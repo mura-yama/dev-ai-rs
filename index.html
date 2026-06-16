@@ -1,0 +1,2899 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>React 考え方ラボ</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel-2:#1c232c;
+    --line:#2a313c; --line-soft:#222831;
+    --ink:#e8edf4; --ink-2:#9aa7b8; --ink-3:#5f6b7c;
+    --react:#61dafb; --react-deep:#1b8fb0;
+    --ok:#3fb950; --ok-bg:rgba(63,185,80,.12);
+    --warn:#d29922; --bad:#f85149; --bad-bg:rgba(248,81,73,.10);
+    --pick:rgba(97,218,251,.10);
+    --kw:#c792ea; --fn:#82aaff; --str:#9ece6a; --par:#f78c6c; --cm:#5c6776;
+    --mono:'SFMono-Regular',ui-monospace,'JetBrains Mono','Menlo',monospace;
+    --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI','Hiragino Sans','Hiragino Kaku Gothic ProN',Meiryo,sans-serif;
+  }
+  /* Next.js 編: モノクロ基調に切り替え（React 編と一目で別物に） */
+  body.next-theme{
+    --bg:#000000; --panel:#0c0c0c; --panel-2:#161616;
+    --line:#2a2a2a; --line-soft:#1e1e1e;
+    --ink:#fafafa; --ink-2:#a1a1a1; --ink-3:#6e6e6e;
+    --react:#ffffff; --react-deep:#8a8a8a;       /* アクセント=白 */
+    --ok:#5eead4; --ok-bg:rgba(94,234,212,.10);
+    --warn:#e5b567; --bad:#ff6369; --bad-bg:rgba(255,99,105,.10);
+    --pick:rgba(255,255,255,.08);
+    --kw:#d6bcfa; --fn:#9bbcf2; --str:#a3e3b8; --par:#f2b58c; --cm:#5a5a5a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink);font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;line-height:1.7;font-size:15px}
+  body{padding:0 20px 90px}
+  .wrap{max-width:780px;margin:0 auto}
+  a{color:inherit;text-decoration:none;cursor:pointer}
+
+  /* top breadcrumb */
+  .top{display:flex;align-items:center;gap:8px;padding:22px 2px 0;font-size:13px;color:var(--ink-3)}
+  .top .crumb{color:var(--ink-2)} .top .crumb:hover{color:var(--react)}
+  .top .sep{opacity:.5} .top .here{color:var(--react)}
+  .atom{width:22px;height:22px;flex:none}
+  .atom .orb{fill:none;stroke:var(--react);stroke-width:5}
+  .atom .nuc{fill:var(--react)}
+
+  code{font-family:var(--mono);font-size:.88em;background:var(--panel-2);
+    padding:2px 6px;border-radius:5px;color:var(--react)}
+  h2.sec{font-size:13px;font-family:var(--mono);color:var(--ink-3);letter-spacing:1px;
+    text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+  h2.sec::before{content:"";width:18px;height:2px;background:var(--react)}
+  p{color:var(--ink-2);margin-bottom:14px}
+  p strong,.ink{color:var(--ink);font-weight:600}
+  section{margin:34px 0}
+
+  /* ============ HOME ============ */
+  .home-hero{padding:40px 0 26px;border-bottom:1px solid var(--line-soft);margin-bottom:30px}
+  .gate-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:600px){.gate-grid{grid-template-columns:1fr}}
+  .gate{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line-soft);
+    border-radius:16px;padding:24px 22px;transition:.18s;cursor:pointer;position:relative;overflow:hidden}
+  .gate:hover{transform:translateY(-2px);border-color:var(--react)}
+  .gate.react:hover{border-color:#61dafb}
+  .gate.next:hover{border-color:#fafafa}
+  .gate-logo{width:40px;height:40px;margin-bottom:14px}
+  .gate-logo .atom{width:40px;height:40px}
+  .gate.react .atom .orb{stroke:#61dafb} .gate.react .atom .nuc{fill:#61dafb}
+  .gate-nm{font-size:20px;font-weight:700;margin-bottom:8px;font-family:var(--mono)}
+  .gate-ds{font-size:13px;color:var(--ink-2);line-height:1.6;flex:1;margin-bottom:14px}
+  .gate-meta{font-size:11.5px;color:var(--ink-3);font-family:var(--mono);margin-bottom:10px}
+  .gate-go{font-size:13px;color:var(--react);font-weight:600}
+  .gate.react .gate-go{color:#61dafb}
+  .home-hero .brand{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+  .home-hero .brand .atom{width:30px;height:30px}
+  .home-hero .brand span{font-family:var(--mono);font-size:15px;color:var(--ink-2)}
+  .home-hero h1{font-size:38px;font-weight:700;letter-spacing:-1px;line-height:1.2;margin-bottom:14px}
+  .home-hero h1 b{color:var(--react)}
+  .home-hero .lede{font-size:17px;color:var(--ink-2);max-width:620px}
+  .cat-label{font-family:var(--mono);font-size:12px;color:var(--react-deep);
+    letter-spacing:1px;text-transform:uppercase;margin:30px 0 14px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:600px){.grid{grid-template-columns:1fr}}
+  .tech{background:var(--panel);border:1px solid var(--line-soft);border-radius:12px;
+    padding:18px 20px;transition:.15s}
+  .tech:hover{border-color:var(--react);background:var(--panel-2);transform:translateY(-1px)}
+  .tech.soon{opacity:.5;pointer-events:none}
+  .tech .nm{font-family:var(--mono);font-size:17px;font-weight:600;color:var(--ink)}
+  .tech .nm b{color:var(--react)}
+  .tech .ds{font-size:13px;color:var(--ink-3);margin-top:6px;line-height:1.5}
+  .tech .ct{font-size:11px;color:var(--react-deep);margin-top:10px;font-family:var(--mono)}
+  .tech.soon .ct{color:var(--ink-3)}
+  .refgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+  @media(max-width:600px){.refgrid{grid-template-columns:1fr}}
+  .reftech{background:var(--panel);border:1px solid var(--line-soft);border-radius:10px;
+    padding:11px 14px;display:flex;flex-direction:column;gap:3px}
+  .refnm{font-family:var(--mono);font-size:13px;color:var(--ink-2)}
+  .refds{font-size:11.5px;color:var(--ink-3);line-height:1.5}
+
+  /* ============ CONCEPT ============ */
+  .hero{padding:30px 0 8px;border-bottom:1px solid var(--line-soft);margin-bottom:30px}
+  .kicker{font-family:var(--mono);font-size:12px;color:var(--react-deep);
+    letter-spacing:1px;text-transform:uppercase;margin-bottom:12px}
+  .hero h1{font-size:40px;font-weight:700;letter-spacing:-1px;margin-bottom:14px;
+    font-family:var(--mono)}
+  .hero h1 .p{color:var(--react)}
+  .lede{font-size:18px;color:var(--ink-2);line-height:1.6;max-width:620px}
+  .tags{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
+  .tag{font-size:12px;padding:4px 11px;border-radius:999px;border:1px solid var(--line);
+    color:var(--ink-2);background:var(--panel)}
+  .tag.cat{background:var(--pick);border-color:var(--react);color:var(--react)}
+  .def{background:var(--panel);border:1px solid var(--line-soft);border-left:3px solid var(--react);
+    border-radius:0 12px 12px 0;padding:20px 22px;font-size:17px;color:var(--ink);line-height:1.6}
+  .def b{color:var(--react);font-weight:600}
+  .code{background:#0a0e14;border:1px solid var(--line-soft);border-radius:12px;
+    padding:18px 20px;font-family:var(--mono);font-size:13px;line-height:2;overflow-x:auto;margin:8px 0}
+  .code .ln{white-space:pre;display:block}
+  .kw{color:var(--kw)} .fn{color:var(--fn)} .str{color:var(--str)} .par{color:var(--par)} .cm{color:var(--cm)}
+  .code .hl{background:var(--pick);border-radius:4px;padding:0 3px}
+  .cap{font-size:13px;color:var(--ink-3);margin-top:8px}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:600px){.cols{grid-template-columns:1fr}}
+  .col{background:var(--panel);border:1px solid var(--line-soft);border-radius:12px;padding:18px 20px}
+  .col h3{font-size:14px;margin-bottom:12px} .col.yes h3{color:var(--ok)} .col.no h3{color:var(--bad)}
+  .col ul{list-style:none}
+  .col li{font-size:14px;color:var(--ink-2);padding:6px 0 6px 22px;position:relative;line-height:1.5}
+  .col.yes li::before{content:"✓";position:absolute;left:0;color:var(--ok);font-weight:700}
+  .col.no li::before{content:"✕";position:absolute;left:0;color:var(--bad);font-weight:700}
+  .miss{background:var(--panel);border:1px solid var(--line-soft);border-radius:12px;padding:4px 0}
+  .miss .row{padding:16px 20px;border-bottom:1px solid var(--line-soft)}
+  .miss .row:last-child{border-bottom:none}
+  .miss .bad{color:var(--bad);font-size:14px;font-weight:600;margin-bottom:6px}
+  .miss .fix{font-size:14px;color:var(--ink-2);line-height:1.55}
+
+  .learn-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+  @media(max-width:600px){.learn-cards{grid-template-columns:1fr}}
+  .lcard{background:var(--panel);border:1px solid var(--line-soft);border-radius:12px;
+    padding:16px 18px;transition:.15s}
+  .lcard:hover{border-color:var(--react);background:var(--panel-2);transform:translateY(-1px)}
+  .lcard.ready{border-color:var(--react-deep)}
+  .lcard.soon{opacity:.5;pointer-events:none}
+  .lcard .dnum{font-family:var(--mono);font-size:12px;color:var(--react-deep)}
+  .lcard .dttl{font-size:15px;font-weight:600;color:var(--ink);margin:5px 0 4px}
+  .lcard .dsub{font-size:12.5px;color:var(--ink-3);line-height:1.45}
+  .lcard .darrow{color:var(--react);font-size:13px;margin-top:10px}
+  .lcard.soon .darrow{color:var(--ink-3)}
+
+  /* ============ LESSON (5 steps) ============ */
+  .lesson-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:0 2px;flex-wrap:wrap}
+  .lesson-head .concept{font-family:var(--mono);font-size:12px;color:var(--react);
+    background:var(--pick);padding:3px 10px;border-radius:6px}
+  .lesson-head .nm{font-size:12px;color:var(--ink-2)}
+  .lesson-head .sc{font-size:12px;color:var(--ink-3)}
+  .stage{display:grid;grid-template-columns:1fr 1.1fr;gap:14px;align-items:start;margin-top:8px}
+  @media(max-width:720px){.stage{grid-template-columns:1fr}}
+  .rail{background:var(--panel);border:1px solid var(--line-soft);border-radius:14px;padding:8px}
+  .rail-head{padding:10px 12px 12px}
+  .rail-head .t{font-size:13px;font-weight:600} .rail-head .s{font-size:11.5px;color:var(--ink-3)}
+  .step{display:flex;gap:11px;padding:11px 12px;border-radius:10px;cursor:pointer;align-items:flex-start}
+  .step:hover{background:var(--panel-2)} .step.cur{background:var(--panel-2)}
+  .step .num{flex:none;width:24px;height:24px;border-radius:7px;display:grid;place-items:center;
+    font-size:12px;font-family:var(--mono);font-weight:600;border:1px solid var(--line);
+    color:var(--ink-3);background:var(--bg)}
+  .step.cur .num{border-color:var(--react);color:var(--react);background:var(--pick)}
+  .step.done .num{border-color:var(--ok);color:#0d1117;background:var(--ok)}
+  .step .lbl{font-size:13px;font-weight:500;color:var(--ink);line-height:1.35}
+  .step.locked .lbl{color:var(--ink-3)} .step.cur .lbl{color:var(--react)}
+  .step .sub2{font-size:11.5px;color:var(--ink-3);margin-top:2px}
+  .connector{height:8px;width:1px;background:var(--line);margin-left:23px}
+  .card{background:var(--panel);border:1px solid var(--line-soft);border-radius:14px;
+    padding:20px;min-height:430px;display:flex;flex-direction:column}
+  .eyebrow{font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--react-deep);
+    font-weight:600;margin-bottom:8px;font-family:var(--mono)}
+  .prompt{font-size:15px;line-height:1.6;color:var(--ink)}
+  .prompt code{font-size:13px;background:var(--panel-2)} .prompt b{color:#fff;font-weight:600}
+  .codeblock{background:#0a0e14;border:1px solid var(--line-soft);border-radius:10px;
+    padding:14px 16px;font-family:var(--mono);font-size:12.5px;line-height:1.95;margin:16px 0;overflow-x:auto}
+  .codeblock .ln{white-space:pre;display:block}
+  .mut{color:var(--ink-3)}
+  .blank{background:#2a3340;border:1px dashed #3d4a5c;border-radius:4px;padding:0 8px;color:var(--react)}
+  .fill-anim{animation:fill .4s ease}
+  @keyframes fill{from{background:var(--pick);transform:scale(1.04)}to{background:transparent;transform:none}}
+  .q{font-size:12px;color:var(--ink-3);margin:4px 0 10px}
+  .opts{display:flex;flex-direction:column;gap:9px}
+  .opt{text-align:left;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;
+    padding:12px 14px;cursor:pointer;color:var(--ink);font-family:var(--mono);font-size:13px;
+    transition:.13s;display:flex;justify-content:space-between;align-items:center;gap:10px;line-height:1.45}
+  .opt:hover:not(.dis){border-color:var(--react-deep);background:#20272f}
+  .opt .ic{font-style:normal;flex:none;opacity:0}
+  .opt.correct{border-color:var(--ok);background:var(--ok-bg)} .opt.correct .ic{opacity:1;color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:var(--bad-bg)} .opt.wrong .ic{opacity:1;color:var(--bad)}
+  .opt.dis{cursor:default;opacity:.55} .opt.dis.correct,.opt.dis.wrong{opacity:1}
+  .why{background:var(--panel-2);border:1px solid var(--line-soft);border-left:3px solid var(--warn);
+    border-radius:0 10px 10px 0;padding:13px 15px;opacity:0;max-height:0;overflow:hidden;transition:.3s}
+  .why.show{opacity:1;max-height:340px;margin-top:16px}
+  .why .h{font-size:12px;font-weight:600;color:var(--warn);margin-bottom:6px}
+  .why p{font-size:13px;line-height:1.65;color:var(--ink-2);margin:0}
+  .why code{font-size:12px;background:var(--bg)}
+  .spacer{flex:1}
+  .nav{display:flex;gap:10px;margin-top:18px}
+  .btn{font-family:var(--sans);font-size:13.5px;border-radius:9px;padding:11px 16px;cursor:pointer;
+    border:1px solid var(--line);background:var(--panel-2);color:var(--ink-2);transition:.13s;font-weight:500}
+  .btn:hover{border-color:var(--react-deep);color:var(--ink)}
+  .btn.primary{flex:1;background:var(--react);color:#08222b;border-color:var(--react);font-weight:600}
+  .btn.primary:hover{background:#7be3fc}
+  .btn:disabled{opacity:.4;cursor:default}
+  .btn.primary:disabled{background:var(--panel-2);color:var(--ink-3);border-color:var(--line)}
+  .done-banner{text-align:center;padding:40px 20px}
+  .done-banner .big{font-size:40px;margin-bottom:8px}
+  .done-banner h3{font-size:17px;margin-bottom:6px}
+  .done-banner p{font-size:13px;color:var(--ink-2);max-width:400px;margin:0 auto 20px}
+
+  .backline{margin-top:36px;padding-top:22px;border-top:1px solid var(--line-soft)}
+  .backline a{font-size:13px;color:var(--ink-2)} .backline a:hover{color:var(--react)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top" id="crumb"></div>
+  <div id="view"></div>
+</div>
+
+<script>
+/* ============================================================
+   データ
+   ============================================================ */
+const DATA = {
+  useState: {
+    name:"useState",
+    cat:"State / 状態を持つ",
+    tagline:"コンポーネントに「覚えておく値」を持たせる、最も基本のフック。",
+    lede:"ユーザーの操作で変わり、変わったら画面も描き直したい値は、これで管理する。",
+    def:'画面に表示され、<b>時間とともに変わる値</b>をコンポーネントに記憶させる。値を更新すると、React が<b>自動でその部分を描き直す</b>。',
+    why:[
+      'ふつうの変数 <code>let count = 0</code> に代入しても画面は変わらない。React は「描画は状態から決まる」前提なので、変化を画面に反映するには <strong>React に変化を知らせる仕組み</strong>が要る。それが useState。',
+      'useState は<strong>2つを1組で</strong>返す —— いまの値と、それを更新する関数。更新関数を呼ぶと React が再描画を予約する。'
+    ],
+    code:[
+      '<span class="kw">import</span> { useState } <span class="kw">from</span> <span class="str">\'react\'</span>;',
+      '',
+      '<span class="kw">function</span> <span class="fn">Counter</span>() {',
+      '  <span class="cm">// [ いまの値 , 更新する関数 ] = useState( 初期値 )</span>',
+      '  <span class="cm">// 初期値 0 から count の型は number と推論される</span>',
+      '  <span class="kw">const</span> [<span class="hl">count</span>, <span class="hl">setCount</span>] = <span class="fn">useState</span>(<span class="par">0</span>);',
+      '  <span class="kw">return</span> &lt;<span class="fn">button</span> onClick={() => <span class="fn">setCount</span>(count + <span class="par">1</span>)}&gt;{count} 回&lt;/<span class="fn">button</span>&gt;;',
+      '}'
+    ],
+    codeCap:"初期値からcountはnumberと型推論される。クリックのたび setCount が呼ばれ表示が描き直される。",
+    yes:["入力フォームの値","開閉・表示/非表示の切替","選択中のタブやアイテム","カウンタや数量","リストへの追加・削除"],
+    no:["他の state から計算で出せる値（派生）","描画に関係しない値（→ useRef）","サーバーから来るデータ（→ SWR 等）","複数画面で共有する値（→ Context）","複雑に絡み合う状態（→ useReducer）"],
+    noNote:"いちばん大事なのは右側。<strong>計算で導ける値は state にしない</strong>のが、バグの少ない設計の第一歩。",
+    miss:[
+      ['変数に直接代入すれば画面が変わる','<code>count = count + 1</code> では再描画されない。必ず更新関数 <code>setCount(...)</code> を通す。'],
+      ['setState は即座に値を書き換える','更新は<strong>予約</strong>。直後に <code>count</code> を読んでもまだ古い。次の描画で新しい値になる。'],
+      ['前の値を使うときも <code>set(値)</code> でいい','連続更新では <code>set(prev => ...)</code> の<strong>関数型更新</strong>が安全。取りこぼしを防ぐ。'],
+      ['オブジェクトや配列は一部だけ書き換えていい','<code>arr.push()</code> は検知されない。<code>[...prev, item]</code> で<strong>新しく作る</strong>。']
+    ],
+    lessons:[
+      {id:"modal",  num:"01", ctx:"Webサイト", title:"モーダルの開閉", sub:"boolean 1つの最小状態", ready:true},
+      {id:"toggle", num:"02", ctx:"共通",     title:"トグル状態の管理", sub:"関数型更新に出会う", ready:true},
+      {id:"search", num:"03", ctx:"業務ツール", title:"検索フォーム入力", sub:"制御コンポーネント・単方向", ready:true},
+      {id:"counter",num:"04", ctx:"EC/管理",  title:"数量カウンタ", sub:"前の値依存・下限ガード", ready:true},
+      {id:"setting",num:"05", ctx:"管理ツール", title:"設定フォーム", sub:"オブジェクトのスプレッド更新", ready:true},
+      {id:"todo",   num:"06", ctx:"業務ツール", title:"TODO 追加/削除", sub:"配列の不変更新・key", ready:true},
+    ]
+  },
+
+  useContext: {
+    name:"useContext",
+    cat:"Context / 離れた所で共有する",
+    tagline:"props のバケツリレーをやめ、離れたコンポーネントで同じ値を共有する仕組み。",
+    lede:"アプリ全体で必要な「テーマ」「ログイン中のユーザー」などを、途中の階層を経由せず直接受け取る。",
+    def:'コンポーネントツリーのどこからでも読める<b>共有の値</b>を用意する仕組み。<code>Provider</code> で配り、<code>useContext</code> で受け取る。途中のコンポーネントを<b>経由しなくていい</b>。',
+    why:[
+      'props は親から子へ1段ずつ手渡す。深い階層の末端に値を届けたいだけなのに、間の全コンポーネントが <code>theme</code> を受け取って下へ渡すだけ……という<strong>バケツリレー</strong>が起きる。',
+      'Context は「ツリーのこの範囲で共有する箱」を作る。<code>Provider</code> が値を入れ、その中の<strong>どの深さの子でも</strong> <code>useContext</code> で直接取り出せる。間のコンポーネントは何も知らなくていい。'
+    ],
+    code:[
+      '<span class="cm">// 1. 箱を作る</span>',
+      '<span class="kw">const</span> <span class="fn">ThemeContext</span> = <span class="fn">createContext</span>(<span class="str">\'light\'</span>);',
+      '',
+      '<span class="cm">// 2. Provider で配る（この中なら全員読める）</span>',
+      '&lt;<span class="fn">ThemeContext</span>.<span class="fn">Provider</span> value={theme}&gt;',
+      '  &lt;<span class="fn">App</span> /&gt;',
+      '&lt;/<span class="fn">ThemeContext</span>.<span class="fn">Provider</span>&gt;',
+      '',
+      '<span class="cm">// 3. 深い子で直接受け取る</span>',
+      '<span class="kw">const</span> theme = <span class="fn">useContext</span>(<span class="fn">ThemeContext</span>);'
+    ],
+    codeCap:"間にどれだけ階層があっても、Provider の中なら useContext 一発で値が取れる。",
+    yes:["テーマ（ダーク/ライト）","ログイン中のユーザー情報","言語・ロケール設定","多くの画面が読む「アプリ全体の設定」"],
+    no:["1〜2階層下に渡すだけ（→ props で十分）","頻繁に変わる値（再描画が広がる）","局所的な状態（そのコンポーネント内の useState）","サーバーデータのキャッシュ（→ SWR 等）"],
+    noNote:"いちばん大事なのは右側。<strong>Context は「最後の手段」</strong>。まず props で考え、バケツリレーが本当に苦痛になってから導入するのが定石。最初から Context にすると、どこで値が変わるか追えなくなる。",
+    miss:[
+      ['Context は状態管理の道具だ','Context 自体は<strong>値を配る</strong>だけ。状態は <code>useState</code> で持ち、その値を Context に乗せる。役割が違う。'],
+      ['とりあえず Context にすれば props が減って楽','安易な Context 化は「どこから来た値か」を不透明にする。<strong>props で済むならその方が追いやすい</strong>。'],
+      ['1つの大きな Context に全部入れる','値が1つ変わると<strong>読んでいる全員が再描画</strong>。関心ごとに Context を分ける。'],
+      ['Provider で囲まなくても useContext は使える','Provider の外では <code>createContext</code> の<strong>デフォルト値</strong>が返る。囲み忘れは典型的なバグ。']
+    ],
+    lessons:[
+      {id:"theme",  num:"01", ctx:"Webサイト", title:"テーマ切替", sub:"Context の最小構成", ready:true},
+      {id:"prop-drill", num:"02", ctx:"共通", title:"バケツリレーの解消", sub:"いつ props をやめるか", ready:true},
+      {id:"auth",   num:"03", ctx:"業務ツール", title:"ログインユーザー共有", sub:"値と更新関数をセットで配る", ready:true},
+      {id:"split",  num:"04", ctx:"管理ツール", title:"Context の分割", sub:"再描画を抑える設計", ready:true},
+    ]
+  },
+
+  props: {
+    name:"props",
+    cat:"Props と合成 / 値を渡す",
+    tagline:"親コンポーネントから子へ値を手渡す、データの流れの基本。",
+    lede:"React のデータは上から下へ一方向に流れる。その「手渡し」が props。",
+    def:'親が子に渡す<b>読み取り専用の値</b>。子は受け取って表示や動作に使うが、<b>書き換えてはいけない</b>。データは親から子へ一方向に流れる。',
+    why:[
+      'コンポーネントを部品として再利用するには、同じ部品に<strong>違う中身</strong>を入れたい。「ボタン」という部品に、ある所では「保存」、別の所では「削除」というラベルを渡す——これが props。',
+      'props は<strong>子から見ると読み取り専用</strong>。子が勝手に書き換えると、データがどこで変わったか追えなくなる。変えたいときは親に「変えて」と伝える（後述のコールバック）。'
+    ],
+    code:[
+      '<span class="cm">// 子: props の型を定義する</span>',
+      '<span class="kw">type</span> <span class="fn">ButtonProps</span> = { label: <span class="kw">string</span>; color: <span class="kw">string</span> };',
+      '',
+      '<span class="kw">function</span> <span class="fn">Button</span>({ label, color }: <span class="fn">ButtonProps</span>) {',
+      '  <span class="kw">return</span> &lt;<span class="fn">button</span> className={color}&gt;{label}&lt;/<span class="fn">button</span>&gt;;',
+      '}',
+      '',
+      '<span class="cm">// 親: 値を渡す（型に合わないとエラーになる）</span>',
+      '&lt;<span class="fn">Button</span> label=<span class="str">"保存"</span> color=<span class="str">"blue"</span> /&gt;'
+    ],
+    codeCap:"props の型を定義すると、渡し忘れや型違いをエラーで防げる。同じ部品に違う値を渡して使い回す。",
+    yes:["子に表示させたいデータ","子の見た目を変える設定（色・サイズ）","子で起きたことを親に伝える関数（コールバック）","子の中身そのもの（children）"],
+    no:["子が独自に持つべき一時的な状態（→ 子の useState）","深い階層へ中継するだけの値（→ Context を検討）","子から親への直接の書き換え（一方向に反する）"],
+    noNote:"props は<strong>親から子への一方向</strong>。子が値を変えたいときは、親から渡された<strong>関数を呼ぶ</strong>（イベントの持ち上げ）。この向きを守ると、データの流れが追いやすくなる。",
+    miss:[
+      ['子の中で props を書き換えればいい','props は<strong>読み取り専用</strong>。<code>props.label = ...</code> はしない。変えたい値は親が持ち、関数で変更を依頼する。'],
+      ['props は何個でも気軽に増やせる','増やしすぎると部品の責務が曖昧に。多すぎると感じたら<strong>分割や children を検討</strong>する合図。'],
+      ['関数は props で渡せない','関数も値。<code>onClick={handleSave}</code> のように<strong>渡せる</strong>。これが子から親へ伝える基本手段。'],
+      ['渡し忘れた props は勝手に補完される','渡さなければ <code>undefined</code>。必要ならデフォルト値を <code>{ size = \'md\' }</code> のように指定する。']
+    ],
+    lessons:[
+      {id:"pass",     num:"01", ctx:"共通",     title:"値を渡す", sub:"props の基本と分割代入", ready:true},
+      {id:"callback", num:"02", ctx:"業務ツール", title:"子から親へ伝える", sub:"コールバック・イベントの持ち上げ", ready:true},
+      {id:"default",  num:"03", ctx:"Webサイト", title:"デフォルト値", sub:"渡されない時に備える", ready:true},
+    ]
+  },
+
+  children: {
+    name:"children",
+    cat:"Props と合成 / 組み合わせる",
+    tagline:"コンポーネントの「中身」を丸ごと受け取り、枠と中身を分けて組み立てる。",
+    lede:"カードやモーダルのような「枠」を作り、中に何を入れるかは使う側が決める——これが合成。",
+    def:'タグの<b>開きと閉じの間に書いたもの</b>が、特別な props <code>children</code> として子に届く。枠の部品が中身を知らなくても組み立てられる。',
+    why:[
+      'カードの「枠（影・角丸・余白）」は共通でも、中身は場所ごとに違う。中身を props で1つずつ受け取るのは大変。そこで<strong>中身を丸ごと</strong>受け取る仕組みが children。',
+      'これにより、枠を作る側は中身を知らなくてよく、使う側は自由に中身を入れられる。継承ではなく<strong>組み合わせ（合成）</strong>で UI を作る、という React の考え方の核。'
+    ],
+    code:[
+      '<span class="kw">import</span> { ReactNode } <span class="kw">from</span> <span class="str">\'react\'</span>;',
+      '',
+      '<span class="cm">// 枠: children の型は ReactNode</span>',
+      '<span class="kw">function</span> <span class="fn">Card</span>({ children }: { children: <span class="fn">ReactNode</span> }) {',
+      '  <span class="kw">return</span> &lt;<span class="fn">div</span> className=<span class="str">"card"</span>&gt;{children}&lt;/<span class="fn">div</span>&gt;;',
+      '}',
+      '',
+      '<span class="cm">// 使う側: 開きと閉じの間が children になる</span>',
+      '&lt;<span class="fn">Card</span>&gt;',
+      '  &lt;<span class="fn">h2</span>&gt;見出し&lt;/<span class="fn">h2</span>&gt;',
+      '&lt;/<span class="fn">Card</span>&gt;'
+    ],
+    codeCap:"Card は中身を知らない。h2 でも画像でも、入れたものがそのまま枠に収まる。",
+    yes:["カード・パネルなど「枠」の部品","モーダルやレイアウトの外側","中身が場所ごとに変わる共通デザイン"],
+    no:["中身が完全に決まっている部品（普通の props で十分）","渡すものが単純な文字列1つだけ（props のほうが明示的）"],
+    noNote:"children は<strong>「中身が可変な枠」</strong>に向く。中身が1つの文字列で固定なら、普通の props のほうが「何を受け取るか」が明確。<strong>可変性があるかで選ぶ</strong>。",
+    miss:[
+      ['children は特別な書き方が要る','<code>children</code> はただの props。<code>{ children }</code> で受け取り、<code>{children}</code> で置くだけ。'],
+      ['合成より継承（extends）を使うべき','React は<strong>継承をほぼ使わない</strong>。枠と中身を組み合わせる合成で、たいていの再利用は足りる。'],
+      ['children は1つの要素しか入らない','複数並べてもよい。配列としてまとめて届く。'],
+      ['枠の部品が中身の型を知る必要がある','知らなくてよいのが利点。枠は「置く」だけで、中身の責任は使う側にある。']
+    ],
+    lessons:[
+      {id:"layout",  num:"01", ctx:"Webサイト", title:"レイアウトの枠", sub:"children で中身を受ける", ready:true},
+      {id:"wrapper", num:"02", ctx:"共通",     title:"カードの汎用化", sub:"枠と中身を分ける合成", ready:true},
+    ]
+  },
+
+  useReducer: {
+    name:"useReducer",
+    cat:"State / 複雑な状態をまとめる",
+    tagline:"絡み合った複数の更新を、1か所のルールに集約する状態管理。",
+    lede:"useState がいくつも絡んで更新が複雑になったとき、変更のルールを1つの関数にまとめる。",
+    def:'状態と「更新のルール（reducer）」を分け、<b>「何が起きたか（action）」を送る</b>と、ルールに従って次の状態が決まる仕組み。複雑な更新を1か所に集約できる。',
+    why:[
+      'useState が増え、「A を変えると B もリセット」のような<strong>絡み合った更新</strong>が散らばると、どこで何が変わるか追えなくなる。',
+      'useReducer は更新ロジックを <code>reducer</code> 関数1つに集める。コンポーネントは「<strong>何が起きたか</strong>」を <code>dispatch</code> で送るだけ。どう変わるかは reducer が一手に引き受ける。'
+    ],
+    code:[
+      '<span class="cm">// 状態と action の型を定義する</span>',
+      '<span class="kw">type</span> <span class="fn">State</span> = { count: <span class="kw">number</span> };',
+      '<span class="kw">type</span> <span class="fn">Action</span> = { type: <span class="str">\'increment\'</span> };',
+      '',
+      '<span class="kw">function</span> <span class="fn">reducer</span>(state: <span class="fn">State</span>, action: <span class="fn">Action</span>): <span class="fn">State</span> {',
+      '  <span class="kw">switch</span> (action.type) {',
+      '    <span class="kw">case</span> <span class="str">\'increment\'</span>: <span class="kw">return</span> { count: state.count + <span class="par">1</span> };',
+      '    <span class="kw">default</span>: <span class="kw">return</span> state;',
+      '  }',
+      '}',
+      '<span class="kw">const</span> [state, dispatch] = <span class="fn">useReducer</span>(reducer, { count: <span class="par">0</span> });'
+    ],
+    codeCap:"State と Action に型を付けると、action.type の打ち間違いや戻り値の形のミスを防げる。",
+    yes:["複数の値が連動して変わる状態","「次の状態が今の状態に依存」する更新が多い時","更新の種類（action）が多く整理したい時"],
+    no:["独立した単純な値（→ useState で十分）","boolean 1つ（reducer は大げさ）","サーバーデータ（→ SWR 等）"],
+    noNote:"<strong>まず useState で考える</strong>。値が独立していて単純なら useReducer は過剰。更新が絡み合って useState が散らかってきたと感じてから移行するのが自然。",
+    miss:[
+      ['useReducer は useState の上位互換だ','用途が違う。<strong>単純な状態は useState のほうが読みやすい</strong>。複雑さに応じて選ぶ。'],
+      ['reducer の中で状態を直接書き換えていい','reducer も<strong>新しい状態を返す</strong>のが原則。<code>state.count++</code> ではなく新オブジェクトを返す。'],
+      ['action は文字列でなければならない','慣習で <code>{type:\'...\'}</code> の形が多いが、必須ではない。ただ揃えると読みやすい。'],
+      ['Redux と同じものだ','考え方は似るが別物。useReducer は<strong>React 標準</strong>で、1コンポーネント内の状態に使える。']
+    ],
+    lessons:[
+      {id:"cart",  num:"01", ctx:"EC", title:"カートの状態", sub:"複数の更新を action に集約", ready:true},
+    ]
+  },
+
+  useEffect: {
+    name:"useEffect",
+    cat:"Effect / 外界と同期する",
+    tagline:"React の外側（通信・購読・タイマー）とコンポーネントを同期させる。",
+    lede:"データ取得やイベント購読など、描画とは別の「副作用」を扱う。ただし使わずに済むなら使わない。",
+    def:'コンポーネントを<b>React の外の世界</b>（サーバー・ブラウザ API・タイマーなど）と<b>同期</b>させるための仕組み。描画後に実行され、依存配列で「いつ動くか」を決める。',
+    why:[
+      'React は本来「状態→画面」を描くだけ。だが現実には、サーバーからデータを取る、イベントを購読する、といった<strong>外の世界とのやりとり</strong>が要る。それを描画の流れから切り離して扱うのが useEffect。',
+      '公式は useEffect を<strong>「避難ハッチ」</strong>と呼ぶ。外部システムと同期しないなら、多くの場合 Effect は要らない。まず「これは本当に副作用か、計算で済むか」を問う。'
+    ],
+    code:[
+      '<span class="kw">useEffect</span>(() => {',
+      '  <span class="cm">// 外界と同期する処理（描画後に実行）</span>',
+      '  <span class="kw">const</span> id = <span class="fn">setInterval</span>(tick, <span class="par">1000</span>);',
+      '  <span class="cm">// 後始末（クリーンアップ）</span>',
+      '  <span class="kw">return</span> () => <span class="fn">clearInterval</span>(id);',
+      '}, []); <span class="cm">// 依存配列: 何が変わったら再実行するか</span>'
+    ],
+    codeCap:"依存配列が空 [] なら最初の描画後に1回。値を入れると、その値が変わるたび再実行。",
+    yes:["サーバーからのデータ取得","イベントの購読（スクロール・リサイズ等）","タイマーの設置","ブラウザ API との同期（document.title 等）"],
+    no:["他の値から計算できるもの（→ 描画中に計算）","イベントへの反応（→ イベントハンドラに書く）","状態を別の状態に同期させるだけ（設計を見直す）"],
+    noNote:"<strong>「Effect が要らない場合」を見抜くのが最重要</strong>。計算で出せる値や、クリックへの反応は Effect ではない。useEffect は「外界との同期」だけに絞ると、バグが激減する。",
+    miss:[
+      ['useEffect はライフサイクル（マウント時など）のための道具だ','本質は<strong>「外界との同期」</strong>。「いつ動くか」より「何と同期しているか」で考えると依存配列を正しく書ける。'],
+      ['依存配列は省略していい','省略すると<strong>毎描画で実行</strong>される。意図しない再実行の元。何に依存するか明示する。'],
+      ['クリーンアップは省いてよい','購読やタイマーは<strong>後始末しないと多重登録・リーク</strong>に。return で必ず解除する。'],
+      ['データ取得はいつも useEffect で書く','選択肢の1つにすぎない。SWR 等のライブラリや、サーバー側取得のほうが適する場面も多い。']
+    ],
+    lessons:[
+      {id:"fetch",   num:"01", ctx:"業務ツール", title:"データ取得", sub:"副作用の基本・loading/error", ready:true},
+      {id:"deps",    num:"02", ctx:"管理ツール", title:"依存配列で再取得", sub:"何を見張るか", ready:true},
+      {id:"cleanup", num:"03", ctx:"共通",     title:"購読のクリーンアップ", sub:"後始末で漏れを防ぐ", ready:true},
+      {id:"no-effect",num:"04",ctx:"共通",     title:"Effect が要らない時", sub:"計算で済むか見抜く", ready:true},
+    ]
+  },
+
+  useRef: {
+    name:"useRef",
+    cat:"Ref / 描画に影響しない値",
+    tagline:"再描画を起こさずに値を保持したり、DOM 要素を直接参照する。",
+    lede:"画面に出さないが覚えておきたい値や、input へのフォーカスのような DOM 操作に使う。",
+    def:'<b>再描画を引き起こさない</b>「入れ物」。<code>.current</code> に値を出し入れできる。DOM 要素への参照や、描画に関係しない値の保持に使う。',
+    why:[
+      'useState は値が変わると再描画する。だが「タイマーの ID」や「前回の値」のように、<strong>覚えておきたいが画面には関係しない</strong>値もある。それを useState で持つと無駄な再描画が起きる。',
+      'useRef は <code>.current</code> を書き換えても<strong>再描画しない</strong>。また、input 要素などに <code>ref</code> を付けると、その DOM を直接操作（フォーカス等）できる。'
+    ],
+    code:[
+      '<span class="cm">// 型引数で「何への参照か」を伝える</span>',
+      '<span class="kw">const</span> inputRef = <span class="fn">useRef</span>&lt;<span class="fn">HTMLInputElement</span>&gt;(<span class="kw">null</span>);',
+      '',
+      '<span class="cm">// DOM を直接操作（フォーカスを当てる）</span>',
+      '<span class="kw">const</span> <span class="fn">focus</span> = () => inputRef.current?.<span class="fn">focus</span>();',
+      '',
+      '&lt;<span class="fn">input</span> ref={inputRef} /&gt;'
+    ],
+    codeCap:"useRef<HTMLInputElement> で参照先の型を伝える。current は null の可能性があるので ?. で安全に。",
+    yes:["input へのフォーカスなど DOM 操作","タイマー ID の保持","前回の値の記憶","描画に出さない作業用の値"],
+    no:["画面に表示する値（→ useState）","変わったら再描画したい値（→ useState）","計算で出せる値（→ 描画中に計算）"],
+    noNote:"判断は単純。<strong>「変わったら画面を描き直したい？」</strong>——はいなら useState、いいえなら useRef。表示に関わる値を ref に入れると、変えても画面が更新されず混乱する。",
+    miss:[
+      ['ref を変えれば画面も変わる','<code>.current</code> の書き換えは<strong>再描画しない</strong>。画面に出したい値は useState で持つ。'],
+      ['ref はいつでも DOM をいじる道具だ','DOM 操作は<strong>最後の手段</strong>。多くは状態と JSX で表現できる。フォーカス等の例外的な場面に絞る。'],
+      ['描画中に ref.current を読み書きしてよい','描画中の参照は避ける。<strong>イベントや Effect の中</strong>で扱うのが安全。'],
+      ['ref と state は同じようなもの','役割が逆。<strong>state は描画に関わる、ref は関わらない</strong>。']
+    ],
+    lessons:[
+      {id:"focus",   num:"01", ctx:"業務ツール", title:"input にフォーカス", sub:"DOM 参照の基本", ready:true},
+      {id:"previous",num:"02", ctx:"共通",     title:"前回の値を覚える", sub:"再描画と無関係な保持", ready:true},
+    ]
+  },
+
+  useMemo: {
+    name:"useMemo",
+    cat:"Performance / 再計算を避ける",
+    tagline:"重い計算の結果を覚えておき、無駄な再計算を防ぐ。ただし多くは不要。",
+    lede:"本当に重い計算が毎描画で繰り返される時だけ使う、最適化の道具。",
+    def:'計算結果を<b>覚えておき</b>、依存する値が変わらなければ<b>前回の結果を再利用</b>する。重い計算の繰り返しを避ける最適化。useCallback はその「関数版」。',
+    why:[
+      'コンポーネントは再描画のたびに中の計算をやり直す。普通は問題ないが、<strong>本当に重い計算</strong>（大量データの集計など）だと毎回やり直すのが無駄になる。',
+      'useMemo は依存配列の値が変わらない限り、<strong>前回の計算結果を使い回す</strong>。ただし覚えておくこと自体にもコストがある。<strong>まず計測し、本当に重い時だけ</strong>使う。'
+    ],
+    code:[
+      '<span class="cm">// items か query が変わった時だけ再計算</span>',
+      '<span class="kw">const</span> filtered = <span class="fn">useMemo</span>(() => {',
+      '  <span class="kw">return</span> items.<span class="fn">filter</span>(i => i.name.<span class="fn">includes</span>(query));',
+      '}, [items, query]);'
+    ],
+    codeCap:"items も query も変わらない再描画では、filter をやり直さず前回の結果を返す。",
+    yes:["明らかに重い計算が毎描画で走る時","子に渡すオブジェクト/配列の参照を安定させたい時"],
+    no:["軽い計算（覚えるコストのほうが高い）","ほとんどの普通の計算（最適化は後回し）","とりあえずの「おまじない」的な付与"],
+    noNote:"<strong>デフォルトは「使わない」</strong>。早すぎる最適化は、コードを複雑にするだけで効果がないことが多い。まず普通に書き、遅さを<strong>計測してから</strong>必要な箇所にだけ足す。",
+    miss:[
+      ['useMemo を付ければ何でも速くなる','覚える処理自体にコストがある。<strong>軽い計算ではむしろ遅くなる</strong>こともある。'],
+      ['迷ったら全部 useMemo で包めばいい','可読性が下がり、依存配列のバグも増える。<strong>必要な箇所に絞る</strong>。'],
+      ['依存配列は省略してよい','省略すると毎回再計算され、意味がない。<strong>依存を正しく書く</strong>のが前提。'],
+      ['useMemo と useCallback は別物','useCallback は<strong>関数を覚える useMemo</strong>と考えてよい。仕組みは同じ。']
+    ],
+    lessons:[
+      {id:"heavy", num:"01", ctx:"管理ツール", title:"重い計算をキャッシュ", sub:"いつ使うべきかの判断", ready:true},
+    ]
+  },
+
+  SWR: {
+    name:"SWR",
+    cat:"外部ライブラリ / データ取得",
+    tagline:"サーバーデータの取得・キャッシュ・再検証を宣言的に任せるライブラリ。",
+    lede:"useEffect で手書きしていたデータ取得の面倒（loading・error・再取得・キャッシュ）を1行に畳む。",
+    def:'<b>「キーを指定すると、そのデータを取得・キャッシュし、自動で最新に保つ」</b>フック。名前は stale-while-revalidate（古い値を見せつつ裏で更新）から。Vercel 製で Next.js と相性が良い。',
+    why:[
+      'useEffect でデータ取得を書くと、loading 状態・error 処理・再取得・キャッシュ・重複排除……と<strong>付随処理が膨らむ</strong>。同じ定型を毎回書くことになる。',
+      'SWR はこれらを引き受ける。<code>useSWR(キー, 取得関数)</code> と書けば、<strong>data・error・isLoading</strong> が返り、画面の再フォーカス時などに自動で再検証する。「いつ自前の useEffect をやめるか」の判断が要点。'
+    ],
+    code:[
+      '<span class="kw">import</span> useSWR <span class="kw">from</span> <span class="str">\'swr\'</span>;',
+      '',
+      '<span class="kw">function</span> <span class="fn">Profile</span>() {',
+      '  <span class="cm">// 型引数 &lt;User&gt; で data が User | undefined になる</span>',
+      '  <span class="kw">const</span> { data, error, isLoading } = <span class="fn">useSWR</span>&lt;<span class="fn">User</span>&gt;(',
+      '    <span class="str">\'/api/user\'</span>, fetcher);',
+      '  <span class="kw">if</span> (isLoading) <span class="kw">return</span> &lt;<span class="fn">Spinner</span> /&gt;;',
+      '  <span class="kw">if</span> (error) <span class="kw">return</span> &lt;<span class="fn">Error</span> /&gt;;',
+      '  <span class="kw">return</span> &lt;<span class="fn">div</span>&gt;{data?.name}&lt;/<span class="fn">div</span>&gt;;',
+      '}'
+    ],
+    codeCap:"取得・キャッシュ・再検証・loading/error が useSWR 1つに畳まれる。",
+    yes:["ユーザー操作で変わるサーバーデータ","再フォーカスや再接続で最新に保ちたいデータ","複数箇所で同じデータを使う（キャッシュ共有）"],
+    no:["サーバー側で取得できるデータ（→ Server Components で十分なことも）","クライアント内だけの状態（→ useState）","複雑な更新・楽観的更新が大量（→ TanStack Query も検討）"],
+    noNote:"<strong>「クライアントで取る必要があるか」をまず問う</strong>。Next.js の Server Components でサーバー側に取得できるなら、クライアントのデータ取得ライブラリ自体が不要なこともある。ユーザー操作で変わるデータにこそ向く。",
+    miss:[
+      ['SWR は useState の代わりだ','役割が違う。SWR は<strong>サーバーデータ</strong>、useState は<strong>クライアント内の状態</strong>。'],
+      ['SWR を入れれば useEffect は全部不要になる','データ取得が楽になるだけ。購読やタイマーなど<strong>他の副作用は useEffect</strong>のまま。'],
+      ['取得関数（fetcher）は SWR が用意してくれる','fetcher は<strong>自分で渡す</strong>。fetch でも axios でもよい。SWR は「いつ呼ぶか」を管理する。'],
+      ['キーは何でもいい','キーは<strong>キャッシュの識別子</strong>。同じキーは同じデータとして共有・重複排除される。URL を使うのが定番。']
+    ],
+    lessons:[
+      {id:"basic",  num:"01", ctx:"業務ツール", title:"データ取得を任せる", sub:"useEffect をやめる判断", ready:true},
+    ]
+  },
+
+  useCallback: {
+    name:"useCallback",
+    cat:"Performance / 関数を覚える",
+    tagline:"関数の定義を覚えておき、毎描画で作り直さないようにする最適化。useMemo の関数版。",
+    lede:"子コンポーネントに渡す関数の「同一性」を保ちたい時に使う。多くは不要。",
+    def:'<b>関数の定義を覚えておく</b>フック。依存配列が変わらなければ、前回と<b>同じ関数</b>を返す。子に渡す関数の参照を安定させ、不要な再描画を防ぐのが主な用途。',
+    why:[
+      'コンポーネントは再描画のたびに、中で定義した関数を<strong>毎回新しく作り直す</strong>。普通は問題ないが、その関数を「最適化された子（React.memo）」に props で渡している場合、毎回違う関数に見えて子が無駄に再描画される。',
+      'useCallback は依存が変わらない限り<strong>同じ関数を使い回す</strong>。これで子から見た props が変わらず、再描画を防げる。<code>useMemo(() => fn, deps)</code> の関数専用版と考えてよい。'
+    ],
+    code:[
+      '<span class="cm">// 引数に型を付ける（item は Item 型）</span>',
+      '<span class="kw">const</span> handleAdd = <span class="fn">useCallback</span>((item: <span class="fn">Item</span>) => {',
+      '  setItems(prev => [...prev, item]);',
+      '}, []);',
+      '',
+      '<span class="cm">// React.memo した子に渡しても無駄な再描画が起きない</span>',
+      '&lt;<span class="fn">MemoizedList</span> onAdd={handleAdd} /&gt;'
+    ],
+    codeCap:"引数 item に型を付ける。依存配列が空なら handleAdd は毎描画で同じ関数のまま。",
+    yes:["React.memo した子に関数を props で渡す時","useEffect の依存配列に関数を入れる時","その関数の参照が変わると困る場面"],
+    no:["普通の onClick など、参照の同一性が関係ない時","最適化していない子に渡すだけの関数","「とりあえず」の付与"],
+    noNote:"<strong>デフォルトは「使わない」</strong>。useMemo と同じく、参照の同一性が実際に問題になる場面に絞る。普通の関数を毎回包むと、可読性が下がるだけで効果はほぼない。",
+    miss:[
+      ['useCallback を付けると関数が速くなる','関数の<strong>実行</strong>は速くならない。変わるのは「毎回作り直すか、使い回すか」だけ。'],
+      ['全ての関数を useCallback で包むべき','包むこと自体にコストがある。<strong>参照の安定が必要な所だけ</strong>。'],
+      ['useCallback と useMemo は別物','<strong>useCallback(fn, d) は useMemo(() => fn, d) と同じ</strong>。関数を覚えるか、値を覚えるかの違い。'],
+      ['依存配列は省略してよい','省略すると毎回新しい関数になり、意味がない。使う値を正しく依存に入れる。']
+    ],
+    lessons:[
+      {id:"memo-child", num:"01", ctx:"管理ツール", title:"子の再描画を防ぐ", sub:"参照の同一性・React.memo と対", ready:true},
+    ]
+  },
+
+  useTransition: {
+    name:"useTransition",
+    cat:"Performance / 更新に優先順位を",
+    tagline:"重い更新を「急がない」と印を付け、入力などの操作を優先させる。",
+    lede:"大量データの絞り込みで画面が固まる時、入力の反応を止めずに更新する。React 18 以降。",
+    def:'状態更新を<b>「急がない（非ブロッキング）」</b>と印を付けるフック。これにより、入力のような急ぐ更新が、重い更新に邪魔されず先に処理される。React 18 以降。',
+    why:[
+      '大量データを絞り込むような重い更新があると、入力中に画面が<strong>カクついて固まる</strong>。文字を打つたび重い再描画が走り、入力が追いつかないため。',
+      'useTransition で重い更新を <code>startTransition</code> で包むと、それは<strong>「急がない更新」</strong>になる。入力の反映が優先され、重い部分は手が空いた時に処理される。<code>isPending</code> で「更新中」も表示できる。'
+    ],
+    code:[
+      '<span class="kw">const</span> [isPending, startTransition] = <span class="fn">useTransition</span>();',
+      '',
+      '<span class="kw">const</span> onChange = (e: <span class="fn">ChangeEvent</span>&lt;<span class="fn">HTMLInputElement</span>&gt;) => {',
+      '  setQuery(e.target.value); <span class="cm">// 急ぐ: 入力の反映</span>',
+      '  <span class="fn">startTransition</span>(() => {',
+      '    setResults(<span class="fn">filterBig</span>(e.target.value)); <span class="cm">// 急がない: 重い絞り込み</span>',
+      '  });',
+      '};'
+    ],
+    codeCap:"入力は即反映、重い絞り込みは「急がない」扱い。isPending で更新中の表示も出せる。",
+    yes:["重い再計算・再描画でUIが固まる時","入力など急ぐ操作と、重い更新が混在する時","タブ切替で重い内容を描く時"],
+    no:["軽い更新（そもそも固まらない）","通信の待ち時間（それは loading 状態で扱う）","ほとんどの普通の更新"],
+    noNote:"<strong>UIが実際に固まる時だけ</strong>。多くのアプリでは不要。まず普通に作り、カクつきを確認してから導入する。最適化系に共通する「計測してから」の姿勢。",
+    miss:[
+      ['useTransition は通信を速くする','通信とは無関係。<strong>描画・計算の重さ</strong>による固まりを緩和する道具。データ取得の待ちは loading 状態で扱う。'],
+      ['startTransition に入れれば何でも速くなる','処理自体は軽くならない。<strong>優先順位を下げる</strong>だけ。重い処理が消えるわけではない。'],
+      ['入力の更新も startTransition に入れる','入力は<strong>急ぐ更新</strong>。これを遅らせると逆に入力がもたつく。急ぐものは外に置く。'],
+      ['React 17 でも使える','<strong>React 18 以降</strong>の機能。バージョンに注意。']
+    ],
+    lessons:[
+      {id:"heavy-filter", num:"01", ctx:"業務ツール", title:"重い絞り込みで固めない", sub:"急ぐ更新を優先する", ready:true},
+    ]
+  },
+
+  useDeferredValue: {
+    name:"useDeferredValue",
+    cat:"Performance / 更新を遅らせる",
+    tagline:"重要でない部分の更新を遅らせ、急ぐ部分を先に更新する。React 18 以降。",
+    lede:"useTransition と似た目的を、値の側から実現する。重い表示を「少し遅れて」追従させる。",
+    def:'ある値の<b>「少し遅れた版」</b>を返すフック。急ぐ更新（入力）を先に反映し、その値を使う重い表示は<b>遅れて追従</b>させる。React 18 以降。',
+    why:[
+      'useTransition は「更新する側」を包んだ。useDeferredValue は<strong>「値を使う側」</strong>から同じ問題に対処する。更新処理を直接触れない時（値を props で受け取るだけの時など）に向く。',
+      '<code>const deferred = useDeferredValue(query)</code> とすると、<code>deferred</code> は急ぐ更新の<strong>後を追って</strong>変わる。重いリストはこの <code>deferred</code> を使って描けば、入力の反応を妨げない。'
+    ],
+    code:[
+      '<span class="kw">const</span> deferredQuery = <span class="fn">useDeferredValue</span>(query);',
+      '',
+      '<span class="cm">// 入力は query で即反映、重いリストは遅れる版で描く</span>',
+      '&lt;<span class="fn">input</span> value={query} onChange={onChange} /&gt;',
+      '&lt;<span class="fn">HeavyList</span> query={deferredQuery} /&gt;'
+    ],
+    codeCap:"入力欄は query で即反応。重い HeavyList は遅れて追従するので、入力が固まらない。",
+    yes:["重い表示が、入力などに遅れて追従してよい時","更新する側を直接いじれない（値を受け取るだけ）時"],
+    no:["即座の反映が必須の表示","軽い表示（遅らせる必要がない）","通信の待ち時間（loading で扱う）"],
+    noNote:"<strong>useTransition と役割が近い</strong>。更新処理を包めるなら useTransition、値を使う側からなら useDeferredValue。どちらも「UIが固まる時だけ」。普段は不要。",
+    miss:[
+      ['値が遅れて反映されるのは常にバグだ','ここでは<strong>意図的</strong>。重い部分だけ遅らせ、急ぐ入力を優先するための仕組み。'],
+      ['useDeferredValue は debounce と同じ','似て非なるもの。debounce は固定時間待つ。これは<strong>React が手の空き具合で</strong>追従させる。'],
+      ['遅延する秒数を指定できる','秒数指定ではない。React が優先順位に応じて調整する。'],
+      ['React 17 でも使える','<strong>React 18 以降</strong>。']
+    ],
+    lessons:[
+      {id:"defer-list", num:"01", ctx:"業務ツール", title:"重い表示を遅れて追従", sub:"値の側から優先順位を付ける", ready:true},
+    ]
+  },
+
+  useId: {
+    name:"useId",
+    cat:"その他 / アクセシビリティ",
+    tagline:"コンポーネントに一意なIDを生成する。ラベルと入力の紐付けなどに使う。",
+    lede:"フォームのラベルと入力を id で結ぶ時、衝突しない一意な id を安全に得る。",
+    def:'コンポーネントごとに<b>衝突しない一意なID</b>を生成するフック。主に、ラベル（label）と入力（input）をアクセシビリティのために結びつける用途。',
+    why:[
+      'ラベルと入力は <code>htmlFor</code> と <code>id</code> で結ぶ必要がある（読み上げや、ラベルクリックで入力にフォーカスするため）。だが id を <code>"email"</code> のように固定すると、同じ部品を<strong>2つ置いた時に id が衝突</strong>する。',
+      'useId は呼ぶたびに<strong>一意な id</strong>を返す。同じ部品を何個置いても衝突しない。サーバー描画（SSR）でもサーバーとクライアントで一致するよう作られている。'
+    ],
+    code:[
+      '<span class="kw">function</span> <span class="fn">EmailField</span>() {',
+      '  <span class="kw">const</span> id = <span class="fn">useId</span>();',
+      '  <span class="kw">return</span> (',
+      '    &lt;&gt;',
+      '      &lt;<span class="fn">label</span> htmlFor={id}&gt;メール&lt;/<span class="fn">label</span>&gt;',
+      '      &lt;<span class="fn">input</span> id={id} type=<span class="str">"email"</span> /&gt;',
+      '    &lt;/&gt;',
+      '  );',
+      '}'
+    ],
+    codeCap:"useId が一意な id を返すので、EmailField を何個置いてもラベルと入力が正しく結ばれる。",
+    yes:["ラベルと入力の紐付け（htmlFor / id）","aria 属性で要素同士を結ぶ時","同じ部品を複数置いても衝突しない id が要る時"],
+    no:["リストの key（→ データの id を使う）","CSS セレクタ用の id","表示に使う通常の値"],
+    noNote:"<strong>用途を間違えないこと</strong>。useId は「アクセシビリティ用の紐付けID」専用。<strong>リストの key には使わない</strong>（key はデータ由来の id を使う）。CSS 用でもない。",
+    miss:[
+      ['useId はリストの key に使える','使わない。key は<strong>データの id</strong>を使う。useId は描画ごとの紐付け用で、リスト要素の識別には向かない。'],
+      ['id は "email" のように自分で決めればいい','同じ部品を2つ置くと<strong>衝突</strong>する。一意性を保証するのが useId の役割。'],
+      ['useId は毎回違う値を返すから不安定','同じコンポーネントでは<strong>描画をまたいで安定</strong>。SSR でも一致する設計。'],
+      ['アクセシビリティは後回しでよい','ラベルと入力の紐付けは<strong>基本的な配慮</strong>。useId で簡単に正しくできる。']
+    ],
+    lessons:[
+      {id:"label", num:"01", ctx:"業務ツール", title:"ラベルと入力を結ぶ", sub:"衝突しない一意ID", ready:true},
+    ]
+  },
+
+  useLayoutEffect: {
+    name:"useLayoutEffect",
+    cat:"Effect / 描画前に測る",
+    tagline:"画面が描かれる直前に実行される useEffect の変種。レイアウトの測定に使う。",
+    lede:"要素のサイズや位置を測ってから表示したい、という稀な場面だけで使う。基本は useEffect。",
+    def:'useEffect とほぼ同じだが、<b>ブラウザが画面を描く直前</b>に実行される。要素のサイズ・位置を測り、ちらつきなく反映したい時に使う。多くの場合は useEffect で十分。',
+    why:[
+      'useEffect は<strong>画面が描かれた後</strong>に走る。だから「要素を測って、その結果で表示を変える」と、一瞬古い表示が見えて<strong>ちらつく</strong>ことがある（例: ツールチップの位置調整）。',
+      'useLayoutEffect は<strong>描画の直前</strong>に走るので、測定と反映を画面に出る前に終えられ、ちらつかない。ただし描画をブロックするため、<strong>本当に必要な時だけ</strong>。それ以外は useEffect を使う。'
+    ],
+    code:[
+      '<span class="kw">const</span> ref = <span class="fn">useRef</span>&lt;<span class="fn">HTMLDivElement</span>&gt;(<span class="kw">null</span>);',
+      '<span class="kw">const</span> [height, setHeight] = <span class="fn">useState</span>(<span class="par">0</span>);',
+      '',
+      '<span class="fn">useLayoutEffect</span>(() => {',
+      '  <span class="cm">// 描画前に高さを測って反映（ちらつかない）</span>',
+      '  setHeight(ref.current?.<span class="fn">getBoundingClientRect</span>().height ?? <span class="par">0</span>);',
+      '}, []);'
+    ],
+    codeCap:"useRef<HTMLDivElement> で参照先の型を伝える。描画前に高さを測って反映するのでちらつかない。",
+    yes:["要素を測ってから表示を調整する時","ツールチップやポップオーバーの位置決め","ちらつきが実際に問題になる時"],
+    no:["普通の副作用（→ useEffect）","データ取得（→ useEffect や SWR）","測定が要らない処理"],
+    noNote:"<strong>デフォルトは useEffect</strong>。useLayoutEffect は描画をブロックするので、使いすぎると遅くなる。「測定→反映のちらつき」が実際に起きた時だけ切り替える。",
+    miss:[
+      ['useLayoutEffect は useEffect の上位互換だ','違う。<strong>描画をブロック</strong>するぶん遅くなりうる。基本は useEffect、必要な時だけこちら。'],
+      ['データ取得は useLayoutEffect が良い','通信に描画前後は関係ない。<strong>useEffect で十分</strong>。'],
+      ['タイミング以外も useEffect と違う','違いは<strong>実行タイミングだけ</strong>。書き方・依存配列・クリーンアップは同じ。'],
+      ['サーバー描画（SSR）でも普通に動く','SSR では実行されず警告が出ることがある。使う場面に注意。']
+    ],
+    lessons:[
+      {id:"measure", num:"01", ctx:"Webサイト", title:"描画前に測る", sub:"useEffect との違い", ready:true},
+    ]
+  },
+
+  useActionState: {
+    name:"useActionState",
+    cat:"その他 / フォームと Action",
+    tagline:"フォーム送信などの「アクション」の状態（結果・処理中）をまとめて管理する。React 19。",
+    lede:"送信処理・その結果・送信中フラグを1つにまとめる、React 19 の新しいフック。",
+    def:'<b>アクション（フォーム送信など）の状態</b>を管理するフック。送信関数を渡すと、結果の状態・送信中フラグ・包んだアクションをまとめて返す。React 19 以降。Server Actions とも組み合わせやすい。',
+    why:[
+      'フォーム送信には「送信処理」「その結果（成功/エラーメッセージ）」「送信中か」という状態が伴う。従来は useState を複数並べて手で管理していた。',
+      'useActionState はこれらを<strong>1つに集約</strong>する。<code>const [state, action, isPending] = useActionState(fn, 初期値)</code> のように、結果・包んだアクション・処理中フラグが返る。フォームの <code>action</code> に直接渡せる。React 19 の機能。'
+    ],
+    code:[
+      '<span class="cm">// React 19。送信処理とその結果をまとめて管理</span>',
+      '<span class="kw">const</span> [state, formAction, isPending] = <span class="fn">useActionState</span>(',
+      '  <span class="kw">async</span> (prev, formData) => {',
+      '    <span class="kw">const</span> res = <span class="kw">await</span> <span class="fn">submit</span>(formData);',
+      '    <span class="kw">return</span> res.ok ? { ok: <span class="kw">true</span> } : { error: res.message };',
+      '  }, <span class="kw">null</span>);',
+      '',
+      '&lt;<span class="fn">form</span> action={formAction}&gt; … &lt;/<span class="fn">form</span>&gt;'
+    ],
+    codeCap:"送信処理・結果(state)・送信中(isPending)が1つに。form の action に直接渡せる。",
+    yes:["フォーム送信の結果・エラー・処理中をまとめたい時","Server Actions と組み合わせる時","送信状態の手書き管理を減らしたい時"],
+    no:["送信を伴わない普通の入力管理（→ useState）","クライアント内だけの単純な状態","React 18 以前の環境"],
+    noNote:"<strong>React 19 の新機能</strong>。古い環境では使えない。また「フォーム/アクション」向けで、ただの入力値管理には useState のほうが素直。用途を見極める。",
+    miss:[
+      ['useActionState は useState の置き換えだ','用途が違う。<strong>アクション（送信）の状態</strong>に特化。普通の入力は useState。'],
+      ['React 18 でも使える','<strong>React 19 以降</strong>の機能。バージョンに注意。'],
+      ['必ず Server Actions が要る','クライアントの非同期関数でも使える。Server Actions と<strong>相性が良い</strong>だけ。'],
+      ['送信中フラグは自分で作る必要がある','返り値の <strong>isPending</strong> がそれ。手書きしなくてよい。']
+    ],
+    lessons:[
+      {id:"form-action", num:"01", ctx:"業務ツール", title:"送信状態をまとめる", sub:"結果・処理中を1つに（React 19）", ready:true},
+    ]
+  },
+
+  "TanStack Query": {
+    name:"TanStack Query",
+    cat:"外部ライブラリ / データ取得",
+    tagline:"サーバーデータの取得・キャッシュ・更新を本格的に管理するライブラリ。旧 React Query。",
+    lede:"SWR と同じ領域の、より多機能な定番。一覧と詳細のキャッシュ、更新（mutation）まで体系的に扱う。",
+    def:'サーバーデータ（サーバー状態）の取得・キャッシュ・再検証・更新を担うライブラリ。<b>queryKey でキャッシュを管理</b>し、データ更新時の無効化や楽観的更新まで体系的に扱える。SWR より多機能。',
+    why:[
+      'SWR と目的は同じ——サーバーデータの面倒（loading/error・キャッシュ・再取得）を引き受ける。TanStack Query はそれに加え、<strong>更新（useMutation）・キャッシュの無効化・楽観的更新</strong>などを体系立てて提供する。',
+      'データの読み取りは <code>useQuery</code>、書き込みは <code>useMutation</code> と役割が分かれ、<strong>queryKey</strong> でどのデータがどのキャッシュかを管理する。更新後に関連キャッシュを「無効化」して自動再取得、といった流れを宣言的に書ける。'
+    ],
+    code:[
+      '<span class="cm">// 読み取り: useQuery</span>',
+      '<span class="kw">const</span> { data, isPending, error } = <span class="fn">useQuery</span>({',
+      '  queryKey: [<span class="str">\'todos\'</span>],',
+      '  queryFn: fetchTodos,',
+      '});',
+      '',
+      '<span class="cm">// 書き込み: useMutation（成功後にキャッシュを無効化）</span>',
+      '<span class="kw">const</span> mutation = <span class="fn">useMutation</span>({',
+      '  mutationFn: addTodo,',
+      '  onSuccess: () => qc.<span class="fn">invalidateQueries</span>({ queryKey: [<span class="str">\'todos\'</span>] }),',
+      '});'
+    ],
+    codeCap:"useQuery で読み、useMutation で書く。queryKey でキャッシュを管理し、更新後に無効化して再取得。",
+    yes:["一覧と詳細など、複数のサーバーデータを扱う時","データ更新（追加・編集・削除）が頻繁な時","楽観的更新やキャッシュ無効化を体系的に行いたい時"],
+    no:["単純な1回の取得だけ（→ SWR や useEffect でも十分）","サーバー側で取得できるデータ（→ Server Components も検討）","クライアント内の状態（→ useState / Zustand）"],
+    noNote:"<strong>SWR との選択</strong>: 軽量で Next.js と手軽に使うなら SWR、更新が多く本格的なキャッシュ管理が要るなら TanStack Query。どちらも<strong>サーバーデータ専用</strong>で、クライアント状態には使わない。まず「サーバー側で取れないか」を問うのは共通。",
+    miss:[
+      ['TanStack Query は状態管理ライブラリだ','扱うのは<strong>サーバー状態（リモートデータ）</strong>。クライアント内の状態は useState や Zustand の領分。'],
+      ['SWR の完全な上位互換だ','多機能だが学習コストも上。<strong>規模と要件で選ぶ</strong>。小さなアプリなら SWR で十分なことも多い。'],
+      ['queryKey は何でもよい','queryKey は<strong>キャッシュの識別子</strong>。データを一意に表す配列にする。更新時の無効化もこのキーで指定する。'],
+      ['取得関数は用意してくれる','queryFn は<strong>自分で渡す</strong>。fetch でも axios でもよい。ライブラリは「いつ呼ぶ・どうキャッシュする」を管理する。']
+    ],
+    lessons:[
+      {id:"query-mutation", num:"01", ctx:"管理ツール", title:"取得と更新", sub:"queryKey とキャッシュ無効化", ready:true},
+    ]
+  },
+
+  Zustand: {
+    name:"Zustand",
+    cat:"外部ライブラリ / 状態管理",
+    tagline:"最小限の記述でグローバルな状態を共有する、軽量な状態管理ライブラリ。",
+    lede:"Context や useReducer では手に余る「広く共有するクライアント状態」を、Provider なしで扱う。",
+    def:'コンポーネントの外に<b>ストア（状態の入れ物）</b>を作り、どこからでも読み書きできる軽量ライブラリ。Provider で囲む必要がなく、<b>必要な部分だけ購読</b>して無駄な再描画を避けられる。',
+    why:[
+      'Context は「共有」の道具だが、頻繁に変わる広い状態だと再描画が広がりやすい。useReducer は1コンポーネント内向き。<strong>アプリ全体で共有し、頻繁に変わるクライアント状態</strong>には、これらが手に余ることがある。',
+      'Zustand はコンポーネントの外にストアを置く。各コンポーネントは<strong>必要な値だけを選んで購読</strong>するので、関係ない更新では再描画されない。Provider 不要で記述も最小限。<strong>サーバーデータではなくクライアント状態</strong>に使う。'
+    ],
+    code:[
+      '<span class="cm">// ストアの型を定義</span>',
+      '<span class="kw">type</span> <span class="fn">Store</span> = { count: <span class="kw">number</span>; increment: () => <span class="kw">void</span> };',
+      '',
+      '<span class="kw">const</span> useStore = <span class="fn">create</span>&lt;<span class="fn">Store</span>&gt;((set) => ({',
+      '  count: <span class="par">0</span>,',
+      '  increment: () => <span class="fn">set</span>((s) => ({ count: s.count + <span class="par">1</span> })),',
+      '}));',
+      '',
+      '<span class="cm">// 必要な部分だけ購読（count だけ取る）</span>',
+      '<span class="kw">const</span> count = <span class="fn">useStore</span>((s) => s.count);'
+    ],
+    codeCap:"外部ストアを作り、必要な値だけ選んで購読。Provider 不要で、関係ない更新では再描画されない。",
+    yes:["アプリ全体で共有するクライアント状態","Context だと再描画が広がってしまう時","Provider のネストを避けたい時"],
+    no:["サーバーから来るデータ（→ TanStack Query / SWR）","1つの画面内だけの状態（→ useState）","深さ数階層の共有（→ props や Context で十分）"],
+    noNote:"<strong>まず useState、次に Context を考える</strong>。Zustand は「広く共有するクライアント状態で、Context では再描画が辛い」と感じてから。サーバーデータには使わない（それは TanStack Query / SWR の領分）。状態の<strong>出どころ</strong>で道具を選ぶ。",
+    miss:[
+      ['Zustand はサーバーデータにも使う','使わない。<strong>クライアント状態</strong>用。サーバーデータは TanStack Query / SWR が、キャッシュや再検証まで面倒を見る。'],
+      ['グローバル状態はとりあえず Zustand','まず useState / Context で足りないか確認。<strong>必要になってから</strong>導入する（Context と同じ姿勢）。'],
+      ['ストア全体を購読すべき','<strong>必要な値だけ選んで購読</strong>するのが要点。全体購読だと無駄な再描画が増える。'],
+      ['Redux と全く同じ','考え方は近いが、Provider 不要・記述が最小限など<strong>より軽量</strong>。ただし大規模で厳格な構造が要るなら Redux Toolkit の選択もある。']
+    ],
+    lessons:[
+      {id:"store", num:"01", ctx:"Webサイト", title:"グローバル状態を共有", sub:"Context との使い分け・部分購読", ready:true},
+    ]
+  },
+
+  "React Hook Form": {
+    name:"React Hook Form",
+    cat:"外部ライブラリ / フォーム",
+    tagline:"再描画を抑えて高速にフォームを扱う、最も使われるフォームライブラリ。",
+    lede:"制御コンポーネントで毎キーストローク再描画していた問題を、非制御の発想で解決する。",
+    def:'入力のたびに再描画しない<b>非制御（uncontrolled）</b>の発想でフォームを扱うライブラリ。<code>register</code> で入力を登録し、バリデーションや送信、エラー管理をまとめて引き受ける。Zod 等と組み合わせるのが定番。',
+    why:[
+      'useState による制御コンポーネントは、<strong>1文字打つたびに再描画</strong>する。項目が増えると再描画が積もり重くなる。バリデーションやエラー表示を手で書く負担も大きい。',
+      'React Hook Form は <code>ref</code> で入力を登録する非制御の作りで、<strong>毎キーストロークの再描画を避ける</strong>。<code>register</code>・<code>handleSubmit</code>・<code>formState.errors</code> で、登録・送信・エラーをまとめて扱える。バリデーションは Zod 等のスキーマと繋げられる。'
+    ],
+    code:[
+      '<span class="cm">// フォームの値の型を渡す</span>',
+      '<span class="kw">type</span> <span class="fn">FormValues</span> = { email: <span class="kw">string</span> };',
+      '<span class="kw">const</span> { register, handleSubmit, formState: { errors } } = <span class="fn">useForm</span>&lt;<span class="fn">FormValues</span>&gt;();',
+      '',
+      '<span class="kw">const</span> onSubmit = (data: <span class="fn">FormValues</span>) => <span class="fn">save</span>(data);',
+      '',
+      '&lt;<span class="fn">form</span> onSubmit={<span class="fn">handleSubmit</span>(onSubmit)}&gt;',
+      '  &lt;<span class="fn">input</span> {...<span class="fn">register</span>(<span class="str">\'email\'</span>, { required: <span class="kw">true</span> })} /&gt;',
+      '  {errors.email && &lt;<span class="fn">span</span>&gt;必須です&lt;/<span class="fn">span</span>&gt;}',
+      '&lt;/<span class="fn">form</span>&gt;'
+    ],
+    codeCap:"register で入力を登録し、handleSubmit で送信、errors でエラー表示。毎キーストロークの再描画がない。",
+    yes:["項目が多い・複雑なフォーム","バリデーションやエラー表示が必要な時","再描画を抑えて高速に動かしたい時"],
+    no:["入力が1〜3個の小さなフォーム（→ useState で十分）","フォーム以外の状態管理","送信を伴わない単純な入力"],
+    noNote:"<strong>小さなフォームには使わない</strong>。1〜3項目なら useState の制御コンポーネントのほうが素直。項目が増え、バリデーションやパフォーマンスが気になってきたら導入する。「ライブラリを入れるべきか」をまず問う。",
+    miss:[
+      ['全てのフォームで使うべき','1〜3項目なら<strong>useState で十分</strong>。規模と要件で選ぶ。'],
+      ['制御コンポーネントが常に正しい','制御は分かりやすいが<strong>毎キーストローク再描画</strong>する。大きなフォームでは非制御の RHF が有利。'],
+      ['バリデーションも自前で書く必要がある','<strong>Zod 等のスキーマ</strong>を resolver で繋げられる。型とバリデーションを一元化できる。'],
+      ['register を付け忘れても動く','register で<strong>登録した入力だけ</strong>が管理対象。付け忘れると値が取れない。']
+    ],
+    lessons:[
+      {id:"rhf-form", num:"01", ctx:"業務ツール", title:"大きなフォームを扱う", sub:"非制御・制御との対比", ready:true},
+    ]
+  },
+
+  Zod: {
+    name:"Zod",
+    cat:"外部ライブラリ / スキーマ検証",
+    tagline:"データの形を一度定義して、型と実行時バリデーションの両方を得る。",
+    lede:"TypeScript の型は実行時には消える。Zod は「実行時にも形をチェックする」を一元化する。",
+    def:'データの<b>形（スキーマ）を一度定義</b>すると、そこから TypeScript の型と<b>実行時のバリデーション</b>の両方が得られるライブラリ。フォーム入力や API 応答の検証に使う。React 専用ではないが React 周辺で広く使われる。',
+    why:[
+      'TypeScript の型は<strong>コンパイル時に消える</strong>。だから実行時に届くデータ（フォーム入力・API 応答）が本当に正しい形か、型だけでは保証できない。検証コードを別に書くと、型と検証が<strong>二重管理</strong>になりズレる。',
+      'Zod はスキーマを1つ書けば、<strong>型推論</strong>（z.infer）と<strong>実行時チェック</strong>（parse）の両方が得られる。定義は1か所。React Hook Form の resolver や Server Actions の入力検証と組み合わせるのが定番。'
+    ],
+    code:[
+      '<span class="kw">import</span> { z } <span class="kw">from</span> <span class="str">\'zod\'</span>;',
+      '',
+      '<span class="cm">// 形を1度定義する</span>',
+      '<span class="kw">const</span> User = z.<span class="fn">object</span>({',
+      '  email: z.<span class="fn">string</span>().<span class="fn">email</span>(),',
+      '  age: z.<span class="fn">number</span>().<span class="fn">min</span>(<span class="par">0</span>),',
+      '});',
+      '',
+      '<span class="kw">type</span> User = z.<span class="fn">infer</span>&lt;<span class="kw">typeof</span> User&gt;; <span class="cm">// 型が得られる</span>',
+      'User.<span class="fn">parse</span>(input); <span class="cm">// 実行時に検証（不正なら例外）</span>'
+    ],
+    codeCap:"スキーマ1つから、型（z.infer）と実行時チェック（parse）の両方。定義は1か所で済む。",
+    yes:["フォーム入力の検証（RHF と組む）","API 応答が想定の形かチェックする時","型と実行時検証を一元化したい時"],
+    no:["TypeScript の型だけで足りる（外部データが絡まない）内部処理","検証が不要な信頼できるデータ"],
+    noNote:"<strong>「実行時に形が不確かなデータ」にこそ使う</strong>。外から来る入力・応答が対象。完全に内部で完結し型だけで足りる所に無理に入れる必要はない。型と検証の<strong>ズレを防ぐ</strong>のが本質的な価値。",
+    miss:[
+      ['Zod は TypeScript の型の代わりだ','補い合う関係。型は<strong>コンパイル時</strong>、Zod は<strong>実行時</strong>もチェックする。z.infer で型も得られる。'],
+      ['React 専用ライブラリだ','React 専用ではない。<strong>汎用のスキーマ検証</strong>。ただし RHF や Server Actions との相性で React 周辺で広く使われる。'],
+      ['検証と型定義は別々に書くべき','Zod の利点は<strong>一元化</strong>。1つのスキーマから両方を得て、二重管理のズレを防ぐ。'],
+      ['parse は失敗しても黙って通る','不正なデータでは<strong>例外を投げる</strong>。安全に扱うなら safeParse で成否を受け取る。']
+    ],
+    lessons:[
+      {id:"schema", num:"01", ctx:"業務ツール", title:"型と検証を一元化", sub:"スキーマ1つから両方を得る", ready:true},
+    ]
+  }
+};
+
+/* 各レッスンのステップ定義: DATA.useState.lessons[].id をキーに */
+const LESSONS = {
+  toggle:{
+    concept:"useState", title:"トグル状態の管理",
+    scenario:"アコーディオンの開閉。状態は true / false の2値だけ。",
+    steps:[
+      {eyebrow:"STEP 1 — 何を状態に持つか", lbl:"状態を見極める", sub:"持つべきデータは何か",
+       prompt:"アコーディオンの<b>開閉</b>を管理したい。コンポーネントが覚えておくべき状態は、次のうちどれが最も素直?",
+       question:"状態として持つべきものは？",
+       opts:[{t:"開いているか否か（boolean 1つ）",ok:true},{t:"開いた回数（number）",ok:false},{t:"表示中のDOM要素そのもの",ok:false}],
+       why:"見た目は状態から<b>導出</b>できる。開閉という2値は boolean 1つで完全に決まる。回数やDOMを持つと「本当の状態」が二重化して破綻のもと。<b>最小の状態を選ぶ</b>のが第一歩。",
+       code:null},
+      {eyebrow:"STEP 2 — 状態を定義する", lbl:"useState で宣言", sub:"初期値をどうするか",
+       prompt:"持つ状態が決まった。<code>useState</code> で宣言する。初期状態は<b>閉じている</b>。①に入る初期値は?",
+       question:"① 初期値は？",
+       opts:[{t:"false",ok:true},{t:"null",ok:false},{t:'"closed"',ok:false}],
+       why:"閉じている=false から始めるのが型としても意味としても素直。<code>null</code> だと boolean でなくなり判定が増える。<b>初期値が型を決める</b>ので最初が肝心。",
+       code:['<span class="kw">const</span> [open, setOpen] = <span class="fn">useState</span>(<span class="b1">①</span>);'],
+       fill:{slot:"b1",val:'<span class="kw">false</span>'}},
+      {eyebrow:"STEP 3 — 更新関数の正体を知る", lbl:"setOpen に渡せるもの", sub:"値だけじゃない",
+       prompt:"次の状態を決める前に <code>setOpen</code> の使い方を押さえる。<code>setOpen(false)</code> のように<b>値</b>を渡せるのは知っての通り。実はもう一つ渡せるものがある。正しい説明はどれ?",
+       question:"setOpen について正しいのは？",
+       opts:[{t:"値の代わりに関数も渡せて、その関数は今の状態を引数で受け取る",ok:true},{t:"渡せるのは boolean の値だけ",ok:false},{t:"関数を渡すと、その関数自体が新しい状態になる",ok:false}],
+       why:"<code>setOpen</code> には値のほかに<b>関数</b>も渡せる。関数を渡すと React がそれを呼び、引数として<b>今の状態</b>を渡す。返した値が次の状態。例: <code>setOpen(cur => 次の値)</code>。この <code>cur</code> を使えるのが次の鍵。",
+       code:['<span class="cm">// 渡し方は2通り</span>','<span class="fn">setOpen</span>(<span class="kw">false</span>);          <span class="cm">// ① 値を直接</span>','<span class="fn">setOpen</span>(cur => 次の値);  <span class="cm">// ② 関数。cur に今の値</span>'],
+       staticCode:true},
+      {eyebrow:"STEP 4 — 変更関数を設計する", lbl:"反転を書く", sub:"今の値から次を決める",
+       prompt:"<code>setOpen</code> は今の値を引数でくれる、と分かった。これを使って開閉を<b>反転</b>させたい。②に入る最も安全な書き方は?",
+       question:"② 反転のさせ方は？",
+       opts:[{t:"setOpen(prev => !prev)",ok:true},{t:"setOpen(!open)",ok:false},{t:"open = !open",ok:false}],
+       why:"今もらえる値を <code>prev</code> と名付け、その否定 <code>!prev</code> を返す。これが<b>関数型更新</b>。今の値を確実に元にするので連続呼び出しでも取りこぼさない。<code>!open</code> は古い <code>open</code> を掴む罠、<code>open = !open</code> は再描画されず✗。",
+       code:['<span class="kw">const</span> [open, setOpen] = <span class="fn">useState</span>(<span class="kw">false</span>);','<span class="kw">const</span> <span class="fn">toggle</span> = (): <span class="kw">void</span> => <span class="b2">②</span>;'],
+       fill:{slot:"b2",val:'<span class="fn">setOpen</span>(prev => !prev)'}},
+      {eyebrow:"STEP 5 — 描画に接続する", lbl:"JSX に繋ぐ", sub:"状態を見た目へ",
+       prompt:"状態と更新関数ができた。最後に<b>見た目</b>へ接続する。③のクリック時に呼ぶべきものは?",
+       question:"③ onClick に渡すのは？",
+       opts:[{t:"toggle",ok:true},{t:"toggle()",ok:false},{t:"setOpen(true)",ok:false}],
+       why:"<code>onClick={toggle}</code> は<b>関数を渡す</b>（クリック時に呼ばれる）。<code>toggle()</code> は描画中に即実行され無限ループの原因に。<code>setOpen(true)</code> は開く専用で反転にならない。",
+       code:['<span class="kw">const</span> [open, setOpen] = <span class="fn">useState</span>(<span class="kw">false</span>);','<span class="kw">const</span> <span class="fn">toggle</span> = () => <span class="fn">setOpen</span>(prev => !prev);','<span class="cm">// JSX</span>','&lt;<span class="fn">button</span> onClick={<span class="b3">③</span>}&gt;切替&lt;/<span class="fn">button</span>&gt;','{open && &lt;<span class="fn">Panel</span> /&gt;}'],
+       fill:{slot:"b3",val:'toggle'}},
+    ],
+    doneMsg:"状態を見極め → 定義し → 更新関数の正体を知り → 反転を設計し → 描画に繋ぐ。実務と同じ順番で useState を組み立てられました。"
+  },
+
+  modal:{
+    concept:"useState", title:"モーダルの開閉",
+    scenario:"確認ダイアログ。開くボタンと、閉じる手段が複数（×ボタン・背景クリック）。",
+    steps:[
+      {eyebrow:"STEP 1 — 何を状態に持つか", lbl:"状態を見極める", sub:"開いているか否か",
+       prompt:"モーダルの開閉を管理したい。状態は開いているか否かの2値。さらにモーダルで<b>特に意識すべき</b>ことは?",
+       question:"モーダルで意識すべきは？",
+       opts:[{t:"開いているかは boolean 1つでよく、閉じる手段が複数あること",ok:true},{t:"開くボタンの数だけ状態が要る",ok:false},{t:"アニメーション用に開閉回数を覚える",ok:false}],
+       why:"状態は <code>isOpen: boolean</code> 1つでよい。ポイントは<b>1つの状態を変える経路が複数</b>あること（×・背景・ESC）。どの経路も「<code>false</code> にする」一点に集約する、と設計段階で見抜くのが大事。",
+       code:null},
+      {eyebrow:"STEP 2 — 状態を定義する", lbl:"useState で宣言", sub:"型と初期値",
+       prompt:"<code>isOpen</code> を宣言する。最初はモーダルは<b>閉じている</b>。①は?",
+       question:"① 初期値は？",
+       opts:[{t:"false",ok:true},{t:"true",ok:false},{t:"undefined",ok:false}],
+       why:"開いた状態で始まるモーダルは普通ない。<code>false</code> が素直。初期値 <code>false</code> から TypeScript は型を <code>boolean</code> と推論する。<code>undefined</code> は「未設定」を意味してしまい、条件分岐で扱いづらい。",
+       code:['<span class="kw">const</span> [isOpen, setIsOpen] = <span class="fn">useState</span>(<span class="b1">①</span>);'],
+       fill:{slot:"b1",val:'<span class="kw">false</span>'}},
+      {eyebrow:"STEP 3 — 変更関数を設計する", lbl:"開く・閉じるを分ける", sub:"意図は2方向",
+       prompt:"モーダルは「開く」と「閉じる」を<b>別の意図</b>で呼ぶ。どう設計するのが読みやすい?",
+       question:"更新関数の設計は？",
+       opts:[{t:"open=()=>setIsOpen(true) と close=()=>setIsOpen(false) を用意",ok:true},{t:"toggle 1つで全部まかなう",ok:false},{t:"経路ごとに別々の状態を作る",ok:false}],
+       why:"閉じる経路が複数でも、呼ぶのは共通の <code>close</code> 1つ。意図が明確な名前（open/close）に分けると、×ボタンも背景クリックも <code>onClick={close}</code> で済む。<b>意図が2方向</b>あるモーダルでは、反転1つよりも open/close を分ける方が読みやすい。",
+       code:['<span class="kw">const</span> <span class="fn">open</span>  = (): <span class="kw">void</span> => <span class="fn">setIsOpen</span>(<span class="kw">true</span>);','<span class="kw">const</span> <span class="fn">close</span> = (): <span class="kw">void</span> => <span class="b2">②</span>;'],
+       fill:{slot:"b2",val:'<span class="fn">setIsOpen</span>(<span class="kw">false</span>)'}},
+      {eyebrow:"STEP 4 — 描画に接続する", lbl:"複数経路を繋ぐ", sub:"全部 close に集約",
+       prompt:"背景（オーバーレイ）クリックでも閉じたい。③のオーバーレイの onClick に渡すのは?",
+       question:"③ オーバーレイの onClick は？",
+       opts:[{t:"close",ok:true},{t:"open",ok:false},{t:"setIsOpen(true)",ok:false}],
+       why:"×ボタンも背景も同じ <code>close</code> を指す。これで「閉じる経路が複数」を1状態で素直に表現できる。状態を最小にした STEP1 の判断が、ここで効いてくる。",
+       code:['{isOpen && (','  &lt;<span class="fn">Overlay</span> onClick={<span class="b3">③</span>}&gt;','    &lt;<span class="fn">Dialog</span> onClick={stop}&gt;','      &lt;<span class="fn">button</span> onClick={close}&gt;×&lt;/<span class="fn">button</span>&gt;','    &lt;/<span class="fn">Dialog</span>&gt;','  &lt;/<span class="fn">Overlay</span>&gt;',')}'],
+       fill:{slot:"b3",val:'close'}},
+    ],
+    doneMsg:"開閉は boolean 1つで持ち、開く/閉じるを意図で分け、複数の閉じる経路を共通の close に集約する。状態を最小に保ったまま経路をまとめる、という設計が身につきました。"
+  },
+
+  counter:{
+    concept:"useState", title:"数量カウンタ",
+    scenario:"カートの数量。＋/−で増減、ただし 0 未満にはしない。",
+    steps:[
+      {eyebrow:"STEP 1 — 何を状態に持つか", lbl:"状態を見極める", sub:"数値ひとつ",
+       prompt:"カートの数量を管理する。状態として持つべきものは?",
+       question:"状態は？",
+       opts:[{t:"数量（number）1つ",ok:true},{t:"＋を押した回数と−を押した回数の2つ",ok:false},{t:"表示用の文字列",ok:false}],
+       why:"必要なのは今の<b>数量</b>だけ。押した回数を別々に持つと、本当の数量を毎回計算する羽目になり二重管理。<b>最小の状態</b>は number 1つ。",
+       code:null},
+      {eyebrow:"STEP 2 — 状態を定義する", lbl:"useState で宣言", sub:"初期値は？",
+       prompt:"数量を宣言する。商品はまだ1個も入っていない。①は?",
+       question:"① 初期値は？",
+       opts:[{t:"0",ok:true},{t:'"0"',ok:false},{t:"null",ok:false}],
+       why:"数として扱うので <code>0</code>。文字列 <code>\"0\"</code> だと <code>+1</code> で <code>\"01\"</code> になる事故が起きる。型は最初に揃える。",
+       code:['<span class="kw">const</span> [qty, setQty] = <span class="fn">useState</span>(<span class="b1">①</span>);'],
+       fill:{slot:"b1",val:'<span class="par">0</span>'}},
+      {eyebrow:"STEP 3 — 増やす（前の値依存）", lbl:"関数型更新が要る理由", sub:"連打に耐える",
+       prompt:"＋ボタンで <code>+1</code> する。ここで<b>関数型更新</b>が効いてくる。なぜ重要?",
+       question:"なぜ prev => prev + 1 が良い？",
+       opts:[{t:"＋を素早く連打しても、毎回「今の値」に積めるから",ok:true},{t:"コードが短くなるから",ok:false},{t:"number には必ず関数型が必須だから",ok:false}],
+       why:"<code>setQty(qty + 1)</code> は描画時点の古い <code>qty</code> を掴む。連打や複数更新が重なると取りこぼす。<code>setQty(prev => prev + 1)</code> なら常に最新値に積む。<b>前の値から次を決める</b>更新の典型例。",
+       code:['<span class="kw">const</span> <span class="fn">inc</span> = () => <span class="b2">②</span>;'],
+       fill:{slot:"b2",val:'<span class="fn">setQty</span>(prev => prev + <span class="par">1</span>)'}},
+      {eyebrow:"STEP 5 — 下限をガードする", lbl:"0 未満にしない", sub:"更新関数に条件を",
+       prompt:"−ボタンで <code>-1</code> するが、<b>0 未満にしない</b>。③のガードの書き方は?",
+       question:"③ 0 未満を防ぐには？",
+       opts:[{t:"prev => Math.max(0, prev - 1)",ok:true},{t:"prev => prev - 1",ok:false},{t:"qty > 0 ? qty - 1 : 0",ok:false}],
+       why:"更新関数の中で <code>Math.max(0, ...)</code> を使えば、状態が不正な値（負）に<b>なりえない</b>。外側の <code>qty</code> を見る三項は古い値を掴む危険があり、関数型の中に閉じ込めるのが安全。状態の<b>不変条件</b>は更新側で守る。",
+       code:['<span class="kw">const</span> <span class="fn">dec</span> = () => <span class="b3">③</span>;'],
+       fill:{slot:"b3",val:'<span class="fn">setQty</span>(prev => <span class="fn">Math</span>.max(<span class="par">0</span>, prev - <span class="par">1</span>))'}},
+    ],
+    doneMsg:"数値の状態では「前の値依存」が常につきまとう。だから関数型更新が基本になり、下限のような不変条件も更新関数の中で守る。prev を使った関数型更新が、ここで本領を発揮しました。"
+  },
+
+  search:{
+    concept:"useState", title:"検索フォーム入力",
+    scenario:"一覧画面の検索ボックス。入力した文字を React 側で把握したい。",
+    steps:[
+      {eyebrow:"STEP 1 — 何を状態に持つか", lbl:"状態を見極める", sub:"入力文字そのもの",
+       prompt:"検索ボックスの入力を扱いたい。状態として持つべきものは?",
+       question:"状態は？",
+       opts:[{t:"入力中の文字列",ok:true},{t:"input 要素そのもの",ok:false},{t:"何も持たず、必要な時に DOM から読む",ok:false}],
+       why:"React では<b>状態を「真実」</b>とし、画面はそこから描く。入力文字を state に持てば、検索・クリア・初期値などすべてその1つの値を基準にできる。DOM から読む発想は、React の単方向の流れに逆らう。",
+       code:null},
+      {eyebrow:"STEP 2 — 状態を定義する", lbl:"useState で宣言", sub:"初期値は空文字",
+       prompt:"入力文字 <code>query</code> を宣言する。最初は<b>空</b>。①は?",
+       question:"① 初期値は？",
+       opts:[{t:'""（空文字）',ok:true},{t:"null",ok:false},{t:"undefined",ok:false}],
+       why:"文字列として扱うので空文字 <code>\"\"</code> から始める。<code>null</code> だと <code>value={null}</code> となり、入力欄が「制御されていない」警告の原因になる。<b>型を最初から文字列に</b>揃える。",
+       code:['<span class="kw">const</span> [query, setQuery] = <span class="fn">useState</span>(<span class="b1">①</span>);'],
+       fill:{slot:"b1",val:'<span class="str">""</span>'}},
+      {eyebrow:"STEP 3 — 入力と状態を結ぶ", lbl:"単方向データフロー", sub:"value と onChange",
+       prompt:"入力欄を state に結びつける。<b>制御コンポーネント</b>の要は2つ。<code>value={query}</code> で「状態→画面」を繋いだ。逆の「画面→状態」を繋ぐ②は?",
+       question:"② onChange に書くのは？",
+       opts:[{t:"e => setQuery(e.target.value)",ok:true},{t:"e => query = e.target.value",ok:false},{t:"setQuery(query)",ok:false}],
+       why:"<b>value で出し、onChange で受ける</b>——この往復で input と state が一体になる。入力のたび <code>e.target.value</code> を state に書き戻す。<code>query = ...</code> は再描画されず、value も更新されないので文字が打てなくなる。",
+       code:['&lt;<span class="fn">input</span>','  value={query}','  onChange={<span class="b2">②</span>}','/&gt;'],
+       fill:{slot:"b2",val:'e => setQuery(e.target.value)'}},
+      {eyebrow:"STEP 4 — 状態を使う", lbl:"派生は計算で", sub:"絞り込みは state にしない",
+       prompt:"<code>query</code> で一覧を絞り込んで表示する。絞り込み結果は<b>どう持つ</b>のが正しい?",
+       question:"③ 絞り込み結果は？",
+       opts:[{t:"state にせず、描画時に query から計算する",ok:true},{t:"filtered という別の state に入れる",ok:false},{t:"useEffect で filtered を更新する",ok:false}],
+       why:"絞り込み結果は <code>query</code> と元データから<b>毎回導ける</b>。別 state にすると「query は新しいのに filtered が古い」ズレが起きる。<b>計算で出せる値は state にしない</b>——これが派生状態を避ける原則。ここでその具体例になる。",
+       code:['<span class="cm">// 描画のたびに計算（state にしない）</span>','<span class="kw">const</span> shown = items.<span class="fn">filter</span>(','  i => i.name.<span class="fn">includes</span>(<span class="b3">③</span>)',');'],
+       fill:{slot:"b3",val:'query'}},
+    ],
+    doneMsg:"入力を state にし、value と onChange で往復させるのが制御コンポーネント。そして絞り込み結果は state にせず計算で出す——「状態を真実とし、見た目は導出する」という React の根っこを体験しました。"
+  },
+
+  setting:{
+    concept:"useState", title:"設定フォーム",
+    scenario:"管理画面の設定ページ。名前・通知ON/OFF・テーマなど複数項目を1画面で編集。",
+    steps:[
+      {eyebrow:"STEP 1 — 何を状態に持つか", lbl:"状態の形を決める", sub:"バラバラか、まとめてか",
+       prompt:"設定項目が複数ある（name, notify, theme…）。状態の持ち方として、どちらが扱いやすい?",
+       question:"状態の形は？",
+       opts:[{t:"1つのオブジェクトにまとめる",ok:true},{t:"項目ごとに useState を10個並べる",ok:false},{t:"配列に順番で入れる",ok:false}],
+       why:"関連する設定は<b>1つのオブジェクト</b>にまとめると、保存・リセット・送信を丸ごと扱える。項目が増えるたび useState を足すのは管理が大変。配列は「何番目が何か」が不明瞭。<b>まとまりは1つの状態に</b>。",
+       code:null},
+      {eyebrow:"STEP 2 — 状態を定義する", lbl:"オブジェクトで宣言", sub:"初期値も形を示す",
+       prompt:"設定オブジェクトを宣言する。①の初期値の役割として正しいのは?",
+       question:"① 初期オブジェクトの役割は？",
+       opts:[{t:"持つフィールドの一覧と型を、そのまま示す",ok:true},{t:"空オブジェクト {} が一番安全",ok:false},{t:"null にして後で入れる",ok:false}],
+       why:"初期値 <code>{name:'', notify:true}</code> が、このフォームの<b>形そのもの</b>を表す。TypeScript はこの初期値から <code>{name: string; notify: boolean}</code> と型を推論する。空 <code>{}</code> や <code>null</code> だと、各入力欄の value が undefined になり制御できない。<b>初期値=設計図</b>。",
+       code:['<span class="cm">// 初期値から型が推論される（明示するなら useState&lt;Form&gt;）</span>','<span class="kw">const</span> [form, setForm] = <span class="fn">useState</span>(<span class="b1">①</span>);'],
+       fill:{slot:"b1",val:'{ name: <span class="str">\'\'</span>, notify: <span class="kw">true</span> }'}},
+      {eyebrow:"STEP 3 — 一部だけ更新する", lbl:"不変更新（スプレッド）", sub:"全体を作り直す",
+       prompt:"名前欄だけ変えたい。オブジェクトの<b>一部更新</b>はどう書く?",
+       question:"② name だけ更新するには？",
+       opts:[{t:"setForm(prev => ({ ...prev, name: v }))",ok:true},{t:"form.name = v",ok:false},{t:"setForm({ name: v })",ok:false}],
+       why:"<code>{...prev, name:v}</code> は「今の全部をコピーして name だけ上書き」。これが<b>不変更新</b>。<code>form.name = v</code> は直接書き換えで検知されない。<code>setForm({name:v})</code> は他の項目（notify など）が<b>消える</b>——一部更新では必ず展開する。",
+       code:['<span class="kw">const</span> <span class="fn">update</span> = (key: <span class="kw">string</span>, v: <span class="kw">string</span>) =>','  setForm(<span class="b2">②</span>);'],
+       fill:{slot:"b2",val:'prev => ({ ...prev, [key]: v })'}},
+      {eyebrow:"STEP 4 — まとめて使う", lbl:"1状態の利点", sub:"送信もリセットも丸ごと",
+       prompt:"オブジェクト1つにまとめた利点が、保存処理で効く。③の送信で渡すのは?",
+       question:"③ 保存APIに渡すのは？",
+       opts:[{t:"form（オブジェクトまるごと）",ok:true},{t:"name, notify, theme を1つずつ",ok:false},{t:"毎回新しく組み立て直す",ok:false}],
+       why:"状態を1つにまとめたから、送信も <code>save(form)</code> 一発。リセットも <code>setForm(初期値)</code> で丸ごと。STEP1 で「まとめる」と決めた判断が、ここで全部の操作を簡潔にする。<b>状態の形が、後の全操作を決める</b>。",
+       code:['<span class="kw">const</span> <span class="fn">onSave</span> = () => <span class="fn">save</span>(<span class="b3">③</span>);'],
+       fill:{slot:"b3",val:'form'}},
+    ],
+    doneMsg:"複数項目はオブジェクト1つにまとめ、一部更新はスプレッドで全体を作り直す。最初に状態の「形」を決める判断が、更新・送信・リセットのすべてを左右する——これが構造化された状態の設計です。"
+  },
+
+  todo:{
+    concept:"useState", title:"TODO 追加/削除",
+    scenario:"タスクリスト。項目を追加し、不要なものを削除する。",
+    steps:[
+      {eyebrow:"STEP 1 — 何を状態に持つか", lbl:"配列を状態に", sub:"各項目に id を",
+       prompt:"タスクの一覧を持つ。配列で持つとして、各項目に<b>欠かせない</b>ものは?",
+       question:"各タスクに必要なものは？",
+       opts:[{t:"一意な id（と内容）",ok:true},{t:"配列の何番目か（index）だけ",ok:false},{t:"内容の文字列だけ",ok:false}],
+       why:"削除や並べ替えで index はずれる。<b>一意な id</b> を各項目が持てば、「どれを消すか」を確実に指せる。後で出てくる <code>key</code> にも id を使う。型なら <code>type Todo = {id: string; text: string}</code> と表せる。<b>識別子は最初から</b>持たせる。",
+       code:null},
+      {eyebrow:"STEP 2 — 状態を定義する", lbl:"空配列で宣言", sub:"型引数が要る",
+       prompt:"タスク配列を宣言する。最初は空。①は?",
+       question:"① 初期値は？",
+       opts:[{t:"[]（空配列）",ok:true},{t:"null",ok:false},{t:"{}",ok:false}],
+       why:"配列として扱うので空配列 <code>[]</code>。ただし空配列だけだと TypeScript は <code>never[]</code> と推論してしまうので、<code>useState&lt;Todo[]&gt;([])</code> と<b>型引数で中身の型を伝える</b>のが要点。<code>null</code> や <code>{}</code> では map / filter が使えない。",
+       code:['<span class="cm">// 空配列は型引数で中身を伝える</span>','<span class="kw">const</span> [todos, setTodos] = <span class="fn">useState</span>&lt;<span class="fn">Todo</span>[]&gt;(<span class="b1">①</span>);'],
+       fill:{slot:"b1",val:'[]'}},
+      {eyebrow:"STEP 3 — 追加する", lbl:"不変更新（追加）", sub:"push しない",
+       prompt:"新しいタスクを<b>末尾に追加</b>する。配列の不変更新はどう書く?",
+       question:"② 追加するには？",
+       opts:[{t:"setTodos(prev => [...prev, newTodo])",ok:true},{t:"todos.push(newTodo)",ok:false},{t:"setTodos(todos.push(newTodo))",ok:false}],
+       why:"<code>[...prev, newTodo]</code> は「今の全要素＋新要素」の<b>新しい配列</b>。<code>push</code> は元配列を直接書き換えるため React が変化を検知できない。<code>push</code> は新しい長さを返すので2番目も壊れる。<b>配列も「新しく作る」</b>。",
+       code:['<span class="kw">const</span> <span class="fn">add</span> = (text: <span class="kw">string</span>) => {','  <span class="kw">const</span> newTodo: <span class="fn">Todo</span> = { id: <span class="fn">crypto</span>.<span class="fn">randomUUID</span>(), text };','  setTodos(<span class="b2">②</span>);','};'],
+       fill:{slot:"b2",val:'prev => [...prev, newTodo]'}},
+      {eyebrow:"STEP 4 — 削除する", lbl:"不変更新（削除）", sub:"filter で除く",
+       prompt:"指定 id のタスクを<b>削除</b>する。STEP1 で id を持たせた判断が効く。③は?",
+       question:"③ id のタスクを削除するには？",
+       opts:[{t:"prev => prev.filter(t => t.id !== id)",ok:true},{t:"prev => prev.splice(index, 1)",ok:false},{t:"delete prev[id]",ok:false}],
+       why:"<code>filter</code> は条件に合う要素だけの<b>新しい配列</b>を返す（=不変更新）。「id が一致しないものだけ残す」で削除になる。<code>splice</code> は元配列を破壊、<code>delete</code> は配列に使えない。id を持たせたから index に頼らず確実に消せる。",
+       code:['<span class="kw">const</span> <span class="fn">remove</span> = (id: <span class="kw">string</span>) =>','  setTodos(<span class="b3">③</span>);'],
+       fill:{slot:"b3",val:'prev => prev.filter(t => t.id !== id)'}},
+    ],
+    doneMsg:"配列の状態は push や splice で壊さず、スプレッドと filter で新しく作る。そして id を最初から持たせることで、削除も key も index に頼らず安定する——リスト状態の設計が一通り身につきました。"
+  },
+
+  theme:{
+    concept:"useContext", title:"テーマ切替",
+    scenario:"サイト全体のダーク/ライト。ヘッダーのボタンで切り替え、各所がその色で描かれる。",
+    steps:[
+      {eyebrow:"STEP 1 — なぜ Context か", lbl:"共有の必要を見抜く", sub:"props では辛い場面",
+       prompt:"テーマは<b>多くの離れた場所</b>（ヘッダー、本文、フッター…）が読む。これを props で配ると何が起きる?",
+       question:"props で配ると？",
+       opts:[{t:"間の全コンポーネントが theme を中継するバケツリレーになる",ok:true},{t:"props なら何階層でも自動で届く",ok:false},{t:"props では複数箇所に渡せない",ok:false}],
+       why:"テーマのように<b>広く・深く</b>使う値を props で配ると、関係ない中間コンポーネントまで <code>theme</code> を受け取って下へ渡すだけになる。この苦痛こそ Context の出番。<b>「共有が広いか」で判断</b>する。",
+       code:null},
+      {eyebrow:"STEP 2 — 箱を作る", lbl:"createContext", sub:"デフォルト値も決める",
+       prompt:"テーマ用の Context を作る。①の引数（デフォルト値）の意味は?",
+       question:"① createContext の引数は？",
+       opts:[{t:"Provider で囲まれていない時に返る既定値",ok:true},{t:"必ず使われる固定の値",ok:false},{t:"省略できず、状態の初期値になる",ok:false}],
+       why:"<code>createContext('light')</code> の <code>'light'</code> は、<b>Provider の外</b>で <code>useContext</code> した時に返る値。テストや囲み忘れの保険になる。これは状態の初期値とは別物——状態は別途 useState で持つ。",
+       code:['<span class="kw">const</span> <span class="fn">ThemeContext</span> = <span class="fn">createContext</span>(<span class="b1">①</span>);'],
+       fill:{slot:"b1",val:'<span class="str">\'light\'</span>'}},
+      {eyebrow:"STEP 3 — Provider で配る", lbl:"value に何を載せるか", sub:"状態は useState",
+       prompt:"テーマは切り替わる=状態。Context は配る箱。両者を組み合わせる。②の Provider の value に載せるのは?",
+       question:"② value に載せるのは？",
+       opts:[{t:"useState で持った theme（と切替関数）",ok:true},{t:"createContext のデフォルト値",ok:false},{t:"固定の文字列 'dark'",ok:false}],
+       why:"<b>状態は useState、配るのは Context</b>という役割分担。<code>useState</code> で持った <code>theme</code> を Provider の value に載せれば、切り替わるたび中の全員に新しい値が届く。Context 自体は状態を持たない、という勘違いの解消点。",
+       code:['<span class="kw">const</span> [theme, setTheme] = <span class="fn">useState</span>(<span class="str">\'light\'</span>);','<span class="kw">return</span> (','  &lt;<span class="fn">ThemeContext</span>.<span class="fn">Provider</span> value={<span class="b2">②</span>}&gt;','    {children}','  &lt;/<span class="fn">ThemeContext</span>.<span class="fn">Provider</span>&gt;',');'],
+       fill:{slot:"b2",val:'theme'}},
+      {eyebrow:"STEP 4 — 受け取る", lbl:"useContext", sub:"間を経由しない",
+       prompt:"深い階層のボタンでテーマを読む。③で値を受け取るには?",
+       question:"③ 値を受け取るには？",
+       opts:[{t:"useContext(ThemeContext)",ok:true},{t:"props.theme",ok:false},{t:"ThemeContext.value",ok:false}],
+       why:"<code>useContext(ThemeContext)</code> で、間に何階層あっても<b>直接</b>取れる。これがバケツリレーの解消。props.theme は中継が必要だった旧来のやり方、<code>.value</code> という読み方は存在しない。",
+       code:['<span class="kw">function</span> <span class="fn">ThemedButton</span>() {','  <span class="kw">const</span> theme = <span class="b3">③</span>;','  <span class="kw">return</span> &lt;<span class="fn">button</span> className={theme}&gt;…&lt;/<span class="fn">button</span>&gt;;','}'],
+       fill:{slot:"b3",val:'<span class="fn">useContext</span>(ThemeContext)'}},
+    ],
+    doneMsg:"createContext で箱を作り、useState の状態を Provider の value に載せ、useContext で深い子が直接受け取る。「状態は useState・共有は Context」という役割分担が、Context 理解の核心です。"
+  },
+
+  "prop-drill":{
+    concept:"useContext", title:"バケツリレーの解消",
+    scenario:"App → Layout → Sidebar → UserBadge と4階層。末端だけが user を必要としている。",
+    steps:[
+      {eyebrow:"STEP 1 — 問題を見る", lbl:"バケツリレーとは", sub:"中継だけのコンポーネント",
+       prompt:"<code>user</code> を末端の <code>UserBadge</code> に届けたい。props で渡すと <code>Layout</code> と <code>Sidebar</code> はどうなる?",
+       question:"中間コンポーネントは？",
+       opts:[{t:"自分は使わない user を受け取り、下へ渡すだけになる",ok:true},{t:"user を無視できる",ok:false},{t:"user を自動でスキップして末端に届く",ok:false}],
+       why:"これが<b>prop drilling（バケツリレー）</b>。Layout も Sidebar も <code>user</code> に用はないのに、props の型に <code>user</code> が増え、ただ下へ手渡す。階層が深いほど苦痛が増す。これを<b>問題として認識</b>するのが第一歩。",
+       code:['&lt;<span class="fn">Layout</span> user={user}&gt;       <span class="cm">// 使わないのに受け取る</span>','  &lt;<span class="fn">Sidebar</span> user={user}&gt;    <span class="cm">// 使わないのに受け取る</span>','    &lt;<span class="fn">UserBadge</span> user={user} /&gt; <span class="cm">// ここだけ使う</span>']},
+      {eyebrow:"STEP 2 — 解消の判断", lbl:"いつ Context にするか", sub:"乱用しない境界",
+       prompt:"このバケツリレー、すぐ Context にすべき? 判断として最も妥当なのは?",
+       question:"Context 化の判断は？",
+       opts:[{t:"中継だけの階層が深く続くなら Context が妥当",ok:true},{t:"props は常に悪。即 Context にする",ok:false},{t:"1階層でも面倒なら必ず Context",ok:false}],
+       why:"<b>props が常に悪いわけではない</b>。1〜2階層なら props のほうが「どこから来た値か」が明確で追いやすい。中継だけの階層が<b>深く続く</b>、多くの枝が同じ値を要る——そうなって初めて Context が割に合う。<b>最後の手段</b>として使う。",
+       code:null},
+      {eyebrow:"STEP 3 — 置き換える", lbl:"Provider で囲む", sub:"中継を消す",
+       prompt:"Context にする。<code>user</code> を持つ場所で Provider を置き、①で配る。中間の props はどうなる?",
+       question:"② 置き換え後、中間コンポーネントは？",
+       opts:[{t:"user の props が消え、中継しなくてよくなる",ok:true},{t:"やはり user を受け取り続ける",ok:false},{t:"Provider を全階層に置く必要がある",ok:false}],
+       why:"Provider は<b>一度だけ</b>上位に置けばよい。中の <code>Layout</code> も <code>Sidebar</code> も <code>user</code> の props が消えてスッキリする。末端だけが <code>useContext</code> で取りに行く。中継の鎖が断ち切られる。",
+       code:['&lt;<span class="fn">UserContext</span>.<span class="fn">Provider</span> value={<span class="b1">①</span>}&gt;','  &lt;<span class="fn">Layout</span>&gt;            <span class="cm">// user 不要に</span>','    &lt;<span class="fn">Sidebar</span>&gt;         <span class="cm">// user 不要に</span>','      &lt;<span class="fn">UserBadge</span> /&gt;   <span class="cm">// useContext で取る</span>'],
+       fill:{slot:"b1",val:'user'}},
+      {eyebrow:"STEP 4 — 末端で取る", lbl:"useContext", sub:"直接アクセス",
+       prompt:"末端の <code>UserBadge</code> で user を受け取る。②は?",
+       question:"② UserBadge での受け取りは？",
+       opts:[{t:"useContext(UserContext)",ok:true},{t:"props.user",ok:false},{t:"上の階層から再び props で受ける",ok:false}],
+       why:"末端が <code>useContext(UserContext)</code> で直接取る。これで「中継の階層は何も知らず、必要な末端だけが値を読む」構図が完成。props バケツリレーが消え、かつ<b>使う場所が明示</b>される。",
+       code:['<span class="kw">function</span> <span class="fn">UserBadge</span>() {','  <span class="kw">const</span> user = <span class="b2">②</span>;','  <span class="kw">return</span> &lt;<span class="fn">span</span>&gt;{user.name}&lt;/<span class="fn">span</span>&gt;;','}'],
+       fill:{slot:"b2",val:'<span class="fn">useContext</span>(UserContext)'}},
+    ],
+    doneMsg:"バケツリレーを問題として見抜き、props で十分な範囲との境界を判断し、Provider 一箇所と末端の useContext で中継を消す。「Context は乱用せず、深い共有が必要になってから」という実務の勘所が掴めました。"
+  },
+
+  auth:{
+    concept:"useContext", title:"ログインユーザー共有",
+    scenario:"ログイン中のユーザー情報を、ヘッダー・各ページ・ログアウトボタンで使う。",
+    steps:[
+      {eyebrow:"STEP 1 — 何を共有するか", lbl:"値と操作をセットで", sub:"読むだけじゃない",
+       prompt:"ユーザー情報は<b>読む</b>だけでなく、ログアウトで<b>変える</b>必要もある。Context で配るべきものは?",
+       question:"Context に載せるのは？",
+       opts:[{t:"ユーザー情報と、それを変える関数（logout など）の両方",ok:true},{t:"ユーザー情報だけ。変更は各所で行う",ok:false},{t:"ログアウト関数だけ",ok:false}],
+       why:"状態は <code>useState</code> で持つが、ここでは「変える手段」も離れた所（ヘッダーのログアウト）で要る。だから<b>値と更新関数をセット</b>で配る。読む側も変える側も、同じ Context から取れる。",
+       code:null},
+      {eyebrow:"STEP 2 — 箱を作る", lbl:"createContext", sub:"未ログインを既定に",
+       prompt:"ユーザー用 Context を作る。Provider の外やログイン前を表すデフォルト値として①が素直なのは?",
+       question:"① デフォルト値は？",
+       opts:[{t:"null（未ログインを表す）",ok:true},{t:"空文字 \"\"",ok:false},{t:"{}（空オブジェクト）",ok:false}],
+       why:"「ユーザーがいない」を <code>null</code> で表すと、<code>if (user)</code> でログイン判定が素直に書ける。空オブジェクトだと「いるが空」と紛らわしい。<b>状態の意味が型に出る</b>ようにする。",
+       code:['<span class="kw">const</span> <span class="fn">UserContext</span> = <span class="fn">createContext</span>(<span class="b1">①</span>);'],
+       fill:{slot:"b1",val:'<span class="kw">null</span>'}},
+      {eyebrow:"STEP 3 — 値と関数を配る", lbl:"value にまとめる", sub:"オブジェクトで渡す",
+       prompt:"状態 <code>user</code> と、変える関数を1つの value にまとめて配る。②に入れるのは?",
+       question:"② value に渡すのは？",
+       opts:[{t:"{ user, login, logout }",ok:true},{t:"user だけ",ok:false},{t:"createContext のデフォルト値",ok:false}],
+       why:"読む値（user）と操作（login/logout）を<b>1つのオブジェクト</b>にまとめて配ると、受け取る側が必要なものを選んで使える。これが「値と更新関数をセットで配る」設計。",
+       code:['<span class="kw">const</span> [user, setUser] = <span class="fn">useState</span>(<span class="kw">null</span>);','<span class="kw">const</span> <span class="fn">logout</span> = () => <span class="fn">setUser</span>(<span class="kw">null</span>);','<span class="kw">return</span> (','  &lt;<span class="fn">UserContext</span>.<span class="fn">Provider</span> value={<span class="b2">②</span>}&gt;','    {children}','  &lt;/<span class="fn">UserContext</span>.<span class="fn">Provider</span>&gt;',');'],
+       fill:{slot:"b2",val:'{ user, login, logout }'}},
+      {eyebrow:"STEP 4 — 使い勝手を整える", lbl:"カスタムフックで包む", sub:"useAuth()",
+       prompt:"各所で <code>useContext(UserContext)</code> と書くより、<code>useAuth()</code> で取れると読みやすい。③のカスタムフックの中身は?",
+       question:"③ useAuth の中身は？",
+       opts:[{t:"return useContext(UserContext)",ok:true},{t:"return UserContext",ok:false},{t:"return createContext()",ok:false}],
+       why:"<code>useContext</code> をカスタムフックで包むと、使う側は <code>const { user, logout } = useAuth()</code> と書けて意図が明確に。Context の実装詳細を隠せる。<b>使い勝手を整える</b>定番の工夫（カスタムフックは別技術として後述）。",
+       code:['<span class="kw">function</span> <span class="fn">useAuth</span>() {','  <span class="kw">return</span> <span class="b3">③</span>;','}'],
+       fill:{slot:"b3",val:'<span class="fn">useContext</span>(UserContext)'}},
+    ],
+    doneMsg:"共有するのは値だけでなく「変える手段」も。両者を value にまとめ、カスタムフックで包んで使い勝手を整える——実務で Context を使うときの典型的な組み立てが身につきました。"
+  },
+
+  split:{
+    concept:"useContext", title:"Context の分割",
+    scenario:"1つの大きな Context にテーマも通知設定も全部入れたら、片方を変えると無関係な所まで再描画。",
+    steps:[
+      {eyebrow:"STEP 1 — 問題を知る", lbl:"再描画の広がり", sub:"巨大Contextの副作用",
+       prompt:"テーマも通知設定も言語も、1つの Context に詰めた。通知設定だけ変えた時、何が起きる?",
+       question:"1つの値を変えると？",
+       opts:[{t:"その Context を読む全コンポーネントが再描画される",ok:true},{t:"通知設定を読む所だけ再描画される",ok:false},{t:"何も再描画されない",ok:false}],
+       why:"Context の value が変わると、その Context を <code>useContext</code> で読む<b>全員</b>が再描画される。テーマしか使わない所まで、通知設定の変更で描き直される。これが巨大 Context の代償。",
+       code:null},
+      {eyebrow:"STEP 2 — 分ける判断", lbl:"関心で分割", sub:"変わる頻度で見る",
+       prompt:"どう分けるのが妥当? 分割の基準として最も適切なのは?",
+       question:"分割の基準は？",
+       opts:[{t:"関心事や変わる頻度ごとに別の Context にする",ok:true},{t:"とにかく細かく1値1Contextにする",ok:false},{t:"分けず1つのままにする",ok:false}],
+       why:"<b>一緒に変わるものは一緒に、別々に変わるものは別に</b>。テーマ・通知・言語は独立して変わるので別 Context にする。むやみに細かくすると Provider だらけになるので、関心の単位でまとめる。",
+       code:null},
+      {eyebrow:"STEP 3 — 分割する", lbl:"複数Contextに", sub:"独立して持つ",
+       prompt:"テーマと通知を別 Context に分ける。①②それぞれ独立した Context を作る。これで通知だけ変えた時は?",
+       question:"分割後、通知を変えると？",
+       opts:[{t:"通知 Context を読む所だけ再描画される",ok:true},{t:"やはり全員再描画される",ok:false},{t:"テーマも一緒に変わる",ok:false}],
+       why:"分けたことで、再描画の影響が<b>その Context を読む範囲に限定</b>される。テーマしか使わない所は通知の変更で描き直されない。これがパフォーマンス上の利点。",
+       code:['<span class="kw">const</span> <span class="fn">ThemeContext</span>  = <span class="fn">createContext</span>(<span class="b1">①</span>);','<span class="kw">const</span> <span class="fn">NotifyContext</span> = <span class="fn">createContext</span>(<span class="b2">②</span>);'],
+       fill:{slot:"b1",val:'<span class="str">\'light\'</span>'}},
+      {eyebrow:"STEP 4 — 注意点を押さえる", lbl:"分割の限界", sub:"やりすぎない",
+       prompt:"分割は万能ではない。過度な分割の弊害として正しいのは?",
+       question:"分割しすぎると？",
+       opts:[{t:"Provider が何重にもなり、構造が複雑になる",ok:true},{t:"再描画が逆に増える",ok:false},{t:"Context が使えなくなる",ok:false}],
+       why:"分割は再描画を抑えるが、<b>分けるほど Provider が積み重なり</b>、ツリーが読みにくくなる。「再描画が実際に問題か」を見てから分ける。<b>最適化は計測してから</b>——むやみに分けない。",
+       code:null},
+    ],
+    doneMsg:"巨大 Context は無関係な再描画を広げる。関心の単位で分けると影響を限定できるが、分けすぎは構造を複雑にする。「再描画が実際に問題になってから、関心ごとに分ける」というバランス感覚が要点です。"
+  },
+
+  pass:{
+    concept:"props", title:"値を渡す",
+    scenario:"汎用ボタン部品。場所ごとにラベルと色を変えて使い回す。",
+    steps:[
+      {eyebrow:"STEP 1 — 何を渡すか", lbl:"可変な部分を見極める", sub:"固定と可変を分ける",
+       prompt:"ボタン部品を作る。場所ごとに変わるのはラベルと色。props にすべきものは?",
+       question:"props にするのは？",
+       opts:[{t:"場所ごとに変わるもの（ラベル・色）",ok:true},{t:"全ボタン共通の角丸やフォント",ok:false},{t:"ボタンの内部状態すべて",ok:false}],
+       why:"<b>場所ごとに変えたい部分</b>を props にする。共通の見た目（角丸など）は部品内に固定でよい。「何を外から変えられるようにするか」を決めるのが部品設計の第一歩。",
+       code:null},
+      {eyebrow:"STEP 2 — 親から渡す", lbl:"属性のように書く", sub:"名前=値",
+       prompt:"親からラベル「保存」と色「blue」を渡す。①の書き方は?",
+       question:"① 親での渡し方は？",
+       opts:[{t:'label="保存" color="blue"',ok:true},{t:'{label:"保存", color:"blue"}',ok:false},{t:'props("保存","blue")',ok:false}],
+       why:"props は HTML 属性のように <code>名前=値</code> で渡す。文字列は <code>\"...\"</code>、変数や式は <code>{...}</code> で囲む。順番ではなく<b>名前で渡す</b>ので、渡し忘れや順序ミスに強い。",
+       code:['&lt;<span class="fn">Button</span> <span class="b1">①</span> /&gt;'],
+       fill:{slot:"b1",val:'label="保存" color="blue"'}},
+      {eyebrow:"STEP 3 — 子で受け取る", lbl:"分割代入", sub:"必要な名前を取り出す",
+       prompt:"子のコンポーネントで props を受け取る。<b>分割代入</b>で取り出す②は?",
+       question:"② 受け取り方は？",
+       opts:[{t:"function Button({ label, color })",ok:true},{t:"function Button(label, color)",ok:false},{t:"function Button() で props は自動で使える",ok:false}],
+       why:"props は1つのオブジェクトで届く。<code>{ label, color }</code> と<b>分割代入</b>すれば必要な名前だけ取り出せて読みやすい。<code>(label, color)</code> のように複数引数では受け取れない（届くのは props オブジェクト1つ）。",
+       code:['<span class="kw">function</span> <span class="b2">②</span> {','  <span class="kw">return</span> &lt;<span class="fn">button</span> className={color}&gt;{label}&lt;/<span class="fn">button</span>&gt;;','}'],
+       fill:{slot:"b2",val:'<span class="fn">Button</span>({ label, color })'}},
+      {eyebrow:"STEP 4 — 読み取り専用を守る", lbl:"書き換えない", sub:"一方向を保つ",
+       prompt:"子の中でラベルを変えたくなった。<code>label = '削除'</code> と書いてよい?",
+       question:"③ 子で props を変えるのは？",
+       opts:[{t:"してはいけない。props は読み取り専用",ok:true},{t:"子の中なら自由に変えてよい",ok:false},{t:"label++ ならよい",ok:false}],
+       why:"props は<b>子から見て読み取り専用</b>。子が書き換えると、データがどこで変わったか追えなくなり、親の値ともずれる。変えたい時は<b>親に依頼する</b>（次のレッスンのコールバック）。一方向の流れを守る。",
+       code:null},
+    ],
+    doneMsg:"可変な部分を props にし、名前で渡して分割代入で受け取り、子では書き換えない。「データは親から子へ一方向」という React の基本の流れを、部品の作り手として体験しました。"
+  },
+
+  callback:{
+    concept:"props", title:"子から親へ伝える",
+    scenario:"子の削除ボタンが押されたことを、リストを持つ親に伝えたい。",
+    steps:[
+      {eyebrow:"STEP 1 — 向きを考える", lbl:"データの流れ", sub:"子は親を直接変えられない",
+       prompt:"リスト（状態）は親が持つ。子のボタンで項目を消したい。だが props は読み取り専用。どうする?",
+       question:"子から親の状態を変えるには？",
+       opts:[{t:"親が「変える関数」を props で子に渡し、子はそれを呼ぶ",ok:true},{t:"子が親の状態を直接書き換える",ok:false},{t:"子が自分で状態をコピーして持つ",ok:false}],
+       why:"データは親→子の一方向。逆向き（子→親）に伝えるには、<b>親が用意した関数を子に渡し</b>、子はそれを呼ぶだけにする。状態の変更は常に<b>持ち主（親）が行う</b>。これが「イベントの持ち上げ」。",
+       code:null},
+      {eyebrow:"STEP 2 — 関数を渡す", lbl:"関数も props", sub:"値として渡せる",
+       prompt:"親が削除関数 <code>handleDelete</code> を子に渡す。①の渡し方は?",
+       question:"① 関数の渡し方は？",
+       opts:[{t:"onDelete={handleDelete}",ok:true},{t:"onDelete={handleDelete()}",ok:false},{t:'onDelete="handleDelete"',ok:false}],
+       why:"関数も値なので props で渡せる。<code>{handleDelete}</code> は<b>関数そのもの</b>を渡す。<code>{handleDelete()}</code> は描画中に<b>即実行</b>してしまい結果が渡る（誤り）。文字列 <code>\"...\"</code> はただの文字列。",
+       code:['&lt;<span class="fn">Item</span> onDelete={<span class="b1">①</span>} /&gt;'],
+       fill:{slot:"b1",val:'handleDelete'}},
+      {eyebrow:"STEP 3 — 子で呼ぶ", lbl:"イベントで呼ぶ", sub:"必要なら情報を添えて",
+       prompt:"子はクリック時に、受け取った関数を呼ぶ。どの項目かを伝えるため id を添える。②は?",
+       question:"② クリック時の呼び方は？",
+       opts:[{t:"() => onDelete(id)",ok:true},{t:"onDelete(id)",ok:false},{t:"onDelete",ok:false}],
+       why:"<code>onClick={() => onDelete(id)}</code> のように<b>関数で包む</b>と、クリック時に id 付きで呼べる。<code>onDelete(id)</code> を直接書くと描画中に即実行される。子は「何が起きたか（どの id か）」を親に伝えるだけ。",
+       code:['<span class="kw">function</span> <span class="fn">Item</span>({ id, onDelete }) {','  <span class="kw">return</span> &lt;<span class="fn">button</span> onClick={<span class="b2">②</span>}&gt;削除&lt;/<span class="fn">button</span>&gt;;','}'],
+       fill:{slot:"b2",val:'() => onDelete(id)'}},
+      {eyebrow:"STEP 4 — 親で受けて変える", lbl:"持ち主が更新", sub:"流れが一周",
+       prompt:"親は呼ばれた関数の中で、自分の状態を更新する。③の削除の書き方は?",
+       question:"③ 親での削除処理は？",
+       opts:[{t:"setItems(prev => prev.filter(i => i.id !== id))",ok:true},{t:"items.splice(id, 1)",ok:false},{t:"子に削除してもらう",ok:false}],
+       why:"親が <code>filter</code> で新しい配列を作って更新する（不変更新）。流れはこう一周する: <b>子でクリック→親の関数を呼ぶ→親が状態を更新→再描画で子も最新に</b>。状態の持ち主が更新する、が一貫している。",
+       code:['<span class="kw">const</span> <span class="fn">handleDelete</span> = (id: <span class="kw">string</span>) =>','  setItems(<span class="b3">③</span>);'],
+       fill:{slot:"b3",val:'prev => prev.filter(i => i.id !== id)'}},
+    ],
+    doneMsg:"子から親へは「親が渡した関数を子が呼ぶ」で伝える。状態の変更は常に持ち主が行い、データは一方向に流れたまま一周する——イベントの持ち上げという、props のもう半分が掴めました。"
+  },
+
+  default:{
+    concept:"props", title:"デフォルト値",
+    scenario:"汎用ボタン。多くは標準サイズでよく、毎回 size を渡すのは面倒。",
+    steps:[
+      {eyebrow:"STEP 1 — 渡されない場合を考える", lbl:"undefined になる", sub:"省略を想定する",
+       prompt:"<code>size</code> を渡さずに <code>&lt;Button /&gt;</code> と書いた時、子の <code>size</code> はどうなる?",
+       question:"渡さないと size は？",
+       opts:[{t:"undefined になる",ok:true},{t:"自動で \"md\" になる",ok:false},{t:"エラーになる",ok:false}],
+       why:"渡さなかった props は <b><code>undefined</code></b>。エラーにはならないが、<code>undefined</code> のまま使うと表示が崩れることがある。<b>省略される前提</b>で備えるのが親切な部品設計。",
+       code:null},
+      {eyebrow:"STEP 2 — 既定値を与える", lbl:"分割代入で既定値", sub:"= で指定",
+       prompt:"<code>size</code> が省略されたら \"md\" にしたい。分割代入で既定値を与える①は?",
+       question:"① 既定値の書き方は？",
+       opts:[{t:'{ size = "md" }',ok:true},{t:'{ size || "md" }',ok:false},{t:'{ size = undefined }',ok:false}],
+       why:"分割代入で <code>{ size = \"md\" }</code> と書くと、<b>渡されなかった時だけ</b> \"md\" が使われる。渡された値があればそちら優先。これが現在の標準的な既定値の与え方。",
+       code:['<span class="kw">function</span> <span class="fn">Button</span>(<span class="b1">①</span>) {','  <span class="kw">return</span> &lt;<span class="fn">button</span> className={size}&gt;…&lt;/<span class="fn">button</span>&gt;;','}'],
+       fill:{slot:"b1",val:'{ size = "md" }'}},
+      {eyebrow:"STEP 3 — 注意点", lbl:"falsy に注意", sub:"0 や空文字の扱い",
+       prompt:"既定値に <code>||</code> を使う（<code>size || \"md\"</code>）と困る場合がある。それはどんな時?",
+       question:"size || \"md\" の落とし穴は？",
+       opts:[{t:'0 や空文字を渡した時も既定値に置き換わってしまう',ok:true},{t:'undefined を渡せなくなる',ok:false},{t:'特に問題はない',ok:false}],
+       why:"<code>||</code> は <code>0</code>・<code>\"\"</code>・<code>false</code> なども「無し」とみなして既定値にする。意図して 0 を渡しても消えてしまう。だから<b>分割代入の <code>=</code> 既定値</b>（渡されない時だけ効く）のほうが安全。",
+       code:null},
+      {eyebrow:"STEP 4 — 使う側がシンプルに", lbl:"省略できる利点", sub:"標準は書かない",
+       prompt:"既定値を用意した結果、標準サイズのボタンはどう書ける?",
+       question:"② 標準サイズの呼び出しは？",
+       opts:[{t:'<Button />（size を省略）',ok:true},{t:'<Button size="md" />（毎回必須）',ok:false},{t:'<Button size={undefined} />',ok:false}],
+       why:"既定値のおかげで、標準の時は <code>&lt;Button /&gt;</code> と<b>省略できる</b>。違うサイズの時だけ <code>size=\"lg\"</code> を渡す。使う側が「変えたい時だけ書く」状態になり、コードが読みやすくなる。",
+       code:['<span class="cm">// 標準サイズ</span>','&lt;<span class="fn">Button</span> /&gt;','<span class="cm">// 大きいボタンだけ明示</span>','&lt;<span class="fn">Button</span> size=<span class="str">"lg"</span> /&gt;'],
+       staticCode:true},
+    ],
+    doneMsg:"渡されない props は undefined。分割代入の = で既定値を与えれば、使う側は「変えたい時だけ書く」で済む。|| ではなく = を使う理由（falsy の扱い）まで含めて、親切な部品の作り方が分かりました。"
+  },
+
+  layout:{
+    concept:"children", title:"レイアウトの枠",
+    scenario:"全ページ共通のヘッダー＋余白の枠。中身はページごとに違う。",
+    steps:[
+      {eyebrow:"STEP 1 — 何が可変か", lbl:"枠と中身を分ける", sub:"共通と個別",
+       prompt:"全ページに共通のヘッダーと余白がある。中身はページごとに違う。枠の部品が受け取るべきは?",
+       question:"枠が受け取るのは？",
+       opts:[{t:"中身（children）。枠は中身を知らなくていい",ok:true},{t:"各ページの内容を props で1つずつ",ok:false},{t:"ページの種類を表す番号",ok:false}],
+       why:"共通部分（ヘッダー・余白）は枠に固定し、<b>変わる中身は children で丸ごと</b>受け取る。枠は中身が何かを知らなくてよい。これが合成の発想。",
+       code:null},
+      {eyebrow:"STEP 2 — children を受ける", lbl:"特別な props", sub:"名前は children",
+       prompt:"枠の部品で中身を受け取る。①の受け取り方は?",
+       question:"① 中身の受け取りは？",
+       opts:[{t:"{ children }",ok:true},{t:"{ content }",ok:false},{t:"{ inner }",ok:false}],
+       why:"タグの間に書いたものは <code>children</code> という<b>決まった名前</b>の props で届く。<code>content</code> など別名では届かない（それは自分で渡す普通の props）。children は特別な名前と覚える。",
+       code:['<span class="kw">function</span> <span class="fn">Layout</span>(<span class="b1">①</span>) {','  <span class="kw">return</span> (','    &lt;<span class="fn">div</span>&gt;','      &lt;<span class="fn">Header</span> /&gt;','      &lt;<span class="fn">main</span>&gt;{children}&lt;/<span class="fn">main</span>&gt;','    &lt;/<span class="fn">div</span>&gt;',');','}'],
+       fill:{slot:"b1",val:'{ children }'}},
+      {eyebrow:"STEP 3 — 中身を置く", lbl:"どこに表示するか", sub:"{children} を書く",
+       prompt:"受け取った中身を main の中に表示する。②に書くのは?",
+       question:"② 中身を表示するには？",
+       opts:[{t:"{children}",ok:true},{t:"children（波括弧なし）",ok:false},{t:"<children />",ok:false}],
+       why:"JSX の中で値を表示するには <code>{children}</code> と<b>波括弧で囲む</b>。波括弧なしの <code>children</code> はただの文字「children」になる。<code>&lt;children /&gt;</code> という要素は存在しない。",
+       code:['&lt;<span class="fn">main</span>&gt;<span class="b2">②</span>&lt;/<span class="fn">main</span>&gt;'],
+       fill:{slot:"b2",val:'{children}'}},
+      {eyebrow:"STEP 4 — 使う", lbl:"タグの間に書く", sub:"開きと閉じの間",
+       prompt:"Layout を使う。中身はどこに書く?",
+       question:"③ 中身の書き場所は？",
+       opts:[{t:"<Layout>…中身…</Layout> の開きと閉じの間",ok:true},{t:"<Layout children={…} />",ok:false},{t:"<Layout content={…} />",ok:false}],
+       why:"<code>&lt;Layout&gt;</code> と <code>&lt;/Layout&gt;</code> の<b>間に書いたもの</b>が children として届く。これが自然で読みやすい書き方。<code>children={...}</code> と明示的に渡すこともできるが、間に書くほうが直感的。",
+       code:['&lt;<span class="fn">Layout</span>&gt;','  &lt;<span class="fn">h1</span>&gt;ページ見出し&lt;/<span class="fn">h1</span>&gt;','  &lt;<span class="fn">p</span>&gt;本文…&lt;/<span class="fn">p</span>&gt;','&lt;/<span class="fn">Layout</span>&gt;'],
+       staticCode:true},
+    ],
+    doneMsg:"共通の枠は固定し、可変の中身は children で丸ごと受ける。タグの間に書いたものが children になり、{children} で置く——継承ではなく組み合わせで UI を作る、合成の基本が身につきました。"
+  },
+
+  wrapper:{
+    concept:"children", title:"カードの汎用化",
+    scenario:"影・角丸・余白を持つカード。中に商品も、お知らせも、何でも入れたい。",
+    steps:[
+      {eyebrow:"STEP 1 — props と children を併用", lbl:"役割を分ける", sub:"設定と中身",
+       prompt:"カードに「見出し（文字）」と「中身（自由）」の両方を持たせたい。どう設計する?",
+       question:"見出しと中身の扱いは？",
+       opts:[{t:"見出しは props、自由な中身は children",ok:true},{t:"両方とも children",ok:false},{t:"両方とも props",ok:false}],
+       why:"<b>単純で決まった値（見出し文字）は props</b>、<b>自由で可変な中身は children</b>。両者は併用できる。役割で使い分けると、使う側にとって何を渡せばいいか明確になる。",
+       code:null},
+      {eyebrow:"STEP 2 — 両方受け取る", lbl:"props と children", sub:"一緒に分割代入",
+       prompt:"カードで見出し title と中身 children を受け取る。①は?",
+       question:"① 受け取り方は？",
+       opts:[{t:"{ title, children }",ok:true},{t:"{ title } だけ",ok:false},{t:"children は別の関数で受ける",ok:false}],
+       why:"<code>{ title, children }</code> のように<b>一緒に分割代入</b>できる。children も普通の props なので並べて受け取れる。title は文字、children は中身、と役割が分かれている。",
+       code:['<span class="kw">function</span> <span class="fn">Card</span>(<span class="b1">①</span>) {','  <span class="kw">return</span> (','    &lt;<span class="fn">div</span> className=<span class="str">"card"</span>&gt;','      &lt;<span class="fn">h3</span>&gt;{title}&lt;/<span class="fn">h3</span>&gt;','      &lt;<span class="fn">div</span>&gt;{children}&lt;/<span class="fn">div</span>&gt;','    &lt;/<span class="fn">div</span>&gt;',');','}'],
+       fill:{slot:"b1",val:'{ title, children }'}},
+      {eyebrow:"STEP 3 — 使い回す", lbl:"中身を変えるだけ", sub:"同じ枠で別物",
+       prompt:"同じ Card に、ある所では商品、別の所ではお知らせを入れる。②③の中身は自由。これで実現できるのは?",
+       question:"② 同じ Card の使い回しで？",
+       opts:[{t:"枠は共通のまま、中身だけ違うカードが作れる",ok:true},{t:"中身ごとに別の Card 部品が要る",ok:false},{t:"商品専用 Card を新しく作る",ok:false}],
+       why:"枠（影・角丸・余白）は <code>Card</code> に共通化され、<b>中身を変えるだけ</b>で商品カードにもお知らせカードにもなる。「枠の部品を1つ作り、中身は使う側が決める」——再利用の効く設計。",
+       code:['&lt;<span class="fn">Card</span> title=<span class="str">"商品"</span>&gt;','  &lt;<span class="fn">ProductInfo</span> /&gt;','&lt;/<span class="fn">Card</span>&gt;','','&lt;<span class="fn">Card</span> title=<span class="str">"お知らせ"</span>&gt;','  &lt;<span class="fn">p</span>&gt;本日休業&lt;/<span class="fn">p</span>&gt;','&lt;/<span class="fn">Card</span>&gt;'],
+       staticCode:true},
+    ],
+    doneMsg:"決まった値は props、自由な中身は children と役割を分け、両方を併用する。枠を1つ作れば中身を変えるだけで使い回せる——合成による再利用の威力が実感できました。"
+  },
+
+  cart:{
+    concept:"useReducer", title:"カートの状態",
+    scenario:"ECのカート。追加・数量変更・削除・全クリアと、更新の種類が多い。",
+    steps:[
+      {eyebrow:"STEP 1 — useState の限界を感じる", lbl:"なぜ useReducer か", sub:"更新が散らばる",
+       prompt:"カートは追加・数量変更・削除・全クリアと更新が多い。これを useState で書くと何が起きやすい?",
+       question:"useState だと？",
+       opts:[{t:"似た更新ロジックがあちこちに散らばり、見通しが悪くなる",ok:true},{t:"useState では複数の更新は書けない",ok:false},{t:"必ずバグる",ok:false}],
+       why:"useState でも<b>書けるが</b>、更新の種類が増えると <code>setItems(...)</code> の処理が各所に散らばる。useReducer は更新ロジックを<b>1か所（reducer）</b>に集めて見通しを良くする。「書けない」のではなく「整理できる」が要点。",
+       code:null},
+      {eyebrow:"STEP 2 — 更新ルールを集める", lbl:"reducer 関数", sub:"action で分岐",
+       prompt:"reducer は「今の状態」と「何が起きたか（action）」から「次の状態」を返す。①の戻り値の原則は?",
+       question:"① reducer が返すのは？",
+       opts:[{t:"新しい状態（元を書き換えず作り直す）",ok:true},{t:"元の状態を直接書き換えた結果",ok:false},{t:"何も返さなくてよい",ok:false}],
+       why:"reducer も useState と同じく<b>新しい状態を返す</b>のが原則。<code>state.items.push()</code> のような直接変更はしない。action.type で分岐し、それぞれ新しい状態を組み立てて返す。",
+       code:['<span class="kw">function</span> <span class="fn">reducer</span>(state, action) {','  <span class="kw">switch</span> (action.type) {','    <span class="kw">case</span> <span class="str">\'add\'</span>:','      <span class="kw">return</span> <span class="b1">①</span>;','    <span class="kw">default</span>: <span class="kw">return</span> state;','  }','}'],
+       fill:{slot:"b1",val:'{ items: [...state.items, action.item] }'}},
+      {eyebrow:"STEP 3 — 何が起きたかを送る", lbl:"dispatch", sub:"命令ではなく出来事",
+       prompt:"コンポーネントから「商品を追加」を伝える。②の dispatch の中身は?",
+       question:"② dispatch に渡すのは？",
+       opts:[{t:"{ type: 'add', item }（何が起きたか）",ok:true},{t:"新しい state 全体",ok:false},{t:"reducer 関数そのもの",ok:false}],
+       why:"<code>dispatch</code> には<b>「何が起きたか」</b>を表す action を渡す。<code>{type:'add', item}</code> は「追加が起きた」という出来事。どう状態を変えるかは reducer の責任。コンポーネントは出来事を伝えるだけで済む。",
+       code:['&lt;<span class="fn">button</span> onClick={() => dispatch(<span class="b2">②</span>)}&gt;','  カートに追加','&lt;/<span class="fn">button</span>&gt;'],
+       fill:{slot:"b2",val:"{ type: 'add', item }"}},
+      {eyebrow:"STEP 4 — 使い分けの判断", lbl:"useState との境界", sub:"いつ使うか",
+       prompt:"どんな時に useState でなく useReducer を選ぶ? 最も妥当な判断は?",
+       question:"useReducer を選ぶ基準は？",
+       opts:[{t:"更新の種類が多い・複数の値が連動して変わる時",ok:true},{t:"状態があるなら常に useReducer",ok:false},{t:"boolean 1つでも useReducer が良い",ok:false}],
+       why:"<b>単純な状態は useState</b>のほうが読みやすい。更新の種類が多く、複数の値が連動するカートのような状態で useReducer が活きる。「上位互換」ではなく<b>複雑さに応じて選ぶ</b>道具。",
+       code:null},
+    ],
+    doneMsg:"更新が多く絡み合う状態では、ロジックを reducer に集約し、コンポーネントは「何が起きたか」を dispatch する。useState の上位互換ではなく、複雑さに応じて選ぶ——状態管理の引き出しが増えました。"
+  },
+
+  fetch:{
+    concept:"useEffect", title:"データ取得",
+    scenario:"ユーザー一覧をサーバーから取得して表示する。",
+    steps:[
+      {eyebrow:"STEP 1 — なぜ Effect か", lbl:"副作用を見極める", sub:"外界とのやりとり",
+       prompt:"サーバーからデータを取る。これを描画の計算の中に直接書いてはいけない理由は?",
+       question:"なぜ描画中に書かない？",
+       opts:[{t:"通信は外界とのやりとり（副作用）で、描画は純粋に保つべきだから",ok:true},{t:"通信は速いから問題ない",ok:false},{t:"描画中でも書いてよい",ok:false}],
+       why:"描画（レンダー）は<b>純粋</b>——同じ入力なら同じ結果を返し、外に影響しないのが原則。通信のような<b>副作用</b>は描画から切り離し、useEffect の中で行う。これが「外界との同期」。",
+       code:null},
+      {eyebrow:"STEP 2 — 状態を3つ用意", lbl:"data/loading/error", sub:"取得の3状態",
+       prompt:"取得には「読込中」「成功（データ）」「失敗（エラー）」の3つの局面がある。最低限持つべき状態は?",
+       question:"持つべき状態は？",
+       opts:[{t:"data・loading・error の3つ",ok:true},{t:"data だけ",ok:false},{t:"loading だけ",ok:false}],
+       why:"取得中はスピナー、成功すればデータ、失敗すればエラー表示——<b>3つの局面</b>を画面に出すには、それぞれの状態が要る。これがデータ取得の定番セット（SWR はこれを自動で返してくれる）。",
+       code:['<span class="kw">const</span> [data, setData] = <span class="fn">useState</span>(<span class="kw">null</span>);','<span class="kw">const</span> [loading, setLoading] = <span class="fn">useState</span>(<span class="kw">true</span>);','<span class="kw">const</span> [error, setError] = <span class="fn">useState</span>(<span class="kw">null</span>);'],
+       staticCode:true},
+      {eyebrow:"STEP 3 — Effect で取得", lbl:"いつ取るか", sub:"依存配列で制御",
+       prompt:"最初の表示時に1回だけ取得したい。①の依存配列は?",
+       question:"① 依存配列は？",
+       opts:[{t:"[]（空。最初の描画後に1回）",ok:true},{t:"省略（毎描画で取得→無限ループの危険）",ok:false},{t:"[data]（data が変わるたび）",ok:false}],
+       why:"空配列 <code>[]</code> は「最初の描画後に1回だけ」を意味する。省略すると毎描画で実行され、取得→state更新→再描画→また取得…の<b>無限ループ</b>の危険。<code>[data]</code> も取得が data を変えるので同様。最初の1回なら <code>[]</code>。",
+       code:['<span class="kw">useEffect</span>(() => {','  <span class="fn">fetchUsers</span>()','    .<span class="fn">then</span>(setData)','    .<span class="fn">catch</span>(setError)','    .<span class="fn">finally</span>(() => <span class="fn">setLoading</span>(<span class="kw">false</span>));','}, <span class="b1">①</span>);'],
+       fill:{slot:"b1",val:'[]'}},
+      {eyebrow:"STEP 4 — 局面ごとに描く", lbl:"状態から画面を出す", sub:"3状態を分岐",
+       prompt:"3つの状態から画面を出し分ける。②の順序として安全なのは?",
+       question:"② 描き分けの順は？",
+       opts:[{t:"loading → error → データ表示 の順に早期 return",ok:true},{t:"いきなり data.map() から書く",ok:false},{t:"error を無視して data だけ見る",ok:false}],
+       why:"<code>data</code> はまだ <code>null</code> の瞬間がある。先に <code>data.map()</code> すると「null の map」でエラー。<b>loading・error を先に処理</b>して早期 return し、最後に確実にデータがある状態で表示する。状態から画面を導く、を丁寧に。",
+       code:['<span class="kw">if</span> (loading) <span class="kw">return</span> &lt;<span class="fn">Spinner</span> /&gt;;','<span class="kw">if</span> (error) <span class="kw">return</span> &lt;<span class="fn">ErrorView</span> /&gt;;','<span class="kw">return</span> &lt;<span class="fn">List</span> data={data} /&gt;;'],
+       staticCode:true},
+    ],
+    doneMsg:"通信は副作用なので useEffect で。data・loading・error の3状態を持ち、依存配列 [] で取得回数を制御し、局面ごとに画面を出し分ける。この定型の面倒さを知ることが、後で SWR のありがたみに繋がります。"
+  },
+
+  deps:{
+    concept:"useEffect", title:"依存配列で再取得",
+    scenario:"ユーザーを選ぶと、その人の詳細をサーバーから取り直す。",
+    steps:[
+      {eyebrow:"STEP 1 — 依存配列の意味", lbl:"何を見張るか", sub:"いつ再実行するか",
+       prompt:"依存配列は「いつ Effect を再実行するか」を決める。その本質的な意味は?",
+       question:"依存配列とは？",
+       opts:[{t:"Effect が同期している「外の値」の一覧",ok:true},{t:"実行回数の上限",ok:false},{t:"実行を遅らせる秒数",ok:false}],
+       why:"依存配列は<b>「この Effect は何と同期しているか」</b>の宣言。中に並べた値が変わるたび、Effect は同期を取り直す（再実行）。「いつ動くか」ではなく<b>「何に依存するか」</b>で考えると正しく書ける。",
+       code:null},
+      {eyebrow:"STEP 2 — 依存を入れる", lbl:"userId を見張る", sub:"変わったら取り直す",
+       prompt:"選択中の <code>userId</code> が変わったら詳細を取り直したい。①の依存配列は?",
+       question:"① 依存配列は？",
+       opts:[{t:"[userId]",ok:true},{t:"[]",ok:false},{t:"省略",ok:false}],
+       why:"<code>[userId]</code> と書くと、<b>userId が変わるたび</b>に再取得される。<code>[]</code> だと最初の1回きりで、別ユーザーを選んでも更新されない。Effect が <code>userId</code> に依存しているので、それを配列に明示する。",
+       code:['<span class="kw">useEffect</span>(() => {','  <span class="fn">fetchDetail</span>(userId).<span class="fn">then</span>(setDetail);','}, <span class="b1">①</span>);'],
+       fill:{slot:"b1",val:'[userId]'}},
+      {eyebrow:"STEP 3 — 入れ忘れの害", lbl:"依存の漏れ", sub:"古い値を掴む",
+       prompt:"<code>userId</code> を使っているのに依存配列に入れ忘れると何が起きる?",
+       question:"依存を入れ忘れると？",
+       opts:[{t:"userId が変わっても古い値のまま取得され、表示がずれる",ok:true},{t:"エラーで止まる",ok:false},{t:"自動で補完される",ok:false}],
+       why:"Effect が使う外の値は<b>すべて依存配列に入れる</b>のが原則。入れ忘れると、Effect は古い <code>userId</code> を掴んだまま再実行されず、表示と選択がずれる。Lint（eslint-plugin-react-hooks）がこの漏れを警告してくれる。",
+       code:null},
+      {eyebrow:"STEP 4 — 競合に注意", lbl:"古い結果の混線", sub:"クリーンアップで防ぐ",
+       prompt:"素早く別ユーザーに切り替えると、前の取得結果が後から届いて表示が混線することがある。②の対策は?",
+       question:"② 混線を防ぐには？",
+       opts:[{t:"クリーンアップで「もう古い」と印を付け、古い結果を捨てる",ok:true},{t:"取得を速くする",ok:false},{t:"依存配列を空にする",ok:false}],
+       why:"非同期の取得は<b>順番が前後する</b>ことがある。クリーンアップ関数で「この取得はもう古い」と印を付け、古い結果を無視する。これが競合状態（race condition）対策。依存配列とクリーンアップは<b>セットで</b>考える。",
+       code:['<span class="kw">useEffect</span>(() => {','  <span class="kw">let</span> active = <span class="kw">true</span>;','  <span class="fn">fetchDetail</span>(userId).<span class="fn">then</span>(d => {','    <span class="kw">if</span> (active) <span class="fn">setDetail</span>(d);','  });','  <span class="kw">return</span> () => { active = <span class="kw">false</span>; };','}, [userId]);'],
+       staticCode:true},
+    ],
+    doneMsg:"依存配列は「何と同期しているか」の宣言。使う値は漏れなく入れ、非同期の競合はクリーンアップで防ぐ。「いつ動くか」より「何に依存するか」で考える——useEffect で一番つまずく所が整理できました。"
+  },
+
+  cleanup:{
+    concept:"useEffect", title:"購読のクリーンアップ",
+    scenario:"ウィンドウのリサイズを監視して、幅を表示する。",
+    steps:[
+      {eyebrow:"STEP 1 — 購読には後始末が要る", lbl:"登録と解除は対", sub:"始めたら終える",
+       prompt:"<code>addEventListener</code> でリサイズを購読する。クリーンアップを書かないと何が起きる?",
+       question:"後始末しないと？",
+       opts:[{t:"再実行のたびに購読が積み重なり、多重登録・メモリリークになる",ok:true},{t:"特に問題ない",ok:false},{t:"購読が自動で消える",ok:false}],
+       why:"購読・タイマー・接続のように<b>「始めるもの」は必ず「終える」</b>。後始末しないと、Effect が再実行されるたびリスナーが増え続け、多重登録やメモリリークになる。登録と解除は<b>対</b>で書く。",
+       code:null},
+      {eyebrow:"STEP 2 — クリーンアップを返す", lbl:"return で後始末", sub:"解除関数を返す",
+       prompt:"Effect の中で登録し、①で後始末する。クリーンアップの書き方は?",
+       question:"① 後始末の書き方は？",
+       opts:[{t:"return () => window.removeEventListener(...)",ok:true},{t:"window.removeEventListener(...) を最後の行に",ok:false},{t:"何も返さない",ok:false}],
+       why:"Effect が<b>関数を return すると、それがクリーンアップ</b>として呼ばれる。次の再実行の前と、コンポーネントが消える時に走る。登録した <code>handler</code> と同じものを <code>removeEventListener</code> に渡すのが要点。",
+       code:['<span class="kw">useEffect</span>(() => {','  <span class="kw">const</span> <span class="fn">onResize</span> = () => <span class="fn">setW</span>(window.innerWidth);','  window.<span class="fn">addEventListener</span>(<span class="str">\'resize\'</span>, onResize);','  <span class="b1">①</span>','}, []);'],
+       fill:{slot:"b1",val:"return () => window.removeEventListener('resize', onResize);"}},
+      {eyebrow:"STEP 3 — いつ走るか", lbl:"クリーンアップの実行時", sub:"再実行前と破棄時",
+       prompt:"クリーンアップが呼ばれるのはいつ?",
+       question:"② クリーンアップが走るのは？",
+       opts:[{t:"次の再実行の前と、コンポーネントが消える時",ok:true},{t:"コンポーネントが消える時だけ",ok:false},{t:"エラーが起きた時だけ",ok:false}],
+       why:"クリーンアップは<b>2つのタイミング</b>で走る: 依存が変わって再実行する直前（古い購読を解除）と、コンポーネントが消える時（最後の後始末）。これにより常に「購読は1つ」が保たれる。",
+       code:null},
+      {eyebrow:"STEP 4 — 同じ形が他にも", lbl:"パターンの一般化", sub:"始める/終えるは共通",
+       prompt:"この「登録→クリーンアップで解除」の形は、リサイズ以外にも当てはまる。次のうち同じ形のものは?",
+       question:"③ 同じ形なのは？",
+       opts:[{t:"setInterval → clearInterval、購読 → 解除",ok:true},{t:"単純な計算",ok:false},{t:"クリックへの反応",ok:false}],
+       why:"<b>「始めたものを終える」</b>形は共通。タイマー（setInterval→clearInterval）、WebSocket（接続→切断）、外部ライブラリの購読など、すべて同じパターン。一方、単純な計算やクリック反応はそもそも Effect の対象外。",
+       code:null},
+    ],
+    doneMsg:"購読・タイマー・接続は「始めたら終える」。Effect が return した関数がクリーンアップになり、再実行前と破棄時に走る。この対の意識が、多重登録やリークを防ぐ——副作用を安全に扱う鍵が掴めました。"
+  },
+
+  "no-effect":{
+    concept:"useEffect", title:"Effect が要らない時",
+    scenario:"姓と名から「フルネーム」を作る。つい useEffect で同期したくなるが…",
+    steps:[
+      {eyebrow:"STEP 1 — まず疑う", lbl:"本当に副作用か", sub:"外界と関わるか",
+       prompt:"姓 firstName と名 lastName から fullName を作りたい。useEffect で fullName state を更新すべき?",
+       question:"fullName は useEffect で？",
+       opts:[{t:"いいえ。外界と関わらない計算なので Effect は不要",ok:true},{t:"はい。state の同期は Effect の仕事",ok:false},{t:"どちらでもよい",ok:false}],
+       why:"fullName は2つの値から<b>計算で出せる</b>。サーバーもブラウザ API も関わらない=副作用ではない。「Effect は外界との同期」という原則に照らすと、これは Effect の対象外。<b>まず「本当に副作用か」を疑う</b>。",
+       code:null},
+      {eyebrow:"STEP 2 — 計算で済ます", lbl:"描画中に計算", sub:"派生値は state にしない",
+       prompt:"fullName を別 state にせず、描画中に計算する。①は?",
+       question:"① fullName の作り方は？",
+       opts:[{t:"const fullName = firstName + ' ' + lastName",ok:true},{t:"useEffect で setFullName する",ok:false},{t:"useState で fullName を持つ",ok:false}],
+       why:"<b>描画のたびに計算する</b>だけでよい。state にすると「firstName は新しいのに fullName が古い」ズレや、余分な再描画が起きる。<b>他の値から導ける値は state にしない</b>——派生状態を避けるのが原則。",
+       code:['<span class="kw">function</span> <span class="fn">Form</span>({ firstName, lastName }) {','  <span class="kw">const</span> fullName = <span class="b1">①</span>;','  <span class="kw">return</span> &lt;<span class="fn">p</span>&gt;{fullName}&lt;/<span class="fn">p</span>&gt;;','}'],
+       fill:{slot:"b1",val:"firstName + ' ' + lastName"}},
+      {eyebrow:"STEP 3 — Effect の害を知る", lbl:"なぜ避けるか", sub:"余分な再描画",
+       prompt:"もし useEffect + state で fullName を同期すると、どんな不利益がある?",
+       question:"Effect で同期する害は？",
+       opts:[{t:"描画→Effect→state更新→再描画 と余分に1往復し、一瞬古い値も見える",ok:true},{t:"計算が速くなる",ok:false},{t:"特に害はない",ok:false}],
+       why:"Effect は描画<b>後</b>に走る。だから一度古い fullName で描画→Effect で更新→再描画、と<b>余分な往復</b>が起きる。一瞬古い値が見えることも。計算なら1回の描画で正しい値が出る。<b>不要な Effect は害になる</b>。",
+       code:null},
+      {eyebrow:"STEP 4 — 見分ける基準", lbl:"Effect が要る/要らない", sub:"判断をまとめる",
+       prompt:"Effect が<b>要る</b>のはどれ?",
+       question:"② Effect が要るのは？",
+       opts:[{t:"サーバーへの通信・イベント購読・タイマー（外界との同期）",ok:true},{t:"他の値からの計算",ok:false},{t:"クリックへの反応",ok:false}],
+       why:"<b>外界と同期する時だけ</b> Effect。計算は描画中に、クリック等の反応はイベントハンドラに書く。「データ取得・購読・タイマー・ブラウザ API」が Effect、それ以外は多くが不要。この線引きがバグを大きく減らす。",
+       code:null},
+    ],
+    doneMsg:"計算で出せる値に Effect は要らない。描画中に計算すれば、余分な往復もズレもない。「これは本当に外界との同期か」をまず疑う——公式が Effect を『避難ハッチ』と呼ぶ理由が体感できました。"
+  },
+
+  focus:{
+    concept:"useRef", title:"input にフォーカス",
+    scenario:"検索ボックスを、ページを開いた瞬間に入力可能（フォーカス）にしたい。",
+    steps:[
+      {eyebrow:"STEP 1 — state では届かない", lbl:"DOM 操作が要る場面", sub:"フォーカスは命令的",
+       prompt:"input にフォーカスを当てたい。これを state で表現できる?",
+       question:"フォーカスは state で？",
+       opts:[{t:"難しい。フォーカスは DOM への命令的な操作で、ref が向く",ok:true},{t:"isFocused state を true にすればよい",ok:false},{t:"props で渡せばよい",ok:false}],
+       why:"「フォーカスを当てる」は <code>element.focus()</code> という<b>DOM への命令</b>。state で表す宣言的なものではない。こういう例外的な DOM 操作のために <code>useRef</code> がある。ただし<b>DOM 操作は最後の手段</b>。",
+       code:null},
+      {eyebrow:"STEP 2 — ref を作って繋ぐ", lbl:"useRef と ref 属性", sub:"DOM への参照",
+       prompt:"input への参照を作り、繋ぐ。①の ref 属性に渡すのは?",
+       question:"① ref に渡すのは？",
+       opts:[{t:"inputRef（useRef で作った参照）",ok:true},{t:"inputRef.current",ok:false},{t:"useRef()",ok:false}],
+       why:"<code>useRef(null)</code> で参照を作り、<code>ref={inputRef}</code> で input に繋ぐ。すると React がマウント時に <code>inputRef.current</code> へその DOM 要素を入れてくれる。<code>.current</code> を渡すのではなく<b>参照そのもの</b>を渡す。",
+       code:['<span class="kw">const</span> inputRef = <span class="fn">useRef</span>(<span class="kw">null</span>);','&lt;<span class="fn">input</span> ref={<span class="b1">①</span>} /&gt;'],
+       fill:{slot:"b1",val:'inputRef'}},
+      {eyebrow:"STEP 3 — current で操作", lbl:".current にアクセス", sub:"マウント後に使う",
+       prompt:"開いた瞬間にフォーカスする。useEffect の中で②を呼ぶ。",
+       question:"② フォーカスの呼び出しは？",
+       opts:[{t:"inputRef.current.focus()",ok:true},{t:"inputRef.focus()",ok:false},{t:"inputRef.current = focus",ok:false}],
+       why:"DOM 要素は <code>inputRef.current</code> に入っている。だから <code>inputRef.current.focus()</code>。<code>inputRef</code> 自体は「箱」なので <code>.focus()</code> は持たない。マウント後（Effect 内）に使うのも要点——描画中はまだ DOM が無い。",
+       code:['<span class="kw">useEffect</span>(() => {','  <span class="b2">②</span>;','}, []);'],
+       fill:{slot:"b2",val:'inputRef.current.focus()'}},
+      {eyebrow:"STEP 4 — state との違いを確認", lbl:"再描画しない", sub:"ref の性質",
+       prompt:"ref の <code>.current</code> を書き換えても起きないことは?",
+       question:"③ .current を変えると？",
+       opts:[{t:"再描画は起きない",ok:true},{t:"再描画が起きる",ok:false},{t:"エラーになる",ok:false}],
+       why:"<code>.current</code> の書き換えは<b>再描画を起こさない</b>——ここが state との決定的な違い。だから「画面に出す値」を ref に入れてはいけない（変えても画面が更新されない）。ref は<b>描画に関わらない値・DOM 参照</b>専用。",
+       code:null},
+    ],
+    doneMsg:"フォーカスのような命令的 DOM 操作は ref で。参照を ref 属性で繋ぎ、.current でアクセスし、マウント後に使う。そして .current は再描画しない——state と ref の役割の違いが明確になりました。"
+  },
+
+  previous:{
+    concept:"useRef", title:"前回の値を覚える",
+    scenario:"カウンタで「今の値」と「1つ前の値」を並べて表示したい。",
+    steps:[
+      {eyebrow:"STEP 1 — どこに前回値を置くか", lbl:"描画に出すが…", sub:"state と ref の組み合わせ",
+       prompt:"今の値は state。前回の値はどこに持つ? 前回値は「記録」だが表示もする。",
+       question:"前回値の置き場所は？",
+       opts:[{t:"ref に持つ（描画のたびに更新され、再描画は起こさない記録）",ok:true},{t:"もう1つ state を足す",ok:false},{t:"前回値は持てない",ok:false}],
+       why:"前回値を state にすると、それ自体の更新で<b>再描画が増え</b>、今回値との更新タイミングもこじれる。ref なら「記録」として静かに持てる。表示には今回の描画で読むだけ。<b>記録は ref、変化のトリガーは state</b>という分担。",
+       code:null},
+      {eyebrow:"STEP 2 — ref を用意", lbl:"記録用の箱", sub:"初期値",
+       prompt:"前回値を入れる ref を作る。①の初期値は?",
+       question:"① 初期値は？",
+       opts:[{t:"undefined（まだ前回が無い）",ok:true},{t:"現在の count",ok:false},{t:"null は禁止",ok:false}],
+       why:"最初は「前回」がまだ無いので <code>undefined</code> が素直（<code>useRef()</code> は引数省略で undefined）。これにより初回表示では「前回値なし」と分かる。記録用の箱を用意するだけの段階。",
+       code:['<span class="kw">const</span> prevRef = <span class="fn">useRef</span>(<span class="b1">①</span>);'],
+       fill:{slot:"b1",val:''}},
+      {eyebrow:"STEP 3 — 描画後に記録", lbl:"Effect で更新", sub:"今回値を保存",
+       prompt:"今回の描画が終わったら、今の count を「次回のための前回値」として記録する。②は?",
+       question:"② いつ・何を記録する？",
+       opts:[{t:"useEffect で prevRef.current = count",ok:true},{t:"描画中に prevRef.current = count",ok:false},{t:"記録は不要",ok:false}],
+       why:"<b>描画後（Effect 内）</b>に <code>prevRef.current = count</code> で今回値を保存する。次の描画では、これが「前回値」として読める。描画中に書き換えると今回の表示に影響するため、必ず Effect で。",
+       code:['<span class="kw">useEffect</span>(() => {','  <span class="b2">②</span>;','}, [count]);'],
+       fill:{slot:"b2",val:'prevRef.current = count'}},
+      {eyebrow:"STEP 4 — 読む順序を理解", lbl:"描画時点では前回値", sub:"タイミングの妙",
+       prompt:"描画の本体で <code>prevRef.current</code> を読むと、得られるのは?",
+       question:"③ 描画中に読むと？",
+       opts:[{t:"まだ Effect が走る前なので「前回の値」が読める",ok:true},{t:"今回の値",ok:false},{t:"常に undefined",ok:false}],
+       why:"記録の更新は描画<b>後</b>の Effect。だから描画本体で読む時点では、まだ<b>前回保存した値</b>のまま。これを利用して「今＝count、前＝prevRef.current」を並べられる。この順序（描画→記録）の理解がポイント。",
+       code:null},
+    ],
+    doneMsg:"記録は ref、変化のトリガーは state。描画後の Effect で今回値を保存し、次の描画では前回値として読める。「ref は再描画を起こさず値を持ち越す」という性質を、タイミングまで含めて使いこなせました。"
+  },
+
+  heavy:{
+    concept:"useMemo", title:"重い計算をキャッシュ",
+    scenario:"数万件のデータを集計して表示。関係ない state の更新でも毎回再計算されて重い。",
+    steps:[
+      {eyebrow:"STEP 1 — まず疑う", lbl:"本当に重いか", sub:"最適化は計測から",
+       prompt:"集計が重い気がする。すぐ useMemo を付けるべき?",
+       question:"最初にすべきは？",
+       opts:[{t:"本当に遅いか計測する。早すぎる最適化はしない",ok:true},{t:"とりあえず全部 useMemo で包む",ok:false},{t:"重そうな計算は必ず useMemo",ok:false}],
+       why:"<b>デフォルトは「使わない」</b>。多くの計算は速く、useMemo の「覚えるコスト」のほうが高いことすらある。まず普通に書き、<b>実際に遅いと計測できてから</b>必要な箇所にだけ足す。最適化はやりすぎない、が基本姿勢。",
+       code:null},
+      {eyebrow:"STEP 2 — 計算を包む", lbl:"useMemo で囲む", sub:"結果を覚える",
+       prompt:"計測の結果、この集計は確かに重いと分かった。①の形で包む。",
+       question:"① useMemo の書き方は？",
+       opts:[{t:"useMemo(() => 集計処理, 依存配列)",ok:true},{t:"useMemo(集計処理())",ok:false},{t:"useMemo(集計処理)",ok:false}],
+       why:"<code>useMemo(() => 計算, [依存])</code> ——<b>計算を関数で渡す</b>。<code>集計処理()</code> のように即実行した結果を渡すと毎回計算され意味がない。「計算の仕方」を渡し、いつやり直すかは依存配列に任せる。",
+       code:['<span class="kw">const</span> total = <span class="b1">①</span>;'],
+       fill:{slot:"b1",val:'<span class="fn">useMemo</span>(() => <span class="fn">sumAll</span>(items), [items])'}},
+      {eyebrow:"STEP 3 — 依存配列の役割", lbl:"いつ再計算するか", sub:"依存が変わった時だけ",
+       prompt:"依存配列 <code>[items]</code> はここで何を意味する?",
+       question:"② [items] の意味は？",
+       opts:[{t:"items が変わった時だけ再計算し、それ以外は前回結果を再利用",ok:true},{t:"items を毎回再計算する",ok:false},{t:"items を表示する",ok:false}],
+       why:"<code>items</code> が変わらない再描画（例: 無関係な state の更新）では、<b>前回の集計結果を使い回す</b>。items が実際に変わった時だけ計算し直す。これで「関係ない更新でも毎回重い集計」が避けられる。",
+       code:null},
+      {eyebrow:"STEP 4 — 過信しない", lbl:"限界と注意", sub:"万能ではない",
+       prompt:"useMemo について正しい理解は?",
+       question:"③ useMemo の正しい理解は？",
+       opts:[{t:"覚える処理自体にコストがあり、軽い計算では逆効果のこともある",ok:true},{t:"付ければ必ず速くなる",ok:false},{t:"全コンポーネントに付けるべき",ok:false}],
+       why:"useMemo は<b>魔法ではない</b>。前回値の保存・比較自体にコストがあり、軽い計算ではむしろ遅くなる。可読性も下がり依存配列のバグも増える。<b>計測して効果がある箇所にだけ</b>——これが最適化の鉄則。",
+       code:null},
+    ],
+    doneMsg:"最適化は計測から。本当に重い計算だけを useMemo(() => …, [依存]) で包み、依存が変わった時だけ再計算する。「付ければ速くなる」ではなく「必要な箇所に絞る」——パフォーマンス最適化の正しい姿勢が身につきました。"
+  },
+
+  basic:{
+    concept:"SWR", title:"データ取得を任せる",
+    scenario:"useEffect で書いていたユーザー取得を、SWR に置き換える。",
+    steps:[
+      {eyebrow:"STEP 1 — 手書きの面倒を振り返る", lbl:"useEffect 版の重さ", sub:"付随処理が多い",
+       prompt:"useEffect でデータ取得を手書きすると、何が必要になる?",
+       question:"useEffect 版で要るものは？",
+       opts:[{t:"data/loading/error の3 state、依存配列、競合対策…と定型が多い",ok:true},{t:"useEffect 1行だけ",ok:false},{t:"state は不要",ok:false}],
+       why:"useEffect 版は<b>付随処理が膨らむ</b>: 3つの state、依存配列、競合対策、さらにキャッシュや再取得は自前。同じ定型を毎回書く。この面倒を SWR が引き受ける。「何が大変か」を知ると SWR の価値が分かる。",
+       code:null},
+      {eyebrow:"STEP 2 — useSWR に置き換え", lbl:"キーと取得関数", sub:"1行で取得",
+       prompt:"<code>useSWR</code> はキーと取得関数を渡すと、必要なものを返す。①で受け取るのは?",
+       question:"① useSWR が返すのは？",
+       opts:[{t:"{ data, error, isLoading }",ok:true},{t:"data だけ",ok:false},{t:"useEffect の戻り値",ok:false}],
+       why:"<code>useSWR(キー, fetcher)</code> が<b>data・error・isLoading をまとめて返す</b>。手書きで3つの state を管理していた部分が、これ1行に畳まれる。loading/error 分岐はそのまま使える。",
+       code:['<span class="kw">const</span> <span class="b1">①</span> = <span class="fn">useSWR</span>(<span class="str">\'/api/user\'</span>, fetcher);'],
+       fill:{slot:"b1",val:'{ data, error, isLoading }'}},
+      {eyebrow:"STEP 3 — キーの意味", lbl:"キャッシュの識別子", sub:"同じキーは共有",
+       prompt:"第1引数のキー（<code>'/api/user'</code>）の役割は?",
+       question:"② キーの役割は？",
+       opts:[{t:"キャッシュの識別子。同じキーはデータを共有・重複排除する",ok:true},{t:"ただのコメント",ok:false},{t:"取得の順番",ok:false}],
+       why:"キーは<b>キャッシュを識別</b>する。別の場所で同じキーを使えば、<b>同じデータを共有</b>し、無駄な再取得をまとめる（重複排除）。URL をキーにするのが定番。これが「複数箇所で同じデータ」に強い理由。",
+       code:null},
+      {eyebrow:"STEP 4 — 使う判断", lbl:"いつ SWR か", sub:"乱用しない",
+       prompt:"SWR を使う/使わないの判断として妥当なのは?",
+       question:"③ SWR を使う基準は？",
+       opts:[{t:"ユーザー操作で変わるサーバーデータに使う。サーバー側で取れるなら不要なことも",ok:true},{t:"あらゆる state を SWR にする",ok:false},{t:"クライアント内の状態にも使う",ok:false}],
+       why:"SWR は<b>サーバーデータ</b>用。クライアント内の状態は useState のまま。さらに Next.js の Server Components でサーバー側に取得できるなら、クライアントのデータ取得自体が不要なことも。<b>ユーザー操作で変わるデータ</b>にこそ向く。",
+       code:null},
+    ],
+    doneMsg:"手書きの useEffect 取得の面倒（3 state・依存・競合・キャッシュ）を、useSWR が引き受ける。キーでキャッシュを共有し、サーバーデータにこそ使う。「いつ自前をやめてライブラリに任せるか」という判断が、外部ライブラリ学習の核心です。"
+  },
+
+  "memo-child":{
+    concept:"useCallback", title:"子の再描画を防ぐ",
+    scenario:"重い子コンポーネント（React.memo 済み）に、関数を props で渡している。",
+    steps:[
+      {eyebrow:"STEP 1 — 問題を知る", lbl:"関数は毎回作り直される", sub:"参照が変わる",
+       prompt:"親が再描画されるたび、中で定義した関数はどうなる?",
+       question:"再描画で関数は？",
+       opts:[{t:"毎回新しく作り直される（前回と別物の参照になる）",ok:true},{t:"同じ関数が使い回される",ok:false},{t:"消えてなくなる",ok:false}],
+       why:"関数も値。再描画のたびに<b>新しく作り直される</b>ため、中身は同じでも「別物」として扱われる。普通は無害だが、それを React.memo した子に渡していると問題になる（次のステップ）。",
+       code:null},
+      {eyebrow:"STEP 2 — なぜ困るか", lbl:"memo が効かない", sub:"毎回違う props",
+       prompt:"React.memo した子は「props が変わらなければ再描画しない」。だが毎回新しい関数を渡すと?",
+       question:"毎回新しい関数を渡すと？",
+       opts:[{t:"props が毎回変わったと見なされ、子が無駄に再描画される",ok:true},{t:"memo が関数を無視してくれる",ok:false},{t:"子は絶対に再描画されない",ok:false}],
+       why:"React.memo は props を前回と比べる。関数が毎回別物だと「変わった」と判定され、<b>memo の効果が消える</b>。せっかく重い子を memo したのに、関数 props のせいで再描画され続ける。",
+       code:null},
+      {eyebrow:"STEP 3 — useCallback で固定", lbl:"同じ関数を返す", sub:"参照を安定させる",
+       prompt:"関数の参照を安定させる。①の依存配列（この関数は外の値に依存しない）は?",
+       question:"① 依存配列は？",
+       opts:[{t:"[]（依存なし。常に同じ関数）",ok:true},{t:"省略（毎回新しくなる）",ok:false},{t:"[items]（itemsを使っていないのに）",ok:false}],
+       why:"関数が外の値を使わないなら <code>[]</code> で、常に同じ関数を返せる。これで子の props が変わらず、memo が効く。省略すると毎回新しくなり無意味。使っていない値を依存に入れるのも誤り（不要な作り直しの原因）。",
+       code:['<span class="kw">const</span> handleAdd = <span class="fn">useCallback</span>((item: <span class="fn">Item</span>) => {','  setItems(prev => [...prev, item]);','}, <span class="b1">①</span>);'],
+       fill:{slot:"b1",val:'[]'}},
+      {eyebrow:"STEP 4 — 使う判断", lbl:"いつ使うか", sub:"乱用しない",
+       prompt:"useCallback を使う/使わないの判断として妥当なのは?",
+       question:"② useCallback を使う基準は？",
+       opts:[{t:"memo した子に関数を渡す等、参照の安定が実際に要る時だけ",ok:true},{t:"全ての関数を包む",ok:false},{t:"onClick は必ず包む",ok:false}],
+       why:"<b>参照の同一性が問題になる場面に絞る</b>。memo した子に渡す、Effect の依存に入れる、など。普通の onClick を包んでも効果はなく、可読性が下がるだけ。useMemo と同じ「必要な所だけ」。",
+       code:null},
+    ],
+    doneMsg:"関数は毎描画で作り直され、memo した子の最適化を壊す。useCallback で参照を安定させると memo が効く。ただし参照の同一性が要る場面だけ——useMemo の関数版として、使いどころの判断が掴めました。"
+  },
+
+  "heavy-filter":{
+    concept:"useTransition", title:"重い絞り込みで固めない",
+    scenario:"数万件のリストを検索。入力するたび絞り込むと、入力がカクついて固まる。",
+    steps:[
+      {eyebrow:"STEP 1 — 固まる原因", lbl:"急ぐ更新と重い更新", sub:"混ざると詰まる",
+       prompt:"入力のたびに重い絞り込みが走り、画面が固まる。原因の捉え方として正しいのは?",
+       question:"固まる原因は？",
+       opts:[{t:"急ぐ更新（入力）と重い更新（絞り込み）が同じ優先度で詰まっている",ok:true},{t:"入力欄の作りが悪い",ok:false},{t:"データ取得が遅い",ok:false}],
+       why:"入力の反映は<b>急ぐ</b>、重い絞り込みは<b>急がなくてよい</b>。なのに同じ優先度で処理されるため、重い方が入力をブロックして固まる。両者に<b>優先順位を付ける</b>のが解決の方向。",
+       code:null},
+      {eyebrow:"STEP 2 — フックを用意", lbl:"useTransition", sub:"2つを受け取る",
+       prompt:"useTransition は何を返す? ①で受け取るのは?",
+       question:"① useTransition が返すのは？",
+       opts:[{t:"[isPending, startTransition]",ok:true},{t:"[value, setValue]",ok:false},{t:"遅延した値",ok:false}],
+       why:"<code>[isPending, startTransition]</code> を返す。<code>startTransition</code> で「急がない更新」を包み、<code>isPending</code> で「処理中か」を知れる。値を返す useDeferredValue とはここが違う。",
+       code:['<span class="kw">const</span> [isPending, startTransition] = <span class="b1">①</span>;'],
+       fill:{slot:"b1",val:'<span class="fn">useTransition</span>()'}},
+      {eyebrow:"STEP 3 — 急ぐ/急がないを分ける", lbl:"startTransition で包む", sub:"重い方だけ",
+       prompt:"入力の反映は急ぐ、絞り込みは急がない。②に入れるのは?",
+       question:"② startTransition で包むのは？",
+       opts:[{t:"重い絞り込み（setResults）だけ",ok:true},{t:"入力の反映（setQuery）も含めて全部",ok:false},{t:"何も包まない",ok:false}],
+       why:"<b>重い方だけ</b>を <code>startTransition</code> で包む。入力 <code>setQuery</code> は急ぐので<b>外</b>に置く。入力を包むと逆にもたつく。「急ぐものは即、急がないものは後回し」と分ける。",
+       code:['<span class="kw">const</span> onChange = (e: <span class="fn">ChangeEvent</span>&lt;<span class="fn">HTMLInputElement</span>&gt;) => {','  setQuery(e.target.value);','  <span class="fn">startTransition</span>(() => {','    <span class="b2">②</span>;','  });','};'],
+       fill:{slot:"b2",val:'setResults(filterBig(e.target.value))'}},
+      {eyebrow:"STEP 4 — 処理中を伝える", lbl:"isPending を使う", sub:"体験を補う",
+       prompt:"絞り込み中だと分かるようにしたい。③の isPending の使い方は?",
+       question:"③ isPending の使い道は？",
+       opts:[{t:"処理中だけ「更新中…」やスピナーを薄く出す",ok:true},{t:"isPending で入力を無効化する",ok:false},{t:"使わなくてよい",ok:false}],
+       why:"<code>isPending</code> が true の間だけ、薄いローディング表示を出すと「反映中」が伝わり体験が良い。入力を無効化はしない（入力は急ぐ更新として動き続けるべき）。優先順位付けに表示を添えて仕上げる。",
+       code:['{isPending && &lt;<span class="fn">span</span>&gt;更新中…&lt;/<span class="fn">span</span>&gt;}'],
+       staticCode:true},
+    ],
+    doneMsg:"固まりは「急ぐ更新と重い更新が同優先で詰まる」のが原因。重い方だけ startTransition で包み、入力を優先し、isPending で処理中を伝える。UIが実際に固まる時の最適化が身につきました（React 18 以降）。"
+  },
+
+  "defer-list":{
+    concept:"useDeferredValue", title:"重い表示を遅れて追従",
+    scenario:"入力に応じて重いリストを描く。更新する側はいじれず、値を受け取るだけ。",
+    steps:[
+      {eyebrow:"STEP 1 — useTransition との違い", lbl:"値の側から", sub:"アプローチの差",
+       prompt:"useTransition は更新処理を包んだ。useDeferredValue はどこから対処する?",
+       question:"useDeferredValue のアプローチは？",
+       opts:[{t:"値の「遅れた版」を作り、それを使う側から対処する",ok:true},{t:"更新処理を速くする",ok:false},{t:"通信を遅らせる",ok:false}],
+       why:"同じ「UIの固まり」を、<b>値を使う側</b>から解く。更新処理を直接包めない時（値を props で受け取るだけの時など）に向く。<code>startTransition</code> で囲む代わりに、値の遅延版を作る。",
+       code:null},
+      {eyebrow:"STEP 2 — 遅延版を作る", lbl:"useDeferredValue", sub:"値を渡す",
+       prompt:"入力値 query の「遅れた版」を作る。①は?",
+       question:"① 遅延版の作り方は？",
+       opts:[{t:"useDeferredValue(query)",ok:true},{t:"useDeferredValue(setQuery)",ok:false},{t:"useDeferredValue(1000)",ok:false}],
+       why:"<code>useDeferredValue(query)</code> に<b>値そのもの</b>を渡すと、その遅れた版が返る。秒数（1000）ではない——React が優先順位に応じて追従させる。debounce の「固定時間待つ」とは仕組みが違う。",
+       code:['<span class="kw">const</span> deferredQuery = <span class="b1">①</span>;'],
+       fill:{slot:"b1",val:'<span class="fn">useDeferredValue</span>(query)'}},
+      {eyebrow:"STEP 3 — 急ぐ所と遅い所を分ける", lbl:"どちらの値を使うか", sub:"使い分け",
+       prompt:"入力欄と重いリスト、それぞれどちらの値を使う?",
+       question:"② 値の使い分けは？",
+       opts:[{t:"入力欄は query（即）、重いリストは deferredQuery（遅れて）",ok:true},{t:"両方 deferredQuery",ok:false},{t:"両方 query",ok:false}],
+       why:"入力欄は <code>query</code> で<b>即反映</b>（打った文字がすぐ出る）。重いリストは <code>deferredQuery</code> で<b>遅れて追従</b>。これで入力は固まらず、重い描画は手が空いた時に追いつく。急ぐ所と遅い所を値で分ける。",
+       code:['&lt;<span class="fn">input</span> value={query} onChange={onChange} /&gt;','&lt;<span class="fn">HeavyList</span> query={<span class="b2">②</span>} /&gt;'],
+       fill:{slot:"b2",val:'deferredQuery'}},
+      {eyebrow:"STEP 4 — どちらを選ぶか", lbl:"使い分けの判断", sub:"transition と比較",
+       prompt:"useTransition と useDeferredValue、どう選ぶ?",
+       question:"③ 2つの使い分けは？",
+       opts:[{t:"更新処理を包めるなら useTransition、値を受け取るだけなら useDeferredValue",ok:true},{t:"常に useDeferredValue が優れる",ok:false},{t:"両方同時に必ず使う",ok:false}],
+       why:"目的は同じ（UIを固めない）。<b>更新する側を触れるなら useTransition</b>、<b>値を使う側からなら useDeferredValue</b>。受け取った props を重い表示に使うだけ、という場面では後者が自然。どちらも「固まる時だけ」。",
+       code:null},
+    ],
+    doneMsg:"useDeferredValue は値の遅延版を作り、使う側から固まりを解く。入力は即・重い表示は遅れて、と値で分ける。更新を包める時は useTransition、値を受け取るだけなら useDeferredValue——2つの使い分けが掴めました（React 18 以降）。"
+  },
+
+  label:{
+    concept:"useId", title:"ラベルと入力を結ぶ",
+    scenario:"再利用するメール入力フィールド。同じ部品を1画面に2つ置くこともある。",
+    steps:[
+      {eyebrow:"STEP 1 — なぜ結ぶ必要があるか", lbl:"ラベルと入力の紐付け", sub:"アクセシビリティ",
+       prompt:"label と input を id で結ぶのはなぜ?",
+       question:"なぜ紐付ける？",
+       opts:[{t:"読み上げ対応や、ラベルクリックで入力にフォーカスするため",ok:true},{t:"見た目を整えるため",ok:false},{t:"特に意味はない",ok:false}],
+       why:"<code>label htmlFor=id</code> と <code>input id=id</code> を結ぶと、スクリーンリーダーが「この入力は何か」を読め、ラベルをクリックすると入力にフォーカスが移る。<b>基本的なアクセシビリティ</b>の配慮。",
+       code:null},
+      {eyebrow:"STEP 2 — 固定idの問題", lbl:"衝突する", sub:"複数置くと壊れる",
+       prompt:"id を <code>\"email\"</code> と固定した。この部品を1画面に2つ置くと?",
+       question:"固定idを2つ置くと？",
+       opts:[{t:"id が重複し、紐付けやフォーカスがおかしくなる",ok:true},{t:"自動で別々になる",ok:false},{t:"問題ない",ok:false}],
+       why:"id は<b>ページ内で一意</b>であるべき。固定値だと同じ部品を2つ置いた時に重複し、ラベルクリックが片方にしか効かない等の不具合が出る。一意性を保証する仕組みが要る。",
+       code:null},
+      {eyebrow:"STEP 3 — useId で一意に", lbl:"安全なid生成", sub:"衝突しない",
+       prompt:"衝突しない id を得る。①は?",
+       question:"① 一意なidの取得は？",
+       opts:[{t:"const id = useId()",ok:true},{t:'const id = "email"',ok:false},{t:"const id = Math.random()",ok:false}],
+       why:"<code>useId()</code> は<b>衝突しない一意な id</b> を返す。同じ部品を何個置いても別々になる。<code>Math.random()</code> は描画ごとに変わり SSR でもずれて不安定。useId は描画をまたいで安定し、SSR でも一致する設計。",
+       code:['<span class="kw">function</span> <span class="fn">EmailField</span>() {','  <span class="kw">const</span> id = <span class="b1">①</span>;'],
+       fill:{slot:"b1",val:'<span class="fn">useId</span>()'}},
+      {eyebrow:"STEP 4 — 用途を間違えない", lbl:"key には使わない", sub:"役割の境界",
+       prompt:"useId をリストの key に使ってよい?",
+       question:"② リストの key に useId は？",
+       opts:[{t:"使わない。key はデータの id を使う",ok:true},{t:"使うべき",ok:false},{t:"どちらでもよい",ok:false}],
+       why:"useId は<b>ラベル紐付けなどの用途専用</b>。リストの key には<b>データ由来の id</b>（各項目が持つ id）を使う。useId を key にすると、要素の識別という key の役割に合わず不具合のもと。用途の境界を守る。",
+       code:null},
+    ],
+    doneMsg:"ラベルと入力の紐付けはアクセシビリティの基本。固定idは衝突するので useId で一意にする。ただし key には使わない（key はデータの id）——useId の正しい用途と境界が分かりました。"
+  },
+
+  measure:{
+    concept:"useLayoutEffect", title:"描画前に測る",
+    scenario:"ツールチップを、対象要素のサイズを測ってから正しい位置に出したい。",
+    steps:[
+      {eyebrow:"STEP 1 — useEffect だとちらつく", lbl:"描画後の測定", sub:"一瞬ずれて見える",
+       prompt:"useEffect で要素を測って位置を直すと、何が起きることがある?",
+       question:"useEffect で測ると？",
+       opts:[{t:"一度ずれた位置で描画され、直後に直るのでちらつく",ok:true},{t:"必ず正しい位置で出る",ok:false},{t:"測定できない",ok:false}],
+       why:"useEffect は<b>描画後</b>に走る。だから「ずれた位置で一度表示→測って修正→再描画」となり、一瞬ちらつく。位置やサイズの測定→反映では、この順序が問題になる。",
+       code:null},
+      {eyebrow:"STEP 2 — 描画前に測る", lbl:"useLayoutEffect", sub:"タイミングを変える",
+       prompt:"ちらつきを防ぐ。①で測定を行うフックは?",
+       question:"① 描画前に測るには？",
+       opts:[{t:"useLayoutEffect",ok:true},{t:"useEffect",ok:false},{t:"useMemo",ok:false}],
+       why:"<code>useLayoutEffect</code> は<b>画面が描かれる直前</b>に走る。測定と位置の反映を画面に出る前に終えるので、ずれた状態が見えずちらつかない。書き方は useEffect と全く同じ。",
+       code:['<span class="b1">①</span>(() => {','  <span class="kw">const</span> rect = ref.current.<span class="fn">getBoundingClientRect</span>();','  setPos(rect);','}, []);'],
+       fill:{slot:"b1",val:'<span class="fn">useLayoutEffect</span>'}},
+      {eyebrow:"STEP 3 — 違いはタイミングだけ", lbl:"他は同じ", sub:"書き方は共通",
+       prompt:"useLayoutEffect が useEffect と違う点は?",
+       question:"② 何が違う？",
+       opts:[{t:"実行タイミングだけ（描画前か後か）。書き方・依存・クリーンアップは同じ",ok:true},{t:"全てが違う別物",ok:false},{t:"依存配列が要らない",ok:false}],
+       why:"違いは<b>タイミングだけ</b>。依存配列もクリーンアップも useEffect と同じように書く。だから「測定のちらつき」以外では useEffect と同じに考えてよい。",
+       code:null},
+      {eyebrow:"STEP 4 — 基本は useEffect", lbl:"使いすぎない", sub:"描画をブロックする",
+       prompt:"普段は useEffect と useLayoutEffect どちらを使う?",
+       question:"③ 基本はどちら？",
+       opts:[{t:"基本は useEffect。ちらつきが実際に問題な時だけ useLayoutEffect",ok:true},{t:"常に useLayoutEffect が安全",ok:false},{t:"どちらでもよい",ok:false}],
+       why:"useLayoutEffect は<b>描画をブロック</b>するため、多用すると遅くなる。デフォルトは useEffect。測定→反映のちらつきが実際に起きた時だけ切り替える。「必要な時だけ」という最適化系共通の姿勢。",
+       code:null},
+    ],
+    doneMsg:"測定→反映のちらつきは、描画後に走る useEffect が原因。useLayoutEffect は描画前に走るので防げる。違いはタイミングだけで、基本は useEffect、必要な時だけこちら——稀なフックの正しい立ち位置が分かりました。"
+  },
+
+  "form-action":{
+    concept:"useActionState", title:"送信状態をまとめる",
+    scenario:"問い合わせフォーム。送信処理・結果メッセージ・送信中フラグを扱う。React 19。",
+    steps:[
+      {eyebrow:"STEP 1 — 手書きの煩雑さ", lbl:"3つの状態", sub:"従来の管理",
+       prompt:"フォーム送信に伴う状態は、従来 useState で何個も管理していた。それは?",
+       question:"送信に伴う状態は？",
+       opts:[{t:"結果（成功/エラー）と、送信中フラグなど複数",ok:true},{t:"入力値だけ",ok:false},{t:"状態は不要だった",ok:false}],
+       why:"送信には「結果（成功 or エラーメッセージ）」「送信中か」といった状態が伴う。従来は <code>useState</code> を複数並べ、送信前後で手で切り替えていた。これを1つにまとめるのが useActionState（React 19）。",
+       code:null},
+      {eyebrow:"STEP 2 — フックの返り値", lbl:"3つを受け取る", sub:"結果・action・処理中",
+       prompt:"useActionState は何を返す? ①は?",
+       question:"① 返り値は？",
+       opts:[{t:"[state, formAction, isPending]",ok:true},{t:"[value, setValue]",ok:false},{t:"送信結果だけ",ok:false}],
+       why:"<code>[state, formAction, isPending]</code> を返す。<b>state</b>＝結果、<b>formAction</b>＝form に渡す包んだアクション、<b>isPending</b>＝送信中フラグ。送信中フラグを自分で作らなくてよい。React 19 の機能。",
+       code:['<span class="kw">const</span> <span class="b1">①</span> = <span class="fn">useActionState</span>(submitFn, <span class="kw">null</span>);'],
+       fill:{slot:"b1",val:'[state, formAction, isPending]'}},
+      {eyebrow:"STEP 3 — form に繋ぐ", lbl:"action に渡す", sub:"送信処理を結ぶ",
+       prompt:"包んだアクションを form に繋ぐ。②は?",
+       question:"② form への繋ぎ方は？",
+       opts:[{t:"<form action={formAction}>",ok:true},{t:"<form onSubmit={state}>",ok:false},{t:"<form action={submitFn}>",ok:false}],
+       why:"<code>action={formAction}</code> に<b>包んだアクション</b>を渡す。これで送信時に submitFn が呼ばれ、結果が state に入る。生の submitFn ではなく、フックが返した formAction を渡すのが要点。",
+       code:['&lt;<span class="fn">form</span> action={<span class="b2">②</span>}&gt;','  &lt;<span class="fn">input</span> name=<span class="str">"email"</span> /&gt;','  &lt;<span class="fn">button</span> disabled={isPending}&gt;送信&lt;/<span class="fn">button</span>&gt;','&lt;/<span class="fn">form</span>&gt;'],
+       fill:{slot:"b2",val:'formAction'}},
+      {eyebrow:"STEP 4 — 結果と処理中を使う", lbl:"state と isPending", sub:"表示に反映",
+       prompt:"送信中はボタンを無効化し、結果を表示する。③の送信中の判定は?",
+       question:"③ 送信中の判定は？",
+       opts:[{t:"isPending（フックが返す処理中フラグ）",ok:true},{t:"自分で loading state を作る",ok:false},{t:"state.loading",ok:false}],
+       why:"<code>isPending</code> をそのまま使えば、送信中だけボタンを <code>disabled</code> にできる。手書きの loading state は不要。結果は <code>state</code>（成功/エラー）を見て表示する。送信に伴う状態が1か所にまとまる。",
+       code:null},
+    ],
+    doneMsg:"送信の結果・処理中フラグを useActionState が1つにまとめ、form の action に繋ぐ。送信中フラグも手書き不要。React 19 + フォーム/Server Actions 時代の、送信状態管理の新しい形が掴めました。"
+  },
+
+  "query-mutation":{
+    concept:"TanStack Query", title:"取得と更新",
+    scenario:"TODO一覧を取得し、追加したら一覧を自動で最新にしたい。",
+    steps:[
+      {eyebrow:"STEP 1 — 読み書きを分ける", lbl:"query と mutation", sub:"役割の分担",
+       prompt:"データの「取得」と「更新」、TanStack Query ではどう分かれる?",
+       question:"読み書きの分担は？",
+       opts:[{t:"取得は useQuery、更新は useMutation",ok:true},{t:"両方 useQuery",ok:false},{t:"両方 useEffect",ok:false}],
+       why:"<b>読み取りは useQuery、書き込みは useMutation</b>と役割が分かれる。取得はキャッシュして再利用、更新は実行して結果に応じてキャッシュを操作、と扱いが違うため。この分担を押さえるのが第一歩。",
+       code:null},
+      {eyebrow:"STEP 2 — queryKey の役割", lbl:"キャッシュの識別子", sub:"SWRのキーと同じ発想",
+       prompt:"useQuery の <code>queryKey</code> の役割は? (SWR のキーと同じ発想)",
+       question:"① queryKey とは？",
+       opts:[{t:"このデータのキャッシュを一意に識別する名前",ok:true},{t:"取得の実行順",ok:false},{t:"ただのラベル",ok:false}],
+       why:"<code>queryKey: ['todos']</code> は「このキャッシュは todos のもの」という<b>識別子</b>。同じキーは同じデータとして共有され、更新後の無効化もこのキーで指定する。SWR のキーと同じ役割。",
+       code:['<span class="kw">const</span> { data } = <span class="fn">useQuery</span>({','  queryKey: <span class="b1">①</span>,','  queryFn: fetchTodos,','});'],
+       fill:{slot:"b1",val:"['todos']"}},
+      {eyebrow:"STEP 3 — 更新する", lbl:"useMutation", sub:"実行する書き込み",
+       prompt:"TODO を追加する。useMutation に渡す②（実行する関数）は?",
+       question:"② mutationFn は？",
+       opts:[{t:"addTodo（サーバーに追加する関数）",ok:true},{t:"queryKey",ok:false},{t:"fetchTodos",ok:false}],
+       why:"<code>mutationFn</code> には<b>書き込みを行う関数</b>を渡す。<code>mutation.mutate(新TODO)</code> で実行される。取得（fetchTodos）とは別物。読み取りと書き込みで渡す関数が分かれている。",
+       code:['<span class="kw">const</span> mutation = <span class="fn">useMutation</span>({','  mutationFn: <span class="b2">②</span>,','});'],
+       fill:{slot:"b2",val:'addTodo'}},
+      {eyebrow:"STEP 4 — 更新後に最新化", lbl:"キャッシュ無効化", sub:"自動で再取得",
+       prompt:"追加が成功したら、一覧を自動で最新にしたい。③の onSuccess に書くのは?",
+       question:"③ 追加成功後にすることは？",
+       opts:[{t:"todos のキャッシュを無効化して再取得させる",ok:true},{t:"手で data を書き換える",ok:false},{t:"ページをリロードする",ok:false}],
+       why:"<code>invalidateQueries({queryKey:['todos']})</code> で todos のキャッシュを<b>無効化</b>すると、TanStack Query が自動で再取得して一覧が最新になる。手で data をいじったりリロードしたりせず、<b>キーで宣言的に</b>最新化する。これが体系的なキャッシュ管理の利点。",
+       code:['<span class="kw">const</span> mutation = <span class="fn">useMutation</span>({','  mutationFn: addTodo,','  onSuccess: () => <span class="b3">③</span>,','});'],
+       fill:{slot:"b3",val:"qc.invalidateQueries({ queryKey: ['todos'] })"}},
+    ],
+    doneMsg:"読み取りは useQuery、書き込みは useMutation、つなぐのは queryKey。更新後はキャッシュを無効化して自動再取得。SWR より一歩進んだ「取得と更新の体系的な管理」が掴めました。サーバーデータ専用、という前提は共通です。"
+  },
+
+  store:{
+    concept:"Zustand", title:"グローバル状態を共有",
+    scenario:"ログイン情報やテーマを、アプリ全体で頻繁に読み書きする。",
+    steps:[
+      {eyebrow:"STEP 1 — Context との境界", lbl:"いつ Zustand か", sub:"使う前に問う",
+       prompt:"グローバル状態が要る。すぐ Zustand を入れるべき? 妥当な判断は?",
+       question:"Zustand を選ぶ判断は？",
+       opts:[{t:"まず useState/Context を検討し、再描画や記述が辛くなってから",ok:true},{t:"グローバルなら常に Zustand",ok:false},{t:"サーバーデータにも Zustand",ok:false}],
+       why:"<b>まず useState、次に Context</b>。Zustand は「広く共有し頻繁に変わるクライアント状態で、Context だと再描画が辛い」と感じてから。サーバーデータは対象外（TanStack Query / SWR）。Context や useMemo と同じ「必要になってから」の姿勢。",
+       code:null},
+      {eyebrow:"STEP 2 — ストアを作る", lbl:"create", sub:"コンポーネントの外",
+       prompt:"状態と更新関数を持つストアを作る。①の set の役割は?",
+       question:"① set とは？",
+       opts:[{t:"状態を更新する関数（useState の setter に相当）",ok:true},{t:"ストアを削除する",ok:false},{t:"購読を登録する",ok:false}],
+       why:"<code>create((set) => ...)</code> の <code>set</code> は<b>状態を更新する関数</b>。<code>set((s) => ({count: s.count+1}))</code> のように前の状態から次を作る——useState の関数型更新と同じ発想。ストアはコンポーネントの<b>外</b>に置く。",
+       code:['<span class="kw">const</span> useStore = <span class="fn">create</span>((<span class="b1">①</span>) => ({','  count: <span class="par">0</span>,','  inc: () => set((s) => ({ count: s.count + <span class="par">1</span> })),','}));'],
+       fill:{slot:"b1",val:'set'}},
+      {eyebrow:"STEP 3 — 部分購読", lbl:"必要な値だけ取る", sub:"再描画を絞る",
+       prompt:"コンポーネントで count だけ使う。②の購読の仕方として再描画を抑えるのは?",
+       question:"② どう購読する？",
+       opts:[{t:"useStore((s) => s.count)（count だけ選ぶ）",ok:true},{t:"useStore()（ストア全体を取る）",ok:false},{t:"useStore.getState()",ok:false}],
+       why:"<b>必要な値だけ選んで購読</b>する <code>useStore((s) => s.count)</code> が要点。これなら count 以外が変わっても再描画されない。全体を取ると無駄な再描画が増える。Context が「読む全員が再描画」だったのと対照的に、部分購読で絞れる。",
+       code:['<span class="kw">const</span> count = <span class="b2">②</span>;'],
+       fill:{slot:"b2",val:'useStore((s) => s.count)'}},
+      {eyebrow:"STEP 4 — Provider 不要", lbl:"Context との違い", sub:"囲まなくてよい",
+       prompt:"Zustand のストアを使うのに Provider で囲む必要は?",
+       question:"③ Provider は？",
+       opts:[{t:"不要。ストアは外にあり、どこからでも使える",ok:true},{t:"Context と同じく必須",ok:false},{t:"ストアごとに必要",ok:false}],
+       why:"Zustand は<b>Provider 不要</b>。ストアがコンポーネントツリーの外にあるため、どこからでも直接 <code>useStore</code> で使える。Context の「Provider で囲む」ネストが不要になるのが、軽量と言われる理由の一つ。",
+       code:null},
+    ],
+    doneMsg:"まず useState/Context を検討し、辛くなってから Zustand。外部ストアを create で作り、必要な値だけ部分購読し、Provider は不要。クライアント状態専用——「状態の出どころで道具を選ぶ」判断が深まりました。"
+  },
+
+  "rhf-form":{
+    concept:"React Hook Form", title:"大きなフォームを扱う",
+    scenario:"項目の多い登録フォーム。制御コンポーネントだと再描画が重い。",
+    steps:[
+      {eyebrow:"STEP 1 — 制御の限界", lbl:"毎キーストローク再描画", sub:"なぜ重いか",
+       prompt:"useState の制御コンポーネントで大きなフォームを作ると、何が起きる?",
+       question:"制御コンポーネントの課題は？",
+       opts:[{t:"1文字打つたびに再描画され、項目が多いと重くなる",ok:true},{t:"値が取れない",ok:false},{t:"バリデーションができない",ok:false}],
+       why:"制御コンポーネントは入力を state に結ぶため、<b>1文字ごとに再描画</b>する。項目が少なければ問題ないが、多いと再描画が積もって重くなる。RHF はこの再描画を抑える非制御の発想で解く。",
+       code:null},
+      {eyebrow:"STEP 2 — 入力を登録", lbl:"register", sub:"非制御で繋ぐ",
+       prompt:"RHF は入力を <code>register</code> で登録する。①の登録の仕方は?",
+       question:"① 入力の登録は？",
+       opts:[{t:"{...register('email')}",ok:true},{t:"value={email} onChange={...}",ok:false},{t:"ref={email}",ok:false}],
+       why:"<code>{...register('email')}</code> を input に展開すると、RHF が <code>ref</code> 経由でその入力を管理する（非制御）。value/onChange で結ぶ制御コンポーネントとは違い、<b>毎キーストロークの再描画がない</b>のが利点。",
+       code:['&lt;<span class="fn">input</span> {...<span class="b1">①</span>} /&gt;'],
+       fill:{slot:"b1",val:"register('email')"}},
+      {eyebrow:"STEP 3 — 送信を扱う", lbl:"handleSubmit", sub:"検証を通してから",
+       prompt:"送信時、バリデーションを通してからデータを受け取りたい。②は?",
+       question:"② onSubmit の繋ぎ方は？",
+       opts:[{t:"onSubmit={handleSubmit(onValid)}",ok:true},{t:"onSubmit={onValid}",ok:false},{t:"onSubmit={register}",ok:false}],
+       why:"<code>handleSubmit(onValid)</code> で包むと、RHF が<b>バリデーションを実行し、通った時だけ</b> onValid をデータ付きで呼ぶ。生の onSubmit だと検証が走らない。検証→成功時のみ処理、という流れをライブラリが担う。",
+       code:['&lt;<span class="fn">form</span> onSubmit={<span class="b2">②</span>}&gt;'],
+       fill:{slot:"b2",val:'handleSubmit(onValid)'}},
+      {eyebrow:"STEP 4 — 使う判断", lbl:"小さいフォームには", sub:"乱用しない",
+       prompt:"入力1〜2個の小さなフォーム。RHF を使うべき?",
+       question:"③ 小さなフォームでは？",
+       opts:[{t:"useState の制御コンポーネントで十分。RHF は大きい時に",ok:true},{t:"常に RHF が正解",ok:false},{t:"小さくても必ず RHF",ok:false}],
+       why:"<b>1〜3項目なら useState で十分</b>。RHF はライブラリを足すコストがある。項目が増え、バリデーションやパフォーマンスが気になってきたら導入する。「ライブラリを入れるべきか」をまず問うのは、SWR や Zustand と共通。",
+       code:null},
+    ],
+    doneMsg:"制御コンポーネントは毎キーストローク再描画する。RHF は register で非制御に繋ぎ、handleSubmit で検証を通す。ただし小さなフォームには useState で十分——制御/非制御の違いと、ライブラリ導入の判断が掴めました。"
+  },
+
+  schema:{
+    concept:"Zod", title:"型と検証を一元化",
+    scenario:"フォーム入力やAPI応答が、想定の形か実行時にも確かめたい。",
+    steps:[
+      {eyebrow:"STEP 1 — 型だけでは足りない", lbl:"実行時に消える", sub:"問題の認識",
+       prompt:"TypeScript の型があるのに、なぜ実行時の検証も要る?",
+       question:"型だけで足りない理由は？",
+       opts:[{t:"型はコンパイル時に消え、実行時に届くデータの形は保証できないから",ok:true},{t:"型は間違っているから",ok:false},{t:"検証は不要だから",ok:false}],
+       why:"TypeScript の型は<b>コンパイル時に消える</b>。だからフォーム入力や API 応答のような<b>外から実行時に届くデータ</b>が本当に型通りか、型だけでは保証できない。実行時のチェックが別に要る。",
+       code:null},
+      {eyebrow:"STEP 2 — スキーマを定義", lbl:"形を1度書く", sub:"検証のルール",
+       prompt:"メールと年齢を持つユーザーの形を定義する。①の email の検証は?",
+       question:"① email の検証は？",
+       opts:[{t:"z.string().email()",ok:true},{t:"z.string()（形式は問わない）",ok:false},{t:"z.any()",ok:false}],
+       why:"<code>z.string().email()</code> で「文字列かつメール形式」という<b>検証ルール込みの形</b>を定義する。単なる string より厳密。スキーマにルールを書き込むのが Zod の発想。",
+       code:['<span class="kw">const</span> User = z.<span class="fn">object</span>({','  email: <span class="b1">①</span>,','  age: z.<span class="fn">number</span>().<span class="fn">min</span>(<span class="par">0</span>),','});'],
+       fill:{slot:"b1",val:'z.string().email()'}},
+      {eyebrow:"STEP 3 — 型を導出", lbl:"z.infer", sub:"二重管理を避ける",
+       prompt:"このスキーマから TypeScript の型も得たい。②は?",
+       question:"② 型を得るには？",
+       opts:[{t:"z.infer<typeof User>",ok:true},{t:"型は別に手で書く",ok:false},{t:"User.type",ok:false}],
+       why:"<code>z.infer&lt;typeof User&gt;</code> でスキーマから<b>型を自動導出</b>できる。型を別に手書きすると、スキーマと型が<b>二重管理</b>になりズレる。1つのスキーマから型と検証の両方——これが Zod の核心的な価値。",
+       code:['<span class="kw">type</span> User = <span class="b2">②</span>;'],
+       fill:{slot:"b2",val:'z.infer<typeof User>'}},
+      {eyebrow:"STEP 4 — 安全に検証", lbl:"parse と safeParse", sub:"失敗の扱い",
+       prompt:"入力を検証する。不正なら例外でなく成否で受け取りたい。③は?",
+       question:"③ 安全な検証は？",
+       opts:[{t:"User.safeParse(input)（成否を返す）",ok:true},{t:"User.parse(input)（不正で例外）",ok:false},{t:"検証しない",ok:false}],
+       why:"<code>parse</code> は不正なデータで<b>例外を投げる</b>。フォームなどでは <code>safeParse</code> が便利で、<code>{success, data}</code> または <code>{success:false, error}</code> を返すので、エラーを画面表示に繋げやすい。RHF の resolver も内部でこうした検証を使う。",
+       code:['<span class="kw">const</span> result = <span class="b3">③</span>;','<span class="kw">if</span> (!result.success) <span class="fn">showErrors</span>(result.error);'],
+       fill:{slot:"b3",val:'User.safeParse(input)'}},
+    ],
+    doneMsg:"型はコンパイル時に消えるので、外から届くデータには実行時検証が要る。Zod はスキーマ1つから型(z.infer)と検証(safeParse)の両方を得て、二重管理のズレを防ぐ。RHF や Server Actions と組む定番の土台が掴めました。"
+  }
+};
+
+/* ============================================================
+   Next.js 編データ（別ページ・別テーマ）
+   ============================================================ */
+const NEXT_DATA = {
+  "app-router": {
+    name:"App Router",
+    cat:"基礎 / ルーティング",
+    tagline:"フォルダとファイルの構造が、そのままURLとページになる仕組み。",
+    lede:"app ディレクトリの中で、フォルダがURLの区切り、page が画面になる。設定ではなく規約で決まる。",
+    def:'<code>app</code> ディレクトリの<b>フォルダ構造がそのままURL</b>になり、<code>page.tsx</code> がそのURLの画面になる。ルーティングを設定ファイルで書くのではなく、<b>ファイルの置き場所で決める</b>規約ベースの仕組み。',
+    why:[
+      '従来はルーティングを設定で書いていた。App Router では <code>app/about/page.tsx</code> を置くだけで <code>/about</code> が出来る。<strong>フォルダ＝URLの区切り、page.tsx＝その画面</strong>という対応を覚えるのが出発点。',
+      '特別な名前のファイルが役割を持つ。<code>page</code>＝画面、<code>layout</code>＝共通の枠、<code>loading</code>＝読込中表示、<code>error</code>＝エラー表示。<strong>名前で役割が決まる</strong>のが規約ベースの便利さ。'
+    ],
+    code:[
+      '<span class="cm">// フォルダ構造がそのままURLになる</span>',
+      'app/',
+      '  page.tsx          <span class="cm">// →  /</span>',
+      '  about/',
+      '    page.tsx        <span class="cm">// →  /about</span>',
+      '  blog/',
+      '    page.tsx        <span class="cm">// →  /blog</span>',
+      '    layout.tsx      <span class="cm">// blog 以下の共通の枠</span>'
+    ],
+    codeCap:"フォルダを掘ればURLが深くなる。page.tsx がそのURLの画面、layout.tsx が共通の枠。",
+    yes:["新規プロジェクト（App Router が推奨）","Server Components を使いたい時","ネストしたレイアウトを共有したい時"],
+    no:["既存の Pages Router を急いで全面移行する必要はない（共存も可）"],
+    noNote:"App Router は新規プロジェクトの<strong>推奨</strong>。Pages Router はメンテナンスモードだが、Server Actions など新機能は App Router のみ。新しく学ぶなら App Router から。",
+    miss:[
+      ['ルーティングは設定ファイルで書く','App Router は<strong>ファイルの置き場所</strong>で決まる。設定不要。'],
+      ['どんな名前のファイルでも画面になる','画面になるのは <code>page.tsx</code> だけ。他のファイルは画面にならない（部品として使う）。'],
+      ['app の中のコンポーネントはブラウザで動く','App Router では<strong>デフォルトで Server Component</strong>（サーバーで動く）。次のトピックで詳しく。'],
+      ['Pages Router と書き方は同じ','レイアウトやデータ取得の考え方が変わる。同じではない。']
+    ],
+    lessons:[
+      {id:"file-route", num:"01", ctx:"基礎", title:"ファイルがURLになる", sub:"page と layout の役割", ready:true},
+    ]
+  },
+
+  "server-client": {
+    name:"Server / Client Components",
+    cat:"基礎 / 最重要の境界",
+    tagline:"どこで動くか（サーバーかブラウザか）を決める、App Router で最も重要な判断。",
+    lede:"デフォルトはサーバー。操作や状態が要る部分だけ 'use client' でブラウザ側にする。この線引きが肝。",
+    def:'App Router では<b>デフォルトで全コンポーネントが Server Component</b>（サーバーで動く）。状態・イベント・ブラウザAPIが要る部分だけ <code>"use client"</code> を付けて Client Component にする。<b>この境界をどこに引くか</b>が最重要の設計判断。',
+    why:[
+      'Server Component はサーバーで動いてHTMLを生成し、<strong>ブラウザにJavaScriptを送らない</strong>。データ取得も直接でき、認証情報も漏れない。一方、状態やクリックなどの<strong>操作には対応できない</strong>。',
+      'Client Component は <code>"use client"</code> を付けると、状態・イベント・ブラウザAPIが使える。その代わりJavaScriptがブラウザに送られる。<strong>境界の引き方を誤ると、バンドルが肥大化したり実行時に壊れたりする</strong>——だから一番慎重に考える所。'
+    ],
+    code:[
+      '<span class="cm">// Server Component（デフォルト・宣言不要）</span>',
+      '<span class="kw">async function</span> <span class="fn">Page</span>() {',
+      '  <span class="kw">const</span> posts = <span class="kw">await</span> <span class="fn">db</span>.query(...); <span class="cm">// 直接データ取得</span>',
+      '  <span class="kw">return</span> &lt;<span class="fn">List</span> posts={posts} /&gt;;',
+      '}',
+      '',
+      '<span class="cm">// Client Component（操作が要る所だけ）</span>',
+      '<span class="str">"use client"</span>;',
+      '<span class="kw">function</span> <span class="fn">LikeButton</span>() {',
+      '  <span class="kw">const</span> [n, setN] = <span class="fn">useState</span>(<span class="par">0</span>); <span class="cm">// 状態が使える</span>',
+      '}'
+    ],
+    codeCap:"デフォルトはサーバー。useState やクリックが要る部分だけ 'use client' でブラウザ側にする。",
+    yes:["データ取得・表示だけの部分 → Server Component","状態・クリック・入力・ブラウザAPI → Client Component","操作する小さな部品だけ Client にする設計"],
+    no:["とりあえず全部に 'use client' を付ける（バンドルが肥大化）","Server Component でフックやイベントを使う（動かない）"],
+    noNote:"<strong>最重要の原則</strong>: デフォルト（サーバー）のままにし、<strong>操作が要る末端だけ Client にする</strong>。エラー回避のために安易に 'use client' を広げると、サーバーレンダリングの利点を失い Pages Router 以下のバンドルになる。境界は「できるだけ下（末端）に、できるだけ小さく」。",
+    miss:[
+      ["'use client' を付けると速くなる","逆。JavaScriptが増える。<strong>必要な所だけ</strong>に絞るほど軽くなる。"],
+      ['Server Component で useState が使える','使えない。状態・イベント・ブラウザAPIは<strong>Client Component だけ</strong>。'],
+      ['Client Component は Server Component をインポートできる','直接はできない。<strong>children などpropsとして受け取る</strong>形なら組み合わせられる。'],
+      ['迷ったら Client にすれば安全','それが典型的な失敗。<strong>デフォルト（サーバー）を保つ</strong>のが基本姿勢。']
+    ],
+    lessons:[
+      {id:"boundary", num:"01", ctx:"最重要", title:"境界をどこに引くか", sub:"'use client' を最小にする", ready:true},
+      {id:"compose",  num:"02", ctx:"共通",   title:"サーバーとクライアントを組む", sub:"children で混ぜる", ready:true},
+    ]
+  },
+
+  "data-fetching": {
+    name:"サーバーでのデータ取得",
+    cat:"データ / 取得の流儀",
+    tagline:"Server Component で直接 await する。useEffect も loading 状態も要らない。",
+    lede:"App Router では、コンポーネントを async にしてサーバーで直接データを取る。クライアントの取得とは発想が違う。",
+    def:'Server Component は <code>async</code> にして<b>関数の中で直接 await</b> できる。useEffect も loading state も不要。データはサーバーで取得され、HTMLになってから届く。',
+    why:[
+      'クライアントで useEffect を使ってデータ取得すると、loading・error・依存配列・競合対策と付随処理が多くなる。App Router の Server Component では、<strong>コンポーネントを async にして直接 await</strong> するだけ。',
+      'サーバーで取るので、<strong>ローディングスピナーが要らず（HTMLになってから届く）、往復が減り、認証情報がクライアントに漏れない</strong>。「クライアントで取る癖」をやめ、まずサーバーで取れないかを問うのが App Router の流儀。'
+    ],
+    code:[
+      '<span class="cm">// Server Component。async にして直接 await</span>',
+      '<span class="kw">async function</span> <span class="fn">BlogPage</span>() {',
+      '  <span class="kw">const</span> posts = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">\'https://.../posts\'</span>)',
+      '    .<span class="fn">then</span>(r => r.json());',
+      '  <span class="kw">return</span> &lt;<span class="fn">ul</span>&gt;{posts.map(p => &lt;<span class="fn">li</span> key={p.id}&gt;{p.title}&lt;/<span class="fn">li</span>&gt;)}&lt;/<span class="fn">ul</span>&gt;;',
+      '}'
+    ],
+    codeCap:"useEffect も useState も使わず、サーバーで直接 await。スピナーなしでデータ入りHTMLが届く。",
+    yes:["ページ表示に必要なデータ（一覧・詳細）","認証情報を使う取得（サーバーで安全に）","SEO が要る・初期表示を速くしたい時"],
+    no:["ユーザー操作で随時変わるデータ（→ Client + SWR / TanStack Query）","ブラウザ専用の情報が要る取得"],
+    noNote:"<strong>まずサーバーで取れないかを問う</strong>。ページ表示に必要なデータはサーバー取得が基本。ただし「操作するたび変わる」データは、Client Component で SWR / TanStack Query を使う方が向く。<strong>取得の場所をデータの性質で選ぶ</strong>。",
+    miss:[
+      ['データ取得はいつも useEffect','App Router ではまず<strong>Server Component で直接 await</strong>。useEffect は操作で変わるデータ向け。'],
+      ['async コンポーネントはエラーになる','Server Component は<strong>async にできる</strong>。これが App Router の取得の基本形。'],
+      ['Client Component でも await で取れる','Client Component は async にできない。取得は useEffect やライブラリ経由。'],
+      ['サーバー取得だとローディングが必要','HTMLになってから届くので<strong>スピナー不要</strong>。段階表示は loading.tsx や Suspense で。']
+    ],
+    lessons:[
+      {id:"server-fetch", num:"01", ctx:"基礎", title:"サーバーで直接取る", sub:"useEffect をやめる", ready:true},
+    ]
+  },
+
+  "server-actions": {
+    name:"Server Actions",
+    cat:"データ / 更新",
+    tagline:"フォーム送信やデータ更新を、APIを書かずにサーバー関数として実行する。",
+    lede:"'use server' を付けた関数を form の action に渡すだけ。API ルートを別途作らなくていい。",
+    def:'<code>"use server"</code> を付けた<b>サーバーで動く関数</b>。フォーム送信やデータ更新を、別途 API ルートを作らずに直接呼べる。<code>&lt;form action={fn}&gt;</code> に渡すのが基本形。',
+    why:[
+      '従来はフォーム送信のために API ルート（エンドポイント）を別に作り、クライアントから fetch していた。Server Actions は、<strong>サーバー関数を直接 form に渡す</strong>ことで、この往復を不要にする。',
+      '関数に <code>"use server"</code> を付けるとサーバーで実行され、DB更新などを安全に行える。更新後は <code>revalidatePath</code> で関連ページのキャッシュを無効化し、表示を最新にする。フォームの送信状態を扱う useActionState とも組み合わせられる。'
+    ],
+    code:[
+      '<span class="cm">// サーバーで動く関数</span>',
+      '<span class="kw">async function</span> <span class="fn">addTodo</span>(formData: <span class="kw">FormData</span>) {',
+      '  <span class="str">"use server"</span>;',
+      '  <span class="kw">const</span> title = formData.get(<span class="str">\'title\'</span>);',
+      '  <span class="kw">await</span> <span class="fn">db</span>.todos.create({ title });',
+      '  <span class="fn">revalidatePath</span>(<span class="str">\'/todos\'</span>); <span class="cm">// 一覧を最新に</span>',
+      '}',
+      '',
+      '&lt;<span class="fn">form</span> action={addTodo}&gt; … &lt;/<span class="fn">form</span>&gt;'
+    ],
+    codeCap:"'use server' 関数を form の action に渡すだけ。API ルートは不要。更新後 revalidatePath で最新化。",
+    yes:["フォーム送信・データ更新（追加・編集・削除）","API ルートを別に作る手間を省きたい時","サーバー側で安全に処理したい更新"],
+    no:["読み取り専用の取得（→ Server Component で await）","複雑なクライアント側の楽観的更新が中心（→ TanStack Query も検討）"],
+    noNote:"<strong>更新（書き込み）向け</strong>。読み取りは Server Component の await が基本。Server Actions は「フォーム送信や更新を、API を介さず直接」という用途。revalidatePath / revalidateTag で更新後の最新化をセットで考える。",
+    miss:[
+      ['更新には必ず API ルートが要る','Server Actions なら<strong>不要</strong>。サーバー関数を直接 form に渡せる。'],
+      ["'use server' と 'use client' は同じようなもの","逆の意味。'use server'＝<strong>サーバー関数</strong>、'use client'＝<strong>クライアントコンポーネント</strong>。"],
+      ['更新後に表示は自動で最新になる','<strong>revalidatePath / revalidateTag</strong> でキャッシュを無効化して最新化する。'],
+      ['Server Actions は Server Component でしか使えない','Client Component からも呼べる（propsで渡す等）。']
+    ],
+    lessons:[
+      {id:"action-form", num:"01", ctx:"業務ツール", title:"APIなしで更新する", sub:"'use server' と revalidate", ready:true},
+    ]
+  },
+
+  "layouts": {
+    name:"ネストレイアウト",
+    cat:"構造 / 共通UI",
+    tagline:"layout.tsx で、URL階層に沿った共通UIを入れ子に共有する。",
+    lede:"親の layout が子のページを包む。ページ遷移しても共通部分は再描画されず保たれる。",
+    def:'<code>layout.tsx</code> は、その階層以下の<b>共通の枠</b>。layout が子のページを <code>children</code> として受け取って包む。<b>遷移しても再描画されず保たれる</b>のが利点。',
+    why:[
+      'ヘッダーやサイドバーのような共通UIを、各ページで書くのは無駄。<code>app/layout.tsx</code> に置けば全ページ共通、<code>app/blog/layout.tsx</code> に置けば blog 以下だけ共通、と<strong>階層で共有範囲が決まる</strong>。',
+      'レイアウトは <code>children</code> でページを受け取る——タグの間に書いた中身を丸ごと受け取る合成の形。さらに、<strong>ページ間を移動しても layout は再描画されない</strong>ので、サイドバーのスクロール位置などが保たれる。'
+    ],
+    code:[
+      '<span class="cm">// app/blog/layout.tsx — blog 以下の共通の枠</span>',
+      '<span class="kw">export default function</span> <span class="fn">BlogLayout</span>({ children }: { children: <span class="fn">ReactNode</span> }) {',
+      '  <span class="kw">return</span> (',
+      '    &lt;<span class="fn">div</span>&gt;',
+      '      &lt;<span class="fn">BlogSidebar</span> /&gt;        <span class="cm">// 共通・遷移しても保たれる</span>',
+      '      &lt;<span class="fn">main</span>&gt;{children}&lt;/<span class="fn">main</span>&gt;  <span class="cm">// ここに各ページが入る</span>',
+      '    &lt;/<span class="fn">div</span>&gt;',
+      '  );',
+      '}'
+    ],
+    codeCap:"layout が children で各ページを包む。children はタグの間の中身を丸ごと受け取る仕組み。",
+    yes:["全ページ共通のヘッダー・フッター","ある区画だけの共通サイドバー","遷移時に保ちたい共通UI"],
+    no:["1ページだけの固有UI（page に直接書く）","頻繁に変わる動的な部分（layout は静的な枠向き）"],
+    noNote:"layout は<strong>「その階層の共通の枠」</strong>。共有範囲は置く場所で決まる。1ページ固有のものは page に書く。children で中身を受ける合成の考え方が、そのまま応用できる。",
+    miss:[
+      ['共通UIは各ページにコピーする','<strong>layout.tsx に一度書けば</strong>その階層以下で共有される。'],
+      ['layout は children を受け取らない','受け取る。<strong>children が各ページ</strong>。React の合成と同じ。'],
+      ['ページ遷移で layout も毎回再描画される','<strong>保たれる</strong>。だからスクロール位置などが維持される。'],
+      ['layout は1階層しか作れない','<strong>入れ子にできる</strong>。階層ごとに layout を置ける。']
+    ],
+    lessons:[
+      {id:"nested-layout", num:"01", ctx:"Webサイト", title:"共通の枠を入れ子に", sub:"children と再描画されない利点", ready:true},
+    ]
+  },
+
+  "dynamic-routes": {
+    name:"動的ルート",
+    cat:"基礎 / ルーティング",
+    tagline:"[id] のようなフォルダ名で、URLの一部を変数として受け取る。",
+    lede:"記事ごと・商品ごとのページを1つのファイルで作る。URLの値が params として渡る。",
+    def:'<code>[id]</code> のように<b>角括弧のフォルダ名</b>にすると、その部分がURLの変数になる。<code>/blog/123</code> も <code>/blog/456</code> も同じ <code>app/blog/[id]/page.tsx</code> が担い、値が <code>params</code> で渡る。',
+    why:[
+      '記事が100件あっても、ページファイルを100個作るのは非現実的。<code>[id]</code> という動的セグメントを使えば、<strong>1つのファイルで全ての記事ページ</strong>を担える。',
+      'URLの該当部分の値は <code>params</code> として page に渡る。<code>/blog/123</code> なら <code>params.id === \'123\'</code>。その id でデータを取って表示する、という流れ。フォルダ名の角括弧が「ここは変数」という印。'
+    ],
+    code:[
+      '<span class="cm">// app/blog/[id]/page.tsx</span>',
+      '<span class="kw">async function</span> <span class="fn">PostPage</span>({ params }: { params: <span class="fn">Promise</span>&lt;{ id: <span class="kw">string</span> }&gt; }) {',
+      '  <span class="kw">const</span> { id } = <span class="kw">await</span> params; <span class="cm">// URLの [id] の値</span>',
+      '  <span class="kw">const</span> post = <span class="kw">await</span> <span class="fn">getPost</span>(id);',
+      '  <span class="kw">return</span> &lt;<span class="fn">article</span>&gt;{post.title}&lt;/<span class="fn">article</span>&gt;;',
+      '}'
+    ],
+    codeCap:"[id] フォルダが1つで全記事ページを担う。URLの値は params.id で受け取る。",
+    yes:["記事・商品・ユーザーなど件数が可変のページ","URLに ID やスラッグを含むページ"],
+    no:["固定の少数ページ（普通のフォルダで十分）"],
+    noNote:"動的ルートは<strong>「同じ形のページが多数」</strong>の時に使う。固定の少数ページは普通のフォルダで素直に作る。角括弧 [ ] が動的セグメントの印、という規約を押さえる。",
+    miss:[
+      ['記事の数だけページファイルが要る','<strong>[id] 1つ</strong>で全件を担える。'],
+      ['URLの値はどこからともなく使える','<strong>params</strong> として page に渡る。そこから取り出す。'],
+      ['角括弧は普通のフォルダと同じ','角括弧は<strong>「変数」</strong>の印。普通のフォルダは固定のURL。'],
+      ['params は同期的にそのまま使える','近年の Next.js では <strong>params が Promise</strong> で await が要る場合がある。バージョンに注意。']
+    ],
+    lessons:[
+      {id:"dynamic-id", num:"01", ctx:"Webサイト", title:"1ファイルで全記事", sub:"[id] と params", ready:true},
+    ]
+  }
+};
+
+const NEXT_LESSONS = {
+  "file-route":{
+    concept:"App Router", title:"ファイルがURLになる",
+    scenario:"/about ページと、/blog 以下に共通サイドバーを作りたい。",
+    steps:[
+      {eyebrow:"STEP 1 — URLの作り方", lbl:"フォルダ＝URL", sub:"規約で決まる",
+       prompt:"<code>/about</code> というページを作りたい。どうする?",
+       question:"/about の作り方は？",
+       opts:[{t:"app/about/ フォルダを作り、中に page.tsx を置く",ok:true},{t:"ルーティング設定ファイルに /about を登録",ok:false},{t:"about.html を作る",ok:false}],
+       why:"App Router は<b>フォルダ構造がそのままURL</b>。<code>app/about/page.tsx</code> を置くだけで <code>/about</code> ができる。設定ファイルは不要——置き場所で決まる規約ベース。",
+       code:null},
+      {eyebrow:"STEP 2 — 画面になるファイル", lbl:"page.tsx", sub:"画面の正体",
+       prompt:"フォルダの中で<b>画面になる</b>のはどのファイル?",
+       question:"① 画面になるのは？",
+       opts:[{t:"page.tsx",ok:true},{t:"index.tsx",ok:false},{t:"どんな名前でもよい",ok:false}],
+       why:"画面になるのは <code>page.tsx</code> という<b>決まった名前</b>だけ。他の名前のファイルは画面にならず、部品として使う。この命名規約が App Router の基本。",
+       code:['app/about/<span class="b1">①</span>'],
+       fill:{slot:"b1",val:'page.tsx'}},
+      {eyebrow:"STEP 3 — 共通の枠", lbl:"layout.tsx", sub:"階層で共有",
+       prompt:"<code>/blog</code> 以下の全ページに共通サイドバーを出したい。②のファイルは?",
+       question:"② 共通の枠のファイルは？",
+       opts:[{t:"app/blog/layout.tsx",ok:true},{t:"app/blog/sidebar.tsx",ok:false},{t:"各 page.tsx にコピー",ok:false}],
+       why:"<code>layout.tsx</code> はその階層以下の<b>共通の枠</b>。<code>app/blog/layout.tsx</code> なら blog 以下だけ共通。各ページにコピーする必要はない。置く場所で共有範囲が決まる。",
+       code:['app/blog/<span class="b2">②</span>','app/blog/page.tsx','app/blog/[id]/page.tsx'],
+       fill:{slot:"b2",val:'layout.tsx'}},
+      {eyebrow:"STEP 4 — 役割のあるファイル", lbl:"特別な名前", sub:"名前で決まる",
+       prompt:"読込中の表示を出すファイルは? (名前で役割が決まる)",
+       question:"③ 読込中表示のファイルは？",
+       opts:[{t:"loading.tsx",ok:true},{t:"spinner.tsx",ok:false},{t:"page.tsx に書く",ok:false}],
+       why:"<code>loading.tsx</code>＝読込中、<code>error.tsx</code>＝エラー、<code>page</code>＝画面、<code>layout</code>＝枠。<b>特別な名前が役割を持つ</b>のが規約ベースの便利さ。覚える名前は少ない。",
+       code:null},
+    ],
+    doneMsg:"フォルダ＝URL、page.tsx＝画面、layout.tsx＝共通の枠、loading/error＝状態表示。設定ではなくファイルの置き場所と名前で決まる——App Router のルーティングの土台が掴めました。"
+  },
+
+  "boundary":{
+    concept:"Server / Client Components", title:"境界をどこに引くか",
+    scenario:"記事一覧（表示だけ）と、いいねボタン（クリックで増える）が1ページにある。",
+    steps:[
+      {eyebrow:"STEP 1 — デフォルトを知る", lbl:"何もしなければサーバー", sub:"出発点",
+       prompt:"App Router で普通にコンポーネントを書くと、どこで動く?",
+       question:"デフォルトはどこで動く？",
+       opts:[{t:"サーバー（Server Component）",ok:true},{t:"ブラウザ（Client Component）",ok:false},{t:"両方で同時に",ok:false}],
+       why:"App Router は<b>デフォルトで Server Component</b>。何も付けなければサーバーで動き、HTMLを生成してブラウザにJSを送らない。「まずサーバー」が出発点。",
+       code:null},
+      {eyebrow:"STEP 2 — 表示だけの部分", lbl:"一覧はサーバーで", sub:"JSを送らない",
+       prompt:"記事一覧は表示するだけ。どう作る?",
+       question:"記事一覧は？",
+       opts:[{t:"Server Component のまま（宣言不要）",ok:true},{t:"'use client' を付ける",ok:false},{t:"useState で管理する",ok:false}],
+       why:"表示だけなら<b>Server Component のまま</b>でよい。サーバーでデータを取り、HTMLにして送る。JSが増えず軽い。状態も操作もないので 'use client' は不要——付けると無駄にJSが増える。",
+       code:null},
+      {eyebrow:"STEP 3 — 操作する部分", lbl:"いいねは Client", sub:"状態が要る",
+       prompt:"いいねボタンはクリックで数が増える＝状態が要る。①でファイル先頭に付けるのは?",
+       question:"① いいねボタンに付けるのは？",
+       opts:[{t:'"use client"',ok:true},{t:'"use server"',ok:false},{t:"何も付けない",ok:false}],
+       why:"状態（useState）やクリックが要る部分は <code>\"use client\"</code> を付けて Client Component にする。これがないと Server Component のままで、useState が使えずエラーになる。<b>操作が要る所だけ</b> Client に。",
+       code:['<span class="b1">①</span>;','<span class="kw">function</span> <span class="fn">LikeButton</span>() {','  <span class="kw">const</span> [n, setN] = <span class="fn">useState</span>(<span class="par">0</span>);','  <span class="kw">return</span> &lt;<span class="fn">button</span> onClick={() => setN(n+<span class="par">1</span>)}&gt;♥ {n}&lt;/<span class="fn">button</span>&gt;;','}'],
+       fill:{slot:"b1",val:'<span class="str">"use client"</span>'}},
+      {eyebrow:"STEP 4 — 境界の引き方", lbl:"小さく・末端に", sub:"最重要の原則",
+       prompt:"いいねボタンが Client だから、ページ全体も 'use client' にすべき?",
+       question:"② 境界の引き方は？",
+       opts:[{t:"いいねボタンだけ Client。ページはサーバーのまま",ok:true},{t:"ページ全体を 'use client' に",ok:false},{t:"全部 Client にして統一",ok:false}],
+       why:"<b>操作する末端だけを小さく Client にする</b>のが最重要の原則。ページ全体を Client にすると、表示だけの一覧までJSになりバンドルが肥大化、サーバーレンダリングの利点を失う。境界は「できるだけ下に、できるだけ小さく」。",
+       code:null},
+    ],
+    doneMsg:"デフォルトはサーバー、操作が要る末端だけを小さく 'use client'。ページ全体を Client にするのは典型的な失敗。「境界はできるだけ下に、できるだけ小さく」——App Router で最も重要な判断が掴めました。"
+  },
+
+  "compose":{
+    concept:"Server / Client Components", title:"サーバーとクライアントを組む",
+    scenario:"クリックで開閉する Client のパネルの中に、サーバーで取得した内容を表示したい。",
+    steps:[
+      {eyebrow:"STEP 1 — 制約を知る", lbl:"インポートの向き", sub:"一方向",
+       prompt:"Client Component の中で、Server Component を普通にインポートして使える?",
+       question:"Client は Server をインポートできる？",
+       opts:[{t:"直接インポートはできない",ok:true},{t:"自由にできる",ok:false},{t:"どちらもできない",ok:false}],
+       why:"<b>Server は Client をインポートできるが、逆はできない</b>。Client Component はブラウザでも動くため、サーバー専用の処理を直接は取り込めない。この向きの制約を知るのが組み合わせの第一歩。",
+       code:null},
+      {eyebrow:"STEP 2 — 解決の鍵", lbl:"children で渡す", sub:"propsとして受ける",
+       prompt:"では Client のパネルの中にサーバーの内容を入れるには? 中身を丸ごと受け取る合成が効く。",
+       question:"どう組み合わせる？",
+       opts:[{t:"Client が children として Server Component を受け取る",ok:true},{t:"Client の中で import する",ok:false},{t:"諦めて全部 Client にする",ok:false}],
+       why:"Client Component は<b>children などprops経由でなら</b> Server Component を受け取れる。タグの間に中身を書く合成（children）がここで効く。Client は「中身が何か」を知らず、ただ置くだけ。",
+       code:null},
+      {eyebrow:"STEP 3 — Client 側", lbl:"children を受ける", sub:"開閉だけ担う",
+       prompt:"開閉する Client パネルは children を受け取る。①は?",
+       question:"① Client パネルの受け取りは？",
+       opts:[{t:"{ children }",ok:true},{t:"{ content }",ok:false},{t:"何も受け取らない",ok:false}],
+       why:"<code>\"use client\"</code> のパネルは <code>{ children }</code> を受け取り、開閉状態だけを管理する。中身が Server Component でも Client は関知しない——タグの間に置いた中身を受け取る合成そのもの。",
+       code:['<span class="str">"use client"</span>;','<span class="kw">function</span> <span class="fn">Panel</span>(<span class="b1">①</span>) {','  <span class="kw">const</span> [open, setOpen] = <span class="fn">useState</span>(<span class="kw">false</span>);','  <span class="kw">return</span> open ? &lt;<span class="fn">div</span>&gt;{children}&lt;/<span class="fn">div</span>&gt; : <span class="kw">null</span>;','}'],
+       fill:{slot:"b1",val:'{ children }'}},
+      {eyebrow:"STEP 4 — 組み立てる", lbl:"Server が配置", sub:"親はサーバー",
+       prompt:"親の Server Component で、Panel の中にサーバー取得の内容を入れる。②の置き方は?",
+       question:"② どう組み立てる？",
+       opts:[{t:"<Panel><ServerContent /></Panel>（間に置く）",ok:true},{t:"Panel の中で import",ok:false},{t:"ServerContent を 'use client' にする",ok:false}],
+       why:"親（Server）が <code>&lt;Panel&gt;&lt;ServerContent /&gt;&lt;/Panel&gt;</code> と書けば、ServerContent は children として Panel に渡る。<b>Client が開閉を担い、中身はサーバーのまま</b>。両者の利点を保ったまま組み合わせられる。",
+       code:['<span class="cm">// 親は Server Component</span>','&lt;<span class="fn">Panel</span>&gt;','  &lt;<span class="fn">ServerContent</span> /&gt;  <span class="cm">// サーバーで取得・描画</span>','&lt;/<span class="fn">Panel</span>&gt;'],
+       staticCode:true},
+    ],
+    doneMsg:"Client は Server を直接インポートできないが、children として受け取れる。Client が操作を、Server が中身を担い、合成で組み合わせる。children を使った合成が、Next.js の境界設計でそのまま活きました。"
+  },
+
+  "server-fetch":{
+    concept:"サーバーでのデータ取得", title:"サーバーで直接取る",
+    scenario:"ブログ記事一覧をサーバーで取得して表示する。",
+    steps:[
+      {eyebrow:"STEP 1 — クライアント取得の癖を疑う", lbl:"まずサーバーで", sub:"発想の転換",
+       prompt:"記事一覧を取得して表示したい。App Router でまず考えるべきは?",
+       question:"まず考えるのは？",
+       opts:[{t:"Server Component でサーバー側に取得できないか",ok:true},{t:"useEffect で取得",ok:false},{t:"useState に入れる",ok:false}],
+       why:"useEffect でクライアント取得する癖が出やすいが、App Router では<b>まずサーバーで取れないか</b>を問う。サーバー取得ならスピナー不要・往復減・認証情報が安全。クライアント取得は「操作で変わるデータ」に取っておく。",
+       code:null},
+      {eyebrow:"STEP 2 — async にする", lbl:"コンポーネントを async", sub:"直接 await",
+       prompt:"Server Component で直接データを取る。①でコンポーネントに付けるのは?",
+       question:"① コンポーネントを？",
+       opts:[{t:"async function にする",ok:true},{t:"useEffect を中に書く",ok:false},{t:"普通の function のまま",ok:false}],
+       why:"Server Component は <code>async function</code> にでき、関数の中で<b>直接 await</b> できる。これが App Router の取得の基本形。Client Component は async にできないので、これは Server だからこその書き方。",
+       code:['<span class="kw">export default</span> <span class="b1">①</span> <span class="fn">BlogPage</span>() {','  <span class="kw">const</span> posts = <span class="kw">await</span> <span class="fn">getPosts</span>();'],
+       fill:{slot:"b1",val:'<span class="kw">async function</span>'}},
+      {eyebrow:"STEP 3 — loading/error は？", lbl:"手書き不要", sub:"取得の3状態の行方",
+       prompt:"クライアントでの取得では data/loading/error の3状態を手で持つ必要があった。サーバー取得では?",
+       question:"② loading state は？",
+       opts:[{t:"不要。await で待ち、HTMLになってから届く",ok:true},{t:"やはり useState で3つ持つ",ok:false},{t:"useEffect で管理",ok:false}],
+       why:"サーバーで await が完了してからHTMLが届くので、<b>クライアントのloading state は不要</b>。段階的に見せたい時は <code>loading.tsx</code> や Suspense を使う。クライアント取得で必要だった3状態の定型が、ここでは要らなくなる。",
+       code:null},
+      {eyebrow:"STEP 4 — 操作で変わるデータは別", lbl:"使い分け", sub:"クライアント取得の出番",
+       prompt:"「検索ボックスに打つたび結果が変わる」データは、サーバー取得で足りる?",
+       question:"③ 操作で変わるデータは？",
+       opts:[{t:"Client Component で SWR / TanStack Query が向く",ok:true},{t:"全部サーバー取得で足りる",ok:false},{t:"取得できない",ok:false}],
+       why:"ページ表示時に確定するデータはサーバー取得。だが<b>ユーザー操作で随時変わる</b>データは、Client Component で SWR / TanStack Query を使う方が向く。<b>取得の場所をデータの性質で選ぶ</b>のがポイント。",
+       code:null},
+    ],
+    doneMsg:"まずサーバーで取れないかを問い、Server Component を async にして直接 await。loading state は不要。操作で変わるデータだけクライアント取得に回す——useEffect の癖から App Router の流儀へ、発想が切り替わりました。"
+  },
+
+  "action-form":{
+    concept:"Server Actions", title:"APIなしで更新する",
+    scenario:"TODO追加フォーム。送信したらサーバーで保存し、一覧を最新にする。",
+    steps:[
+      {eyebrow:"STEP 1 — 従来の手間", lbl:"API ルートが要った", sub:"何を省けるか",
+       prompt:"従来、フォーム送信でデータを保存するには何が必要だった?",
+       question:"従来の手間は？",
+       opts:[{t:"API ルートを別に作り、クライアントから fetch していた",ok:true},{t:"何も要らなかった",ok:false},{t:"useState だけ",ok:false}],
+       why:"従来はエンドポイント（API ルート）を別に作り、クライアントから fetch する往復が必要だった。Server Actions は<b>サーバー関数を直接 form に渡す</b>ことでこの手間を省く。何が面倒だったかを知ると価値が分かる。",
+       code:null},
+      {eyebrow:"STEP 2 — サーバー関数にする", lbl:"'use server'", sub:"サーバーで動く印",
+       prompt:"保存処理をサーバーで動く関数にする。①で関数の中に書く印は?",
+       question:"① 付ける印は？",
+       opts:[{t:'"use server"',ok:true},{t:'"use client"',ok:false},{t:"何も要らない",ok:false}],
+       why:"<code>\"use server\"</code> を関数の中（または先頭）に書くと、その関数は<b>サーバーで実行</b>される。DB保存などを安全に行える。'use client'（クライアントコンポーネント）とは逆の意味なので混同しない。",
+       code:['<span class="kw">async function</span> <span class="fn">addTodo</span>(formData: <span class="kw">FormData</span>) {','  <span class="b1">①</span>;','  <span class="kw">await</span> <span class="fn">db</span>.todos.create({ title: formData.get(<span class="str">\'title\'</span>) });','}'],
+       fill:{slot:"b1",val:'<span class="str">"use server"</span>'}},
+      {eyebrow:"STEP 3 — form に繋ぐ", lbl:"action に渡す", sub:"fetch 不要",
+       prompt:"この関数を form に繋ぐ。②は?",
+       question:"② form への繋ぎ方は？",
+       opts:[{t:"<form action={addTodo}>",ok:true},{t:"<form onSubmit={fetch(...)}>",ok:false},{t:"<form action=\"/api/todos\">",ok:false}],
+       why:"<code>&lt;form action={addTodo}&gt;</code> と<b>サーバー関数を直接渡す</b>。クライアントからの fetch も API ルートのURLも要らない。送信されると addTodo がサーバーで実行される。",
+       code:['&lt;<span class="fn">form</span> action={<span class="b2">②</span>}&gt;','  &lt;<span class="fn">input</span> name=<span class="str">"title"</span> /&gt;','  &lt;<span class="fn">button</span>&gt;追加&lt;/<span class="fn">button</span>&gt;','&lt;/<span class="fn">form</span>&gt;'],
+       fill:{slot:"b2",val:'addTodo'}},
+      {eyebrow:"STEP 4 — 表示を最新化", lbl:"revalidatePath", sub:"キャッシュ無効化",
+       prompt:"保存後、一覧の表示を最新にしたい。③で呼ぶのは?",
+       question:"③ 一覧を最新にするには？",
+       opts:[{t:"revalidatePath('/todos')",ok:true},{t:"location.reload()",ok:false},{t:"何もしなくても自動で最新",ok:false}],
+       why:"<code>revalidatePath('/todos')</code> で /todos のキャッシュを<b>無効化</b>すると、次の表示で最新データが取り直される。手動リロードは不要。TanStack Query の invalidateQueries と同じ「更新したらキャッシュを無効化」の発想。",
+       code:['<span class="kw">async function</span> <span class="fn">addTodo</span>(formData: <span class="kw">FormData</span>) {','  <span class="str">"use server"</span>;','  <span class="kw">await</span> <span class="fn">db</span>.todos.create({ ... });','  <span class="b3">③</span>;','}'],
+       fill:{slot:"b3",val:"revalidatePath('/todos')"}},
+    ],
+    doneMsg:"'use server' のサーバー関数を form の action に直接渡せば、API ルートなしで更新できる。更新後は revalidatePath で最新化。「更新したらキャッシュを無効化」という、データ更新で共通する発想が掴めました。"
+  },
+
+  "nested-layout":{
+    concept:"ネストレイアウト", title:"共通の枠を入れ子に",
+    scenario:"全ページ共通のヘッダーと、管理画面だけの共通サイドバー。",
+    steps:[
+      {eyebrow:"STEP 1 — 共有範囲を決める", lbl:"置く場所＝範囲", sub:"階層で決まる",
+       prompt:"全ページ共通のヘッダーはどこに置く?",
+       question:"全ページ共通の枠は？",
+       opts:[{t:"app/layout.tsx（ルート）",ok:true},{t:"各ページの page.tsx にコピー",ok:false},{t:"app/header.tsx",ok:false}],
+       why:"<code>app/layout.tsx</code>（ルートの layout）は<b>全ページ共通</b>の枠。layout を置く<b>階層が共有範囲</b>を決める。各ページにコピーする必要はない。",
+       code:null},
+      {eyebrow:"STEP 2 — 一部だけの共通枠", lbl:"入れ子の layout", sub:"範囲を絞る",
+       prompt:"管理画面 /admin 以下だけにサイドバーを出したい。どこに置く?",
+       question:"① /admin 専用の枠は？",
+       opts:[{t:"app/admin/layout.tsx",ok:true},{t:"app/layout.tsx に条件分岐で書く",ok:false},{t:"各 admin ページにコピー",ok:false}],
+       why:"<code>app/admin/layout.tsx</code> を置けば、admin 以下<b>だけ</b>の共通枠になる。ルート layout の中にこの admin layout が<b>入れ子</b>になる。範囲ごとに layout を分けられる。",
+       code:['app/layout.tsx          <span class="cm">// 全ページ共通</span>','app/admin/<span class="b1">①</span>   <span class="cm">// admin 以下だけ共通</span>','app/admin/page.tsx'],
+       fill:{slot:"b1",val:'layout.tsx'}},
+      {eyebrow:"STEP 3 — children で受ける", lbl:"中身を受け取る", sub:"合成の形",
+       prompt:"layout は中のページをどう受け取る?",
+       question:"② layout の受け取りは？",
+       opts:[{t:"{ children }（中のページが children として届く）",ok:true},{t:"{ page }",ok:false},{t:"受け取らない",ok:false}],
+       why:"layout は <code>{ children }</code> で中のページを受け取り、枠の中に <code>{children}</code> として置く。タグの間に書いた中身を丸ごと受け取る<b>合成</b>の形。Next.js 固有の新概念ではなく、children を使った組み合わせ方。",
+       code:['<span class="kw">export default function</span> <span class="fn">AdminLayout</span>(<span class="b2">②</span>) {','  <span class="kw">return</span> (','    &lt;<span class="fn">div</span>&gt;','      &lt;<span class="fn">Sidebar</span> /&gt;','      &lt;<span class="fn">main</span>&gt;{children}&lt;/<span class="fn">main</span>&gt;','    &lt;/<span class="fn">div</span>&gt;',');','}'],
+       fill:{slot:"b2",val:'{ children }'}},
+      {eyebrow:"STEP 4 — 再描画されない利点", lbl:"遷移で保たれる", sub:"layout の強み",
+       prompt:"/admin/users から /admin/settings に移動した時、サイドバーは?",
+       question:"③ ページ遷移でサイドバーは？",
+       opts:[{t:"再描画されず保たれる（スクロール位置なども維持）",ok:true},{t:"毎回作り直される",ok:false},{t:"消える",ok:false}],
+       why:"layout は<b>ページ遷移しても再描画されない</b>。admin 内でページを移動してもサイドバーは保たれ、スクロール位置なども維持される。これが「各ページにコピー」では得られない layout の強み。",
+       code:null},
+    ],
+    doneMsg:"layout を置く階層が共有範囲を決め、入れ子にできる。children で中のページを受けるのは合成の形そのもの。さらに遷移しても再描画されず保たれる——共通UIの設計が Next.js の構造で掴めました。"
+  },
+
+  "dynamic-id":{
+    concept:"動的ルート", title:"1ファイルで全記事",
+    scenario:"記事が何百件もある。記事ごとのページを作りたい。",
+    steps:[
+      {eyebrow:"STEP 1 — 件数分作れない", lbl:"動的セグメント", sub:"1つで賄う",
+       prompt:"記事が500件ある。各記事ページをどう作る?",
+       question:"記事ページの作り方は？",
+       opts:[{t:"[id] という動的フォルダを1つ作る",ok:true},{t:"page を500個作る",ok:false},{t:"1つの page に全記事を表示",ok:false}],
+       why:"500個のファイルは非現実的。<code>[id]</code> という<b>角括弧の動的フォルダ</b>を1つ作れば、全記事ページを賄える。<code>/blog/1</code> も <code>/blog/500</code> も同じファイルが担う。",
+       code:null},
+      {eyebrow:"STEP 2 — 角括弧の意味", lbl:"[id]＝変数", sub:"フォルダ名で示す",
+       prompt:"動的な部分を示すフォルダ名①は?",
+       question:"① 動的フォルダ名は？",
+       opts:[{t:"[id]（角括弧で囲む）",ok:true},{t:"id（そのまま）",ok:false},{t:"$id",ok:false}],
+       why:"<b>角括弧 [ ] で囲んだフォルダ名</b>が「ここは変数」という印。<code>app/blog/[id]/page.tsx</code> の <code>[id]</code> がURLの可変部分になる。普通のフォルダ名（固定URL）との違い。",
+       code:['app/blog/<span class="b1">①</span>/page.tsx'],
+       fill:{slot:"b1",val:'[id]'}},
+      {eyebrow:"STEP 3 — 値を受け取る", lbl:"params", sub:"URLの値",
+       prompt:"<code>/blog/123</code> の「123」を page で受け取る。②は?",
+       question:"② URLの値の受け取りは？",
+       opts:[{t:"props の params から取る",ok:true},{t:"useState で取る",ok:false},{t:"window.location を読む",ok:false}],
+       why:"動的セグメントの値は <code>params</code> として page に渡る。<code>params.id</code> が \"123\"。Server Component なので window は使わない。近年の Next.js では params が Promise で <code>await</code> が要る場合がある（バージョン注意）。",
+       code:['<span class="kw">async function</span> <span class="fn">PostPage</span>({ <span class="b2">②</span> }) {','  <span class="kw">const</span> { id } = <span class="kw">await</span> params;'],
+       fill:{slot:"b2",val:'params'}},
+      {eyebrow:"STEP 4 — 値でデータを取る", lbl:"id で取得", sub:"サーバー取得と繋ぐ",
+       prompt:"受け取った id で記事データを取る。Server Component なので③は?",
+       question:"③ 記事の取得は？",
+       opts:[{t:"await getPost(id)（サーバーで直接）",ok:true},{t:"useEffect で取得",ok:false},{t:"useState に入れる",ok:false}],
+       why:"Server Component なので <code>await getPost(id)</code> で<b>サーバーで直接</b>取る。動的ルート（id を得る）とサーバー取得（id でデータを取る）が繋がる。1つのファイルで、全記事を正しいデータ付きで表示できる。",
+       code:['<span class="kw">const</span> { id } = <span class="kw">await</span> params;','<span class="kw">const</span> post = <span class="kw">await</span> <span class="b3">③</span>;','<span class="kw">return</span> &lt;<span class="fn">article</span>&gt;{post.title}&lt;/<span class="fn">article</span>&gt;;'],
+       fill:{slot:"b3",val:'getPost(id)'}},
+    ],
+    doneMsg:"[id] の動的フォルダ1つで全記事ページを賄い、値は params で受け取り、その id でサーバー取得する。動的ルートとサーバー取得が繋がって、件数可変のページが作れる——Next.js のルーティングの実用形が掴めました。"
+  }
+};
+
+/* ============================================================
+   ルーティング (hash)  #/ , #/useState , #/useState/toggle
+   ============================================================ */
+const viewEl = document.getElementById('view');
+const crumbEl = document.getElementById('crumb');
+const atomSVG = `<svg class="atom" viewBox="0 0 100 100"><ellipse class="orb" cx="50" cy="50" rx="44" ry="17"/><ellipse class="orb" cx="50" cy="50" rx="44" ry="17" transform="rotate(60 50 50)"/><ellipse class="orb" cx="50" cy="50" rx="44" ry="17" transform="rotate(120 50 50)"/><circle class="nuc" cx="50" cy="50" r="7"/></svg>`;
+// Next.js 編のロゴ（モノクロの三角＝Next ブランドを想起させる簡易マーク）
+const nextLogo = `<svg class="atom" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="none" stroke="var(--ink)" stroke-width="5"/><path d="M35 30 V70 M35 30 L66 72 M66 30 V70" stroke="var(--ink)" stroke-width="6" fill="none" stroke-linecap="round"/></svg>`;
+
+function go(path){
+  // 各セグメントをエンコード（技術名のスペース等に対応）。先頭スラッシュは保持。
+  const enc = path.split('/').map(s => s ? encodeURIComponent(s) : s).join('/');
+  location.hash = enc;
+}
+window.addEventListener('hashchange', route);
+// iPhoneのSafariでローカルHTMLを開いた場合、loadイベントが発火しないことがあるため
+// DOMContentLoaded + 即時実行のフォールバックを使う
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', route);
+} else {
+  route();
+}
+
+// 現在のモード（'react' or 'next'）に応じてデータソースを切り替える
+let MODE = 'react';
+function curData(){ return MODE==='next' ? NEXT_DATA : DATA; }
+function curLessons(){ return MODE==='next' ? NEXT_LESSONS : LESSONS; }
+function applyTheme(){
+  if(MODE==='next') document.body.classList.add('next-theme');
+  else document.body.classList.remove('next-theme');
+}
+
+function route(){
+  const parts = location.hash.replace(/^#\/?/,'').split('/').filter(Boolean)
+    .map(p => decodeURIComponent(p));
+  window.scrollTo(0,0);
+  // Next.js 名前空間
+  if(parts[0]==='next'){
+    MODE='next'; applyTheme();
+    if(parts.length===1) return renderNextHome();
+    if(parts.length===2) return renderConcept(parts[1]);
+    return renderLesson(parts[1], parts[2]);
+  }
+  MODE='react'; applyTheme();
+  if(parts.length===0) return renderTopGate();
+  if(parts[0]==='react'){
+    if(parts.length===1) return renderHome();
+    if(parts.length===2) return renderConcept(parts[1]);
+    return renderLesson(parts[1], parts[2]);
+  }
+  // 後方互換: #/useState のような直リンクも React 編として解釈
+  if(parts.length===1) return renderConcept(parts[0]);
+  return renderLesson(parts[0], parts[1]);
+}
+
+/* ---------- TOP GATE（React 編 / Next.js 編の入口）---------- */
+function renderTopGate(){
+  crumbEl.innerHTML = `${atomSVG}<span class="here">ホーム</span>`;
+  viewEl.innerHTML = `
+    <div class="home-hero">
+      <h1>考え方ラボ</h1>
+      <p class="lede">コードの書き方ではなく、<b>なぜそう書くのか</b>を学ぶ。
+        React の考え方と、Next.js の考え方。学びたい方から始めてください。</p>
+    </div>
+    <div class="gate-grid">
+      <a class="gate react" onclick="go('/react')">
+        <div class="gate-logo">${atomSVG}</div>
+        <div class="gate-nm">React 編</div>
+        <div class="gate-ds">フック・props・Context・状態管理・フォームなど。
+          コンポーネントの考え方を、使い所ごとに。</div>
+        <div class="gate-meta">19 技術 ・ 34 の考え方</div>
+        <div class="gate-go">はじめる →</div>
+      </a>
+      <a class="gate next" onclick="go('/next')">
+        <div class="gate-logo">${nextLogo}</div>
+        <div class="gate-nm">Next.js 編</div>
+        <div class="gate-ds">App Router・Server/Client の境界・サーバー取得・
+          Server Actions など。フレームワークの考え方を。</div>
+        <div class="gate-meta">6 トピック ・ 8 の考え方</div>
+        <div class="gate-go">はじめる →</div>
+      </a>
+    </div>
+    <p style="font-size:12.5px;color:var(--ink-3);text-align:center;margin-top:18px">
+      React 編で土台を作ってから Next.js 編に進むと、つながりが見えやすくなります。</p>`;
+}
+
+/* ---------- NEXT.js HOME ---------- */
+function renderNextHome(){
+  crumbEl.innerHTML = `${nextLogo}<a class="crumb" onclick="go('/')">ホーム</a><span class="sep">/</span><span class="here">Next.js 編</span>`;
+  const CATS = [
+    ["基礎 / ルーティング", [["app-router"],["dynamic-routes"]]],
+    ["基礎 / コンポーネントの境界", [["server-client"]]],
+    ["データ / 取得と更新", [["data-fetching"],["server-actions"]]],
+    ["構造 / 共通UI", [["layouts"]]],
+  ];
+  const cards = CATS.map(([label, techs])=>{
+    const items = techs.map(([key])=>{
+      const d = NEXT_DATA[key];
+      const n = d.lessons.length;
+      return `<a class="tech" onclick="go('/next/${key}')">
+        <div class="nm">${d.name}</div><div class="ds">${d.tagline}</div>
+        <div class="ct">考え方 ${n} ・ 概念ページあり →</div></a>`;
+    }).join('');
+    return `<div class="cat-label">${label}</div><div class="grid">${items}</div>`;
+  }).join('');
+  viewEl.innerHTML = `
+    <div class="home-hero">
+      <div class="brand">${nextLogo}<span>Next.js 考え方ラボ</span></div>
+      <h1>フレームワークの<b>考え方</b>を。</h1>
+      <p class="lede">Next.js（App Router）で最も大事なのは「どこで動くか（サーバーかブラウザか）」の判断。
+        React の知識を土台に、フレームワーク特有の考え方を一問ずつ。</p>
+    </div>
+    ${cards}
+    <div class="backline"><a onclick="go('/react')">← React 編へ戻る</a></div>`;
+}
+
+/* ---------- HOME ---------- */
+function renderHome(){
+  crumbEl.innerHTML = `${atomSVG}<span class="here">技術一覧</span>`;
+  const CATS = [
+    ["State / 状態を持つ", [
+      ["useState","覚えておく値を持つ。最初に学ぶフック。"],
+      ["useReducer","複雑に絡む状態を、更新ルール1つに集約する。"],
+    ]],
+    ["Props と合成", [
+      ["props","親から子へ値を渡す。データの流れの基本。"],
+      ["children","枠と中身を分けて組み立てる、合成の考え方。"],
+    ]],
+    ["Context / 離れた所で共有する", [
+      ["useContext","バケツリレーを避け、離れた所で値を共有する。"],
+    ]],
+    ["Effect / 外界と同期する", [
+      ["useEffect","通信・購読・タイマー。使わない判断も学ぶ。"],
+      ["useLayoutEffect","描画前に測る。useEffect との違い。稀。"],
+    ]],
+    ["Ref / 描画に影響しない値", [
+      ["useRef","DOM 操作や、再描画を起こさない値の保持。"],
+    ]],
+    ["Performance / 最適化（必要な時だけ）", [
+      ["useMemo","重い計算をキャッシュ。多くは不要、計測してから。"],
+      ["useCallback","関数を覚える。memo した子への受け渡しに。"],
+      ["useTransition","重い更新を「急がない」と印を付ける。"],
+      ["useDeferredValue","重要でない表示を遅らせる。値の側から。"],
+    ]],
+    ["その他", [
+      ["useId","衝突しない一意ID。ラベル紐付けに。"],
+      ["useActionState","送信などアクションの状態管理。React 19。"],
+    ]],
+    ["外部ライブラリ / データ取得", [
+      ["SWR","データ取得を宣言的に。Next.js と手軽に。"],
+      ["TanStack Query","取得・更新・キャッシュを本格管理。旧 React Query。"],
+    ]],
+    ["外部ライブラリ / 状態・フォーム・検証", [
+      ["Zustand","軽量なグローバル状態。Context との使い分け。"],
+      ["React Hook Form","高速なフォーム。制御コンポーネントの課題を解く。"],
+      ["Zod","型と実行時検証を一元化。RHF と組む定番。"],
+    ]],
+  ];
+  // ライブラリ作者向け（参考一覧。アプリ開発では稀）
+  const REFERENCE = [
+    ["useImperativeHandle","親に公開する ref の操作を絞る。公式も「稀」とする。"],
+    ["useSyncExternalStore","React 外のストアを購読する。主にライブラリ向け。"],
+    ["useInsertionEffect","DOM 変更前に CSS を挿入。CSS-in-JS ライブラリ向け。"],
+    ["useDebugValue","カスタムフックの DevTools 表示ラベル。デバッグ用。"],
+    ["useEffectEvent","Effect から非リアクティブなイベントを切り出す。"],
+  ];
+  const cards = CATS.map(([label, techs])=>{
+    const items = techs.map(t=>{
+      if(t[0]===null){ // soon（概念データなし）
+        return `<div class="tech soon"><div class="nm">${t[1]}</div><div class="ds">${t[2]}</div><div class="ct">準備中</div></div>`;
+      }
+      const key=t[0], d=DATA[key];
+      const nm = key.startsWith('use') ? 'use<b>'+key.slice(3)+'</b>' : key;
+      const n = d ? d.lessons.length : 0;
+      return `<a class="tech" onclick="go('/react/${key}')">
+        <div class="nm">${nm}</div><div class="ds">${t[1]}</div>
+        <div class="ct">考え方 ${n} ・ 概念ページあり →</div></a>`;
+    }).join('');
+    return `<div class="cat-label">${label}</div><div class="grid">${items}</div>`;
+  }).join('');
+
+  const refItems = REFERENCE.map(r=>
+    `<div class="reftech"><span class="refnm">${r[0]}</span><span class="refds">${r[1]}</span></div>`).join('');
+
+  crumbEl.innerHTML = `${atomSVG}<a class="crumb" onclick="go('/')">ホーム</a><span class="sep">/</span><span class="here">React 編</span>`;
+  viewEl.innerHTML = `
+    <div class="home-hero">
+      <div class="brand">${atomSVG}<span>React 考え方ラボ</span></div>
+      <h1>コードを書く前に、<b>考え方</b>から。</h1>
+      <p class="lede">同じ技術でも、使い所ごとに設計の判断は変わる。
+        実務と同じ「実装する順番」で、なぜそう書くのかを一問ずつ確かめていく学習サイト。</p>
+    </div>
+    ${cards}
+    <div class="cat-label">参考: ライブラリ作者向けのフック</div>
+    <p style="font-size:13px;color:var(--ink-3);margin:-4px 0 12px">
+      公式が「主にライブラリ作者向けで、アプリでは一般的に使わない」とするフック。
+      アプリ開発で出会うことは稀なので、存在と用途だけ把握すれば十分です。</p>
+    <div class="refgrid">${refItems}</div>
+    <div class="backline"><a onclick="go('/next')">Next.js 編へ進む →</a></div>`;
+}
+
+/* ---------- CONCEPT ---------- */
+function renderConcept(key){
+  const c = curData()[key];
+  if(!c) return MODE==='next' ? renderNextHome() : renderHome();
+  const pfx = MODE==='next' ? '/next' : '/react';
+  const brand = MODE==='next' ? nextLogo : atomSVG;
+  const gateLabel = MODE==='next' ? 'Next.js 編' : '技術一覧';
+  crumbEl.innerHTML = `${brand}<a class="crumb" onclick="go('${pfx}')">${gateLabel}</a><span class="sep">/</span><span class="here">${c.name}</span>`;
+
+  const yes = c.yes.map(x=>`<li>${x}</li>`).join('');
+  const no  = c.no.map(x=>`<li>${x}</li>`).join('');
+  const miss = c.miss.map(m=>`<div class="row"><div class="bad">✕ ${m[0]}</div><div class="fix">${m[1]}</div></div>`).join('');
+  const code = c.code.map(l=>`<span class="ln">${l}</span>`).join('');
+  const why = c.why.map(p=>`<p>${p}</p>`).join('');
+  const cards = c.lessons.map(l=>`
+    <a class="lcard ${l.ready?'ready':'soon'}" ${l.ready?`onclick="go('${pfx}/${key}/${l.id}')"`:''}>
+      <div class="dnum">${l.num} · ${l.ctx}</div>
+      <div class="dttl">${l.title}</div>
+      <div class="dsub">${l.sub}</div>
+      <div class="darrow">${l.ready?'考え方を学ぶ →':'準備中'}</div>
+    </a>`).join('');
+  const heading = (MODE!=='next' && c.name.startsWith('use'))
+    ? 'use<span class="p">'+c.name.slice(3)+'</span>' : c.name;
+  const yesLabel = MODE==='next' ? `${c.name} が向く場面` : `${c.name} が向くもの`;
+
+  viewEl.innerHTML = `
+    <div class="hero">
+      <div class="kicker">${c.cat}</div>
+      <h1>${heading}</h1>
+      <p class="lede">${c.tagline} ${c.lede}</p>
+      <div class="tags"><span class="tag cat">${c.cat.split(' / ')[0]}</span><span class="tag">考え方 ${c.lessons.length}</span></div>
+    </div>
+    <section><h2 class="sec">一言でいうと</h2><div class="def">${c.def}</div></section>
+    <section><h2 class="sec">なぜ必要か</h2>${why}<div class="code">${code}</div><p class="cap">${c.codeCap}</p></section>
+    <section><h2 class="sec">いつ使う / 使わない</h2>
+      <div class="cols">
+        <div class="col yes"><h3>${yesLabel}</h3><ul>${yes}</ul></div>
+        <div class="col no"><h3>${c.name} にしないほうがいい</h3><ul>${no}</ul></div>
+      </div>
+      <p style="margin-top:14px">${c.noNote}</p>
+    </section>
+    <section><h2 class="sec">よくある勘違い</h2><div class="miss">${miss}</div></section>
+    <section>
+      <h2 class="sec">考え方を学ぶ</h2>
+      <p style="font-size:14px">${MODE==='next'?'実装の順番をたどって、なぜそうするのかを確かめます。':'同じ '+c.name+' を、文脈を変えて。気になるものから、好きな順で。'}</p>
+      <div class="learn-cards">${cards}</div>
+    </section>
+    <div class="backline"><a onclick="go('${pfx}')">← ${gateLabel}に戻る</a></div>`;
+}
+
+/* ---------- LESSON (5 steps) ---------- */
+let L=null, cur=0, answered=[], filled={};
+function renderLesson(key, lid){
+  L = curLessons()[lid];
+  if(!L) return renderConcept(key);
+  const pfx = MODE==='next' ? '/next' : '/react';
+  const brand = MODE==='next' ? nextLogo : atomSVG;
+  const gateLabel = MODE==='next' ? 'Next.js 編' : '技術一覧';
+  cur=0; answered=new Array(L.steps.length).fill(false); filled={};
+  crumbEl.innerHTML = `${brand}<a class="crumb" onclick="go('${pfx}')">${gateLabel}</a><span class="sep">/</span><a class="crumb" onclick="go('${pfx}/${key}')">${key}</a><span class="sep">/</span><span class="here">${L.title}</span>`;
+  paintLesson(key);
+}
+function maxReached(){let m=0;for(let i=0;i<answered.length;i++)if(answered[i])m=i+1;return Math.min(m,L.steps.length-1);}
+
+function buildCode(step){
+  if(step.code===null) return `<div class="codeblock"><span class="ln cm">// まだコードは書かない。</span>
+<span class="ln cm">// 何を状態に持つかを決める段階。</span></div>`;
+  const lines = step.code.map(raw=>{
+    let html=raw;
+    ['b1','b2','b3'].forEach(slot=>{
+      const re=new RegExp(`<span class="${slot}">(.*?)</span>`);
+      const m=html.match(re);
+      if(m){
+        if(filled[slot]) html=html.replace(re,`<span class="fill-anim">${filled[slot]}</span>`);
+        else html=html.replace(re,`<span class="blank">${m[1]}</span>`);
+      }
+    });
+    return `<span class="ln">${html}</span>`;
+  }).join('');
+  return `<div class="codeblock">${lines}</div>`;
+}
+
+function paintLesson(key){
+  const railHead=`<div class="rail-head"><div class="t">${L.title}</div><div class="s">${L.scenario}</div></div>`;
+  let rail=railHead;
+  L.steps.forEach((s,i)=>{
+    const cls = i===cur?'cur':(answered[i]?'done':(i>cur?'locked':''));
+    rail+=`<div class="step ${cls}" data-i="${i}"><div class="num">${answered[i]?'✓':(i+1)}</div>
+      <div><div class="lbl">${s.lbl}</div><div class="sub2">${s.sub}</div></div></div>`;
+    if(i<L.steps.length-1) rail+=`<div class="connector"></div>`;
+  });
+
+  const step=L.steps[cur], isAns=answered[cur];
+  const opts=step.opts.map((o,i)=>`<button class="opt ${isAns?'dis':''} ${isAns&&o.ok?'correct':''}" data-ok="${o.ok}">
+    <span>${o.t}</span><span class="ic">${o.ok?'✓':'✕'}</span></button>`).join('');
+
+  const last = cur===L.steps.length-1;
+  const card = `
+    <div class="eyebrow">${step.eyebrow}</div>
+    <div class="prompt">${step.prompt}</div>
+    ${buildCode(step)}
+    <div class="q">${step.question}</div>
+    <div class="opts">${opts}</div>
+    <div class="why ${isAns?'show':''}" id="why"><div class="h">💡 なぜこの考え方?</div><p>${step.why}</p></div>
+    <div class="spacer"></div>
+    <div class="nav">
+      <button class="btn" id="prev" ${cur===0?'disabled':''}>← 前のステップ</button>
+      <button class="btn primary" id="next" ${isAns?'':'disabled'}>${last?'この使い所を完了 ✓':'次のステップ →'}</button>
+    </div>`;
+
+  viewEl.innerHTML = `
+    <div class="lesson-head">
+      <span class="concept">${L.concept}</span>
+      <span class="nm">${L.title}</span>
+      <span class="sc">· STEP ${cur+1} / ${L.steps.length}</span>
+    </div>
+    <div class="stage"><div class="rail">${rail}</div><div class="card">${card}</div></div>
+    <div class="backline"><a onclick="go('${MODE==='next'?'/next':'/react'}/${key}')">← ${key} の概念ページに戻る</a></div>`;
+
+  viewEl.querySelectorAll('.step').forEach(el=>{
+    el.onclick=()=>{const i=+el.dataset.i; if(i<=maxReached()){cur=i;paintLesson(key);}};
+  });
+  viewEl.querySelectorAll('.opt').forEach(el=>{
+    el.onclick=()=>{
+      if(answered[cur]) return;
+      if(el.dataset.ok==='true'){
+        answered[cur]=true;
+        if(step.fill) filled[step.fill.slot]=step.fill.val;
+        paintLesson(key);
+      }else{ el.classList.add('wrong'); setTimeout(()=>el.classList.remove('wrong'),600); }
+    };
+  });
+  const prev=document.getElementById('prev'), next=document.getElementById('next');
+  if(prev) prev.onclick=()=>{if(cur>0){cur--;paintLesson(key);}};
+  if(next) next.onclick=()=>{ if(!last){cur++;paintLesson(key);} else showDone(key); };
+}
+
+function showDone(key){
+  const pfx = MODE==='next' ? '/next' : '/react';
+  const brand = MODE==='next' ? nextLogo : atomSVG;
+  const gateLabel = MODE==='next' ? 'Next.js 編' : '技術一覧';
+  crumbEl.innerHTML = `${brand}<a class="crumb" onclick="go('${pfx}')">${gateLabel}</a><span class="sep">/</span><a class="crumb" onclick="go('${pfx}/${key}')">${key}</a><span class="sep">/</span><span class="here">${L.title} ✓</span>`;
+  viewEl.innerHTML = `
+    <div class="stage" style="grid-template-columns:1fr"><div class="card"><div class="done-banner">
+      <div class="big">🎉</div>
+      <h3>「${L.title}」完了</h3>
+      <p>${L.doneMsg}</p>
+      <div class="nav" style="max-width:360px;margin:0 auto">
+        <button class="btn" onclick="renderLesson('${key}','${currentLid()}')">もう一度たどる</button>
+        <button class="btn primary" onclick="go('${pfx}/${key}')">他の考え方を見る →</button>
+      </div>
+    </div></div></div>`;
+}
+function currentLid(){
+  const parts = location.hash.replace(/^#\/?/,'').split('/').filter(Boolean).map(p=>decodeURIComponent(p));
+  return MODE==='next' ? (parts[2]||'') : (parts[0]==='react' ? (parts[2]||'') : (parts[1]||''));
+}
+</script>
+</body>
+</html>
