@@ -922,7 +922,7 @@ const LESSONS = {
       {eyebrow:"STEP 1 — 何を状態に持つか", lbl:"状態を見極める", sub:"持つべきデータは何か",
        prompt:"アコーディオンの<b>開閉</b>を管理したい。コンポーネントが覚えておくべき状態は、次のうちどれが最も素直?",
        question:"状態として持つべきものは？",
-       opts:[{t:"開いているか否か（boolean 1つ）",ok:true},{t:"開いた回数（number）",ok:false},{t:"表示中のDOM要素そのもの",ok:false}],
+       opts:[{t:"開いているか否か（boolean 1つ）",ok:true},{t:"開いた累計回数を数える（number 1つ）",ok:false},{t:"表示中の DOM 要素そのものを保持する",ok:false}],
        why:"見た目は状態から<b>導出</b>できる。開閉という2値は boolean 1つで完全に決まる。回数やDOMを持つと「本当の状態」が二重化して破綻のもと。<b>最小の状態を選ぶ</b>のが第一歩。",
        code:null},
       {eyebrow:"STEP 2 — 状態を定義する", lbl:"useState で宣言", sub:"初期値をどうするか",
@@ -935,7 +935,7 @@ const LESSONS = {
       {eyebrow:"STEP 3 — 更新関数の正体を知る", lbl:"setOpen に渡せるもの", sub:"値だけじゃない",
        prompt:"次の状態を決める前に <code>setOpen</code> の使い方を押さえる。<code>setOpen(false)</code> のように<b>値</b>を渡せるのは知っての通り。実はもう一つ渡せるものがある。正しい説明はどれ?",
        question:"setOpen について正しいのは？",
-       opts:[{t:"値の代わりに関数も渡せて、その関数は今の状態を引数で受け取る",ok:true},{t:"渡せるのは boolean の値だけ",ok:false},{t:"関数を渡すと、その関数自体が新しい状態になる",ok:false}],
+       opts:[{t:"値の代わりに関数も渡せて、その関数は今の状態を引数で受け取る",ok:true},{t:"渡せるのは boolean などの値だけで、関数は渡せない",ok:false},{t:"関数を渡すと、その関数自体が次の状態として保存される",ok:false}],
        why:"<code>setOpen</code> には値のほかに<b>関数</b>も渡せる。関数を渡すと React がそれを呼び、引数として<b>今の状態</b>を渡す。返した値が次の状態。例: <code>setOpen(cur => 次の値)</code>。この <code>cur</code> を使えるのが次の鍵。",
        code:['<span class="cm">// 渡し方は2通り</span>','<span class="fn">setOpen</span>(<span class="kw">false</span>);          <span class="cm">// ① 値を直接</span>','<span class="fn">setOpen</span>(cur => 次の値);  <span class="cm">// ② 関数。cur に今の値</span>'],
        staticCode:true},
@@ -964,7 +964,7 @@ const LESSONS = {
       {eyebrow:"STEP 1 — 何を状態に持つか", lbl:"状態を見極める", sub:"開いているか否か",
        prompt:"モーダルの開閉を管理したい。状態は開いているか否かの2値。さらにモーダルで<b>特に意識すべき</b>ことは?",
        question:"モーダルで意識すべきは？",
-       opts:[{t:"開いているかは boolean 1つでよく、閉じる手段が複数あること",ok:true},{t:"開くボタンの数だけ状態が要る",ok:false},{t:"アニメーション用に開閉回数を覚える",ok:false}],
+       opts:[{t:"開いているかは boolean 1つでよく、閉じる手段が複数あること",ok:true},{t:"開くボタンの数だけ別々の状態を用意すること",ok:false},{t:"アニメーション用に開閉した累計回数を覚えること",ok:false}],
        why:"状態は <code>isOpen: boolean</code> 1つでよい。ポイントは<b>1つの状態を変える経路が複数</b>あること（×・背景・ESC）。どの経路も「<code>false</code> にする」一点に集約する、と設計段階で見抜くのが大事。",
        code:null},
       {eyebrow:"STEP 2 — 状態を定義する", lbl:"useState で宣言", sub:"型と初期値",
@@ -977,7 +977,7 @@ const LESSONS = {
       {eyebrow:"STEP 3 — 変更関数を設計する", lbl:"開く・閉じるを分ける", sub:"意図は2方向",
        prompt:"モーダルは「開く」と「閉じる」を<b>別の意図</b>で呼ぶ。どう設計するのが読みやすい?",
        question:"更新関数の設計は？",
-       opts:[{t:"open=()=>setIsOpen(true) と close=()=>setIsOpen(false) を用意",ok:true},{t:"toggle 1つで全部まかなう",ok:false},{t:"経路ごとに別々の状態を作る",ok:false}],
+       opts:[{t:"open=()=>setIsOpen(true) と close=()=>setIsOpen(false) を用意",ok:true},{t:"toggle=()=>setIsOpen(p=>!p) 1つで開閉を兼ねる",ok:false},{t:"開く経路・閉じる経路ごとに別々の状態を作る",ok:false}],
        why:"閉じる経路が複数でも、呼ぶのは共通の <code>close</code> 1つ。意図が明確な名前（open/close）に分けると、×ボタンも背景クリックも <code>onClick={close}</code> で済む。<b>意図が2方向</b>あるモーダルでは、反転1つよりも open/close を分ける方が読みやすい。",
        code:['<span class="kw">const</span> <span class="fn">open</span>  = (): <span class="kw">void</span> => <span class="fn">setIsOpen</span>(<span class="kw">true</span>);','<span class="kw">const</span> <span class="fn">close</span> = (): <span class="kw">void</span> => <span class="b2">②</span>;'],
        fill:{slot:"b2",val:'<span class="fn">setIsOpen</span>(<span class="kw">false</span>)'}},
@@ -1012,7 +1012,7 @@ const LESSONS = {
       {eyebrow:"STEP 3 — 増やす（前の値依存）", lbl:"関数型更新が要る理由", sub:"連打に耐える",
        prompt:"＋ボタンで <code>+1</code> する。ここで<b>関数型更新</b>が効いてくる。なぜ重要?",
        question:"なぜ prev => prev + 1 が良い？",
-       opts:[{t:"＋を素早く連打しても、毎回「今の値」に積めるから",ok:true},{t:"コードが短くなるから",ok:false},{t:"number には必ず関数型が必須だから",ok:false}],
+       opts:[{t:"＋を素早く連打しても、毎回「今の値」に積めるから",ok:true},{t:"コードが短くなり、読みやすくなるから",ok:false},{t:"number 型では関数型更新が必須と決まっているから",ok:false}],
        why:"<code>setQty(qty + 1)</code> は描画時点の古い <code>qty</code> を掴む。連打や複数更新が重なると取りこぼす。<code>setQty(prev => prev + 1)</code> なら常に最新値に積む。<b>前の値から次を決める</b>更新の典型例。",
        code:['<span class="kw">const</span> <span class="fn">inc</span> = () => <span class="b2">②</span>;'],
        fill:{slot:"b2",val:'<span class="fn">setQty</span>(prev => prev + <span class="par">1</span>)'}},
@@ -1139,20 +1139,20 @@ const LESSONS = {
       {eyebrow:"STEP 1 — なぜ Context か", lbl:"共有の必要を見抜く", sub:"props では辛い場面",
        prompt:"テーマは<b>多くの離れた場所</b>（ヘッダー、本文、フッター…）が読む。これを props で配ると何が起きる?",
        question:"props で配ると？",
-       opts:[{t:"間の全コンポーネントが theme を中継するバケツリレーになる",ok:true},{t:"props なら何階層でも自動で届く",ok:false},{t:"props では複数箇所に渡せない",ok:false}],
+       opts:[{t:"間の全コンポーネントが theme を中継するバケツリレーになる",ok:true},{t:"props は何階層でも自動で末端まで届けてくれる",ok:false},{t:"props では同じ値を複数の場所に渡せない",ok:false}],
        why:"テーマのように<b>広く・深く</b>使う値を props で配ると、関係ない中間コンポーネントまで <code>theme</code> を受け取って下へ渡すだけになる。この苦痛こそ Context の出番。<b>「共有が広いか」で判断</b>する。",
        code:null},
       {eyebrow:"STEP 2 — 箱を作る", lbl:"createContext", sub:"デフォルト値も決める",
        prompt:"テーマ用の Context を作る。①の引数（デフォルト値）の意味は?",
        question:"① createContext の引数は？",
-       opts:[{t:"Provider で囲まれていない時に返る既定値",ok:true},{t:"必ず使われる固定の値",ok:false},{t:"省略できず、状態の初期値になる",ok:false}],
+       opts:[{t:"Provider で囲まれていない時に返る既定値",ok:true},{t:"全コンポーネントで必ず使われる固定の共有値",ok:false},{t:"省略できず、状態の初期値として使われる値",ok:false}],
        why:"<code>createContext('light')</code> の <code>'light'</code> は、<b>Provider の外</b>で <code>useContext</code> した時に返る値。テストや囲み忘れの保険になる。これは状態の初期値とは別物——状態は別途 useState で持つ。",
        code:['<span class="kw">const</span> <span class="fn">ThemeContext</span> = <span class="fn">createContext</span>(<span class="b1">①</span>);'],
        fill:{slot:"b1",val:'<span class="str">\'light\'</span>'}},
       {eyebrow:"STEP 3 — Provider で配る", lbl:"value に何を載せるか", sub:"状態は useState",
        prompt:"テーマは切り替わる=状態。Context は配る箱。両者を組み合わせる。②の Provider の value に載せるのは?",
        question:"② value に載せるのは？",
-       opts:[{t:"useState で持った theme（と切替関数）",ok:true},{t:"createContext のデフォルト値",ok:false},{t:"固定の文字列 'dark'",ok:false}],
+       opts:[{t:"useState で持った theme（と切替関数）",ok:true},{t:"createContext に渡したデフォルト値そのもの",ok:false},{t:"固定の文字列 'dark' を直接書いて渡す",ok:false}],
        why:"<b>状態は useState、配るのは Context</b>という役割分担。<code>useState</code> で持った <code>theme</code> を Provider の value に載せれば、切り替わるたび中の全員に新しい値が届く。Context 自体は状態を持たない、という勘違いの解消点。",
        code:['<span class="kw">const</span> [theme, setTheme] = <span class="fn">useState</span>(<span class="str">\'light\'</span>);','<span class="kw">return</span> (','  &lt;<span class="fn">ThemeContext</span>.<span class="fn">Provider</span> value={<span class="b2">②</span>}&gt;','    {children}','  &lt;/<span class="fn">ThemeContext</span>.<span class="fn">Provider</span>&gt;',');'],
        fill:{slot:"b2",val:'theme'}},
@@ -1174,7 +1174,7 @@ const LESSONS = {
       {eyebrow:"STEP 1 — 問題を見る", lbl:"バケツリレーとは", sub:"中継だけのコンポーネント",
        prompt:"<code>user</code> を末端の <code>UserBadge</code> に届けたい。props で渡すと <code>Layout</code> と <code>Sidebar</code> はどうなる?",
        question:"中間コンポーネントは？",
-       opts:[{t:"自分は使わない user を受け取り、下へ渡すだけになる",ok:true},{t:"user を無視できる",ok:false},{t:"user を自動でスキップして末端に届く",ok:false}],
+       opts:[{t:"自分は使わない user を受け取り、下へ渡すだけになる",ok:true},{t:"自分には関係ないので user を無視して受け取らずに済む",ok:false},{t:"user を自動でスキップして末端まで直接届けてくれる",ok:false}],
        why:"これが<b>prop drilling（バケツリレー）</b>。Layout も Sidebar も <code>user</code> に用はないのに、props の型に <code>user</code> が増え、ただ下へ手渡す。階層が深いほど苦痛が増す。これを<b>問題として認識</b>するのが第一歩。",
        code:['&lt;<span class="fn">Layout</span> user={user}&gt;       <span class="cm">// 使わないのに受け取る</span>','  &lt;<span class="fn">Sidebar</span> user={user}&gt;    <span class="cm">// 使わないのに受け取る</span>','    &lt;<span class="fn">UserBadge</span> user={user} /&gt; <span class="cm">// ここだけ使う</span>']},
       {eyebrow:"STEP 2 — 解消の判断", lbl:"いつ Context にするか", sub:"乱用しない境界",
@@ -1208,13 +1208,13 @@ const LESSONS = {
       {eyebrow:"STEP 1 — 何を共有するか", lbl:"値と操作をセットで", sub:"読むだけじゃない",
        prompt:"ユーザー情報は<b>読む</b>だけでなく、ログアウトで<b>変える</b>必要もある。Context で配るべきものは?",
        question:"Context に載せるのは？",
-       opts:[{t:"ユーザー情報と、それを変える関数（logout など）の両方",ok:true},{t:"ユーザー情報だけ。変更は各所で行う",ok:false},{t:"ログアウト関数だけ",ok:false}],
+       opts:[{t:"ユーザー情報と、それを変える関数（logout など）の両方",ok:true},{t:"ユーザー情報だけを配り、変更は各コンポーネントで個別に行う",ok:false},{t:"ログアウト関数だけを配り、情報は別経路で取る",ok:false}],
        why:"状態は <code>useState</code> で持つが、ここでは「変える手段」も離れた所（ヘッダーのログアウト）で要る。だから<b>値と更新関数をセット</b>で配る。読む側も変える側も、同じ Context から取れる。",
        code:null},
       {eyebrow:"STEP 2 — 箱を作る", lbl:"createContext", sub:"未ログインを既定に",
        prompt:"ユーザー用 Context を作る。Provider の外やログイン前を表すデフォルト値として①が素直なのは?",
        question:"① デフォルト値は？",
-       opts:[{t:"null（未ログインを表す）",ok:true},{t:"空文字 \"\"",ok:false},{t:"{}（空オブジェクト）",ok:false}],
+       opts:[{t:"null（未ログインを表す）",ok:true},{t:"空文字 \"\"（空のユーザー名を表す）",ok:false},{t:"{}（中身のない空オブジェクト）",ok:false}],
        why:"「ユーザーがいない」を <code>null</code> で表すと、<code>if (user)</code> でログイン判定が素直に書ける。空オブジェクトだと「いるが空」と紛らわしい。<b>状態の意味が型に出る</b>ようにする。",
        code:['<span class="kw">const</span> <span class="fn">UserContext</span> = <span class="fn">createContext</span>(<span class="b1">①</span>);'],
        fill:{slot:"b1",val:'<span class="kw">null</span>'}},
@@ -1243,26 +1243,26 @@ const LESSONS = {
       {eyebrow:"STEP 1 — 問題を知る", lbl:"再描画の広がり", sub:"巨大Contextの副作用",
        prompt:"テーマも通知設定も言語も、1つの Context に詰めた。通知設定だけ変えた時、何が起きる?",
        question:"1つの値を変えると？",
-       opts:[{t:"その Context を読む全コンポーネントが再描画される",ok:true},{t:"通知設定を読む所だけ再描画される",ok:false},{t:"何も再描画されない",ok:false}],
+       opts:[{t:"その Context を読む全コンポーネントが再描画される",ok:true},{t:"通知設定を実際に読んでいる所だけが再描画される",ok:false},{t:"値は変わるが再描画はどこにも起きない",ok:false}],
        why:"Context の value が変わると、その Context を <code>useContext</code> で読む<b>全員</b>が再描画される。テーマしか使わない所まで、通知設定の変更で描き直される。これが巨大 Context の代償。",
        code:null},
       {eyebrow:"STEP 2 — 分ける判断", lbl:"関心で分割", sub:"変わる頻度で見る",
        prompt:"どう分けるのが妥当? 分割の基準として最も適切なのは?",
        question:"分割の基準は？",
-       opts:[{t:"関心事や変わる頻度ごとに別の Context にする",ok:true},{t:"とにかく細かく1値1Contextにする",ok:false},{t:"分けず1つのままにする",ok:false}],
+       opts:[{t:"関心事や変わる頻度ごとに別の Context にする",ok:true},{t:"とにかく細かく、1つの値につき1つの Context に分ける",ok:false},{t:"分けずに1つの大きな Context のままにする",ok:false}],
        why:"<b>一緒に変わるものは一緒に、別々に変わるものは別に</b>。テーマ・通知・言語は独立して変わるので別 Context にする。むやみに細かくすると Provider だらけになるので、関心の単位でまとめる。",
        code:null},
       {eyebrow:"STEP 3 — 分割する", lbl:"複数Contextに", sub:"独立して持つ",
        prompt:"テーマと通知を別 Context に分ける。①②それぞれ独立した Context を作る。これで通知だけ変えた時は?",
        question:"分割後、通知を変えると？",
-       opts:[{t:"通知 Context を読む所だけ再描画される",ok:true},{t:"やはり全員再描画される",ok:false},{t:"テーマも一緒に変わる",ok:false}],
+       opts:[{t:"通知 Context を読む所だけ再描画される",ok:true},{t:"分けても結局すべての購読先が再描画される",ok:false},{t:"通知を変えるとテーマの表示も一緒に変わる",ok:false}],
        why:"分けたことで、再描画の影響が<b>その Context を読む範囲に限定</b>される。テーマしか使わない所は通知の変更で描き直されない。これがパフォーマンス上の利点。",
        code:['<span class="kw">const</span> <span class="fn">ThemeContext</span>  = <span class="fn">createContext</span>(<span class="b1">①</span>);','<span class="kw">const</span> <span class="fn">NotifyContext</span> = <span class="fn">createContext</span>(<span class="b2">②</span>);'],
        fill:{slot:"b1",val:'<span class="str">\'light\'</span>'}},
       {eyebrow:"STEP 4 — 注意点を押さえる", lbl:"分割の限界", sub:"やりすぎない",
        prompt:"分割は万能ではない。過度な分割の弊害として正しいのは?",
        question:"分割しすぎると？",
-       opts:[{t:"Provider が何重にもなり、構造が複雑になる",ok:true},{t:"再描画が逆に増える",ok:false},{t:"Context が使えなくなる",ok:false}],
+       opts:[{t:"Provider が何重にもなり、構造が複雑になる",ok:true},{t:"分けたぶん再描画の回数がかえって増えてしまう",ok:false},{t:"分けすぎると Context 自体が使えなくなる",ok:false}],
        why:"分割は再描画を抑えるが、<b>分けるほど Provider が積み重なり</b>、ツリーが読みにくくなる。「再描画が実際に問題か」を見てから分ける。<b>最適化は計測してから</b>——むやみに分けない。",
        code:null},
     ],
@@ -1296,7 +1296,7 @@ const LESSONS = {
       {eyebrow:"STEP 4 — 読み取り専用を守る", lbl:"書き換えない", sub:"一方向を保つ",
        prompt:"子の中でラベルを変えたくなった。<code>label = '削除'</code> と書いてよい?",
        question:"③ 子で props を変えるのは？",
-       opts:[{t:"してはいけない。props は読み取り専用",ok:true},{t:"子の中なら自由に変えてよい",ok:false},{t:"label++ ならよい",ok:false}],
+       opts:[{t:"してはいけない。props は読み取り専用だから",ok:true},{t:"子の中でなら props を自由に書き換えてよい",ok:false},{t:"label++ のような更新なら書き換えてよい",ok:false}],
        why:"props は<b>子から見て読み取り専用</b>。子が書き換えると、データがどこで変わったか追えなくなり、親の値ともずれる。変えたい時は<b>親に依頼する</b>（次のレッスンのコールバック）。一方向の流れを守る。",
        code:null},
     ],
@@ -1310,7 +1310,7 @@ const LESSONS = {
       {eyebrow:"STEP 1 — 向きを考える", lbl:"データの流れ", sub:"子は親を直接変えられない",
        prompt:"リスト（状態）は親が持つ。子のボタンで項目を消したい。だが props は読み取り専用。どうする?",
        question:"子から親の状態を変えるには？",
-       opts:[{t:"親が「変える関数」を props で子に渡し、子はそれを呼ぶ",ok:true},{t:"子が親の状態を直接書き換える",ok:false},{t:"子が自分で状態をコピーして持つ",ok:false}],
+       opts:[{t:"親が「変える関数」を props で子に渡し、子はそれを呼ぶ",ok:true},{t:"子が親の状態を直接書き換えて更新する",ok:false},{t:"子が同じ状態を自分でコピーして別に持つ",ok:false}],
        why:"データは親→子の一方向。逆向き（子→親）に伝えるには、<b>親が用意した関数を子に渡し</b>、子はそれを呼ぶだけにする。状態の変更は常に<b>持ち主（親）が行う</b>。これが「イベントの持ち上げ」。",
        code:null},
       {eyebrow:"STEP 2 — 関数を渡す", lbl:"関数も props", sub:"値として渡せる",
@@ -1358,7 +1358,7 @@ const LESSONS = {
       {eyebrow:"STEP 3 — 注意点", lbl:"falsy に注意", sub:"0 や空文字の扱い",
        prompt:"既定値に <code>||</code> を使う（<code>size || \"md\"</code>）と困る場合がある。それはどんな時?",
        question:"size || \"md\" の落とし穴は？",
-       opts:[{t:'0 や空文字を渡した時も既定値に置き換わってしまう',ok:true},{t:'undefined を渡せなくなる',ok:false},{t:'特に問題はない',ok:false}],
+       opts:[{t:"0 や空文字を渡した時も既定値に置き換わってしまう",ok:true},{t:"undefined を明示的に渡すことができなくなる",ok:false},{t:"特に落とし穴はなく、どんな値でも安全に動く",ok:false}],
        why:"<code>||</code> は <code>0</code>・<code>\"\"</code>・<code>false</code> なども「無し」とみなして既定値にする。意図して 0 を渡しても消えてしまう。だから<b>分割代入の <code>=</code> 既定値</b>（渡されない時だけ効く）のほうが安全。",
        code:null},
       {eyebrow:"STEP 4 — 使う側がシンプルに", lbl:"省略できる利点", sub:"標準は書かない",
@@ -1379,7 +1379,7 @@ const LESSONS = {
       {eyebrow:"STEP 1 — 何が可変か", lbl:"枠と中身を分ける", sub:"共通と個別",
        prompt:"全ページに共通のヘッダーと余白がある。中身はページごとに違う。枠の部品が受け取るべきは?",
        question:"枠が受け取るのは？",
-       opts:[{t:"中身（children）。枠は中身を知らなくていい",ok:true},{t:"各ページの内容を props で1つずつ",ok:false},{t:"ページの種類を表す番号",ok:false}],
+       opts:[{t:"中身（children）。枠は中身を知らなくていい",ok:true},{t:"各ページの内容を props で1つずつ受け取る",ok:false},{t:"ページの種類を表す番号を受け取り分岐する",ok:false}],
        why:"共通部分（ヘッダー・余白）は枠に固定し、<b>変わる中身は children で丸ごと</b>受け取る。枠は中身が何かを知らなくてよい。これが合成の発想。",
        code:null},
       {eyebrow:"STEP 2 — children を受ける", lbl:"特別な props", sub:"名前は children",
@@ -1414,7 +1414,7 @@ const LESSONS = {
       {eyebrow:"STEP 1 — props と children を併用", lbl:"役割を分ける", sub:"設定と中身",
        prompt:"カードに「見出し（文字）」と「中身（自由）」の両方を持たせたい。どう設計する?",
        question:"見出しと中身の扱いは？",
-       opts:[{t:"見出しは props、自由な中身は children",ok:true},{t:"両方とも children",ok:false},{t:"両方とも props",ok:false}],
+       opts:[{t:"見出しは props、自由な中身は children",ok:true},{t:"見出しも中身も、両方とも children で受け取る",ok:false},{t:"見出しも中身も、両方とも props で受け取る",ok:false}],
        why:"<b>単純で決まった値（見出し文字）は props</b>、<b>自由で可変な中身は children</b>。両者は併用できる。役割で使い分けると、使う側にとって何を渡せばいいか明確になる。",
        code:null},
       {eyebrow:"STEP 2 — 両方受け取る", lbl:"props と children", sub:"一緒に分割代入",
@@ -1442,20 +1442,20 @@ const LESSONS = {
       {eyebrow:"STEP 1 — useState の限界を感じる", lbl:"なぜ useReducer か", sub:"更新が散らばる",
        prompt:"カートは追加・数量変更・削除・全クリアと更新が多い。これを useState で書くと何が起きやすい?",
        question:"useState だと？",
-       opts:[{t:"似た更新ロジックがあちこちに散らばり、見通しが悪くなる",ok:true},{t:"useState では複数の更新は書けない",ok:false},{t:"必ずバグる",ok:false}],
+       opts:[{t:"似た更新ロジックがあちこちに散らばり、見通しが悪くなる",ok:true},{t:"useState では複数種類の更新をそもそも書けない",ok:false},{t:"状態が増えるほど必ずバグが発生してしまう",ok:false}],
        why:"useState でも<b>書けるが</b>、更新の種類が増えると <code>setItems(...)</code> の処理が各所に散らばる。useReducer は更新ロジックを<b>1か所（reducer）</b>に集めて見通しを良くする。「書けない」のではなく「整理できる」が要点。",
        code:null},
       {eyebrow:"STEP 2 — 更新ルールを集める", lbl:"reducer 関数", sub:"action で分岐",
        prompt:"reducer は「今の状態」と「何が起きたか（action）」から「次の状態」を返す。①の戻り値の原則は?",
        question:"① reducer が返すのは？",
-       opts:[{t:"新しい状態（元を書き換えず作り直す）",ok:true},{t:"元の状態を直接書き換えた結果",ok:false},{t:"何も返さなくてよい",ok:false}],
+       opts:[{t:"新しい状態（元を書き換えず作り直す）",ok:true},{t:"元の状態を直接書き換えた結果を返す",ok:false},{t:"何も返さず、状態を直接更新するだけ",ok:false}],
        why:"reducer も useState と同じく<b>新しい状態を返す</b>のが原則。<code>state.items.push()</code> のような直接変更はしない。action.type で分岐し、それぞれ新しい状態を組み立てて返す。",
        code:['<span class="kw">function</span> <span class="fn">reducer</span>(state, action) {','  <span class="kw">switch</span> (action.type) {','    <span class="kw">case</span> <span class="str">\'add\'</span>:','      <span class="kw">return</span> <span class="b1">①</span>;','    <span class="kw">default</span>: <span class="kw">return</span> state;','  }','}'],
        fill:{slot:"b1",val:'{ items: [...state.items, action.item] }'}},
       {eyebrow:"STEP 3 — 何が起きたかを送る", lbl:"dispatch", sub:"命令ではなく出来事",
        prompt:"コンポーネントから「商品を追加」を伝える。②の dispatch の中身は?",
        question:"② dispatch に渡すのは？",
-       opts:[{t:"{ type: 'add', item }（何が起きたか）",ok:true},{t:"新しい state 全体",ok:false},{t:"reducer 関数そのもの",ok:false}],
+       opts:[{t:"{ type: 'add', item }（何が起きたか）",ok:true},{t:"更新後の新しい state 全体を組み立てて渡す",ok:false},{t:"更新を行う reducer 関数そのものを渡す",ok:false}],
        why:"<code>dispatch</code> には<b>「何が起きたか」</b>を表す action を渡す。<code>{type:'add', item}</code> は「追加が起きた」という出来事。どう状態を変えるかは reducer の責任。コンポーネントは出来事を伝えるだけで済む。",
        code:['&lt;<span class="fn">button</span> onClick={() => dispatch(<span class="b2">②</span>)}&gt;','  カートに追加','&lt;/<span class="fn">button</span>&gt;'],
        fill:{slot:"b2",val:"{ type: 'add', item }"}},
@@ -1476,7 +1476,7 @@ const LESSONS = {
       {eyebrow:"STEP 1 — なぜ Effect か", lbl:"副作用を見極める", sub:"外界とのやりとり",
        prompt:"サーバーからデータを取る。これを描画の計算の中に直接書いてはいけない理由は?",
        question:"なぜ描画中に書かない？",
-       opts:[{t:"通信は外界とのやりとり（副作用）で、描画は純粋に保つべきだから",ok:true},{t:"通信は速いから問題ない",ok:false},{t:"描画中でも書いてよい",ok:false}],
+       opts:[{t:"通信は外界とのやりとり（副作用）で、描画は純粋に保つべきだから",ok:true},{t:"通信は十分に速いので描画中に書いても問題ないから",ok:false},{t:"描画の計算の中に通信を直接書いても構わないから",ok:false}],
        why:"描画（レンダー）は<b>純粋</b>——同じ入力なら同じ結果を返し、外に影響しないのが原則。通信のような<b>副作用</b>は描画から切り離し、useEffect の中で行う。これが「外界との同期」。",
        code:null},
       {eyebrow:"STEP 2 — 状態を3つ用意", lbl:"data/loading/error", sub:"取得の3状態",
@@ -1496,7 +1496,7 @@ const LESSONS = {
       {eyebrow:"STEP 4 — 局面ごとに描く", lbl:"状態から画面を出す", sub:"3状態を分岐",
        prompt:"3つの状態から画面を出し分ける。②の順序として安全なのは?",
        question:"② 描き分けの順は？",
-       opts:[{t:"loading → error → データ表示 の順に早期 return",ok:true},{t:"いきなり data.map() から書く",ok:false},{t:"error を無視して data だけ見る",ok:false}],
+       opts:[{t:"loading → error → データ表示 の順に早期 return",ok:true},{t:"分岐せず、いきなり data.map() から書き始める",ok:false},{t:"error を無視して data だけを見て表示する",ok:false}],
        why:"<code>data</code> はまだ <code>null</code> の瞬間がある。先に <code>data.map()</code> すると「null の map」でエラー。<b>loading・error を先に処理</b>して早期 return し、最後に確実にデータがある状態で表示する。状態から画面を導く、を丁寧に。",
        code:['<span class="kw">if</span> (loading) <span class="kw">return</span> &lt;<span class="fn">Spinner</span> /&gt;;','<span class="kw">if</span> (error) <span class="kw">return</span> &lt;<span class="fn">ErrorView</span> /&gt;;','<span class="kw">return</span> &lt;<span class="fn">List</span> data={data} /&gt;;'],
        staticCode:true},
@@ -1511,7 +1511,7 @@ const LESSONS = {
       {eyebrow:"STEP 1 — 依存配列の意味", lbl:"何を見張るか", sub:"いつ再実行するか",
        prompt:"依存配列は「いつ Effect を再実行するか」を決める。その本質的な意味は?",
        question:"依存配列とは？",
-       opts:[{t:"Effect が同期している「外の値」の一覧",ok:true},{t:"実行回数の上限",ok:false},{t:"実行を遅らせる秒数",ok:false}],
+       opts:[{t:"Effect が同期している「外の値」の一覧",ok:true},{t:"Effect を実行してよい最大回数の上限",ok:false},{t:"Effect の実行を遅らせる秒数の指定",ok:false}],
        why:"依存配列は<b>「この Effect は何と同期しているか」</b>の宣言。中に並べた値が変わるたび、Effect は同期を取り直す（再実行）。「いつ動くか」ではなく<b>「何に依存するか」</b>で考えると正しく書ける。",
        code:null},
       {eyebrow:"STEP 2 — 依存を入れる", lbl:"userId を見張る", sub:"変わったら取り直す",
@@ -1524,7 +1524,7 @@ const LESSONS = {
       {eyebrow:"STEP 3 — 入れ忘れの害", lbl:"依存の漏れ", sub:"古い値を掴む",
        prompt:"<code>userId</code> を使っているのに依存配列に入れ忘れると何が起きる?",
        question:"依存を入れ忘れると？",
-       opts:[{t:"userId が変わっても古い値のまま取得され、表示がずれる",ok:true},{t:"エラーで止まる",ok:false},{t:"自動で補完される",ok:false}],
+       opts:[{t:"userId が変わっても古い値のまま取得され、表示がずれる",ok:true},{t:"依存の漏れを検知してエラーで停止する",ok:false},{t:"使っている値は自動で依存に補完される",ok:false}],
        why:"Effect が使う外の値は<b>すべて依存配列に入れる</b>のが原則。入れ忘れると、Effect は古い <code>userId</code> を掴んだまま再実行されず、表示と選択がずれる。Lint（eslint-plugin-react-hooks）がこの漏れを警告してくれる。",
        code:null},
       {eyebrow:"STEP 4 — 競合に注意", lbl:"古い結果の混線", sub:"クリーンアップで防ぐ",
@@ -2551,13 +2551,6 @@ function go(path){
   location.hash = enc;
 }
 window.addEventListener('hashchange', route);
-// iPhoneのSafariでローカルHTMLを開いた場合、loadイベントが発火しないことがあるため
-// DOMContentLoaded + 即時実行のフォールバックを使う
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', route);
-} else {
-  route();
-}
 
 // 現在のモード（'react' or 'next'）に応じてデータソースを切り替える
 let MODE = 'react';
@@ -2819,6 +2812,17 @@ function buildCode(step){
   return `<div class="codeblock">${lines}</div>`;
 }
 
+// 設問ごとに固定の擬似乱数で選択肢順をシャッフル（正解位置を散らす・同じ設問は常に同じ並び）
+function seededShuffle(arr, seedStr){
+  // 文字列から数値シードを作る
+  let seed = 0;
+  for(let i=0;i<seedStr.length;i++) seed = (seed*31 + seedStr.charCodeAt(i)) & 0x7fffffff;
+  const rng = () => { seed = (seed*1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+  const a = arr.map((v,i)=>({v,i}));
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(rng()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a.map(x=>x.v);
+}
+
 function paintLesson(key){
   const railHead=`<div class="rail-head"><div class="t">${L.title}</div><div class="s">${L.scenario}</div></div>`;
   let rail=railHead;
@@ -2830,7 +2834,8 @@ function paintLesson(key){
   });
 
   const step=L.steps[cur], isAns=answered[cur];
-  const opts=step.opts.map((o,i)=>`<button class="opt ${isAns?'dis':''} ${isAns&&o.ok?'correct':''}" data-ok="${o.ok}">
+  const shuffledOpts = seededShuffle(step.opts, L.concept+'|'+L.title+'|'+cur);
+  const opts=shuffledOpts.map((o,i)=>`<button class="opt ${isAns?'dis':''} ${isAns&&o.ok?'correct':''}" data-ok="${o.ok}">
     <span>${o.t}</span><span class="ic">${o.ok?'✓':'✕'}</span></button>`).join('');
 
   const last = cur===L.steps.length-1;
@@ -2893,6 +2898,16 @@ function showDone(key){
 function currentLid(){
   const parts = location.hash.replace(/^#\/?/,'').split('/').filter(Boolean).map(p=>decodeURIComponent(p));
   return MODE==='next' ? (parts[2]||'') : (parts[0]==='react' ? (parts[2]||'') : (parts[1]||''));
+}
+
+// ルーティングの初期化（全定義の後で実行）。
+// load が発火しない環境（iPhone Safari でのローカルHTML等）に備え、
+// 読み込み状態に応じて確実に一度 route() を呼ぶ。
+window.addEventListener('load', route);
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', route);
+} else {
+  route();
 }
 </script>
 </body>
