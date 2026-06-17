@@ -30,9 +30,9 @@
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{background:var(--bg);color:var(--ink);font-family:var(--sans);
-    -webkit-font-smoothing:antialiased;line-height:1.7;font-size:15px}
+    -webkit-font-smoothing:antialiased;line-height:1.7;font-size:15px;overflow-x:hidden}
   body{padding:0 20px 90px}
-  .wrap{max-width:780px;margin:0 auto}
+  .wrap{max-width:780px;margin:0 auto;min-width:0}
   a{color:inherit;text-decoration:none;cursor:pointer}
 
   /* top breadcrumb */
@@ -149,8 +149,8 @@
     background:var(--pick);padding:3px 10px;border-radius:6px}
   .lesson-head .nm{font-size:12px;color:var(--ink-2)}
   .lesson-head .sc{font-size:12px;color:var(--ink-3)}
-  .stage{display:grid;grid-template-columns:1fr 1.1fr;gap:14px;align-items:start;margin-top:8px}
-  @media(max-width:720px){.stage{grid-template-columns:1fr}}
+  .stage{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:14px;align-items:start;margin-top:8px}
+  @media(max-width:720px){.stage{grid-template-columns:minmax(0,1fr)}}
   .rail{background:var(--panel);border:1px solid var(--line-soft);border-radius:14px;padding:8px}
   .rail-head{padding:10px 12px 12px}
   .rail-head .t{font-size:13px;font-weight:600} .rail-head .s{font-size:11.5px;color:var(--ink-3)}
@@ -166,7 +166,7 @@
   .step .sub2{font-size:11.5px;color:var(--ink-3);margin-top:2px}
   .connector{height:8px;width:1px;background:var(--line);margin-left:23px}
   .card{background:var(--panel);border:1px solid var(--line-soft);border-radius:14px;
-    padding:20px;min-height:430px;display:flex;flex-direction:column}
+    padding:20px;min-height:430px;display:flex;flex-direction:column;min-width:0}
   .eyebrow{font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--react-deep);
     font-weight:600;margin-bottom:8px;font-family:var(--mono)}
   .prompt{font-size:15px;line-height:1.6;color:var(--ink)}
@@ -182,7 +182,9 @@
   .opts{display:flex;flex-direction:column;gap:9px}
   .opt{text-align:left;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;
     padding:12px 14px;cursor:pointer;color:var(--ink);font-family:var(--mono);font-size:13px;
-    transition:.13s;display:flex;justify-content:space-between;align-items:center;gap:10px;line-height:1.45}
+    transition:.13s;display:flex;justify-content:space-between;align-items:center;gap:10px;line-height:1.45;
+    min-width:0;width:100%}
+  .opt>span:first-child{min-width:0;overflow-wrap:anywhere;word-break:break-word}
   .opt:hover:not(.dis){border-color:var(--react-deep);background:#20272f}
   .opt .ic{font-style:normal;flex:none;opacity:0}
   .opt.correct{border-color:var(--ok);background:var(--ok-bg)} .opt.correct .ic{opacity:1;color:var(--ok)}
