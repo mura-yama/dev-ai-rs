@@ -69,6 +69,19 @@
   .gate-meta{font-size:11.5px;color:var(--ink-3);font-family:var(--mono);margin-bottom:10px}
   .gate-go{font-size:13px;color:var(--react);font-weight:600}
   .gate.react .gate-go{color:#61dafb}
+  /* お知らせ（右下トースト） */
+  .notice{position:fixed;right:18px;bottom:18px;z-index:50;
+    max-width:340px;display:flex;align-items:flex-start;gap:10px;
+    background:var(--panel-2);border:1px solid var(--line);
+    border-left:3px solid var(--react);border-radius:12px;
+    padding:13px 14px;box-shadow:0 8px 28px rgba(0,0,0,.38);
+    animation:notice-in .26s ease}
+  @keyframes notice-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .notice-txt{font-size:13px;line-height:1.6;color:var(--ink);flex:1;min-width:0}
+  .notice-close{flex:none;background:none;border:none;cursor:pointer;
+    color:var(--ink-3);font-size:18px;line-height:1;padding:0 2px;margin-top:-1px}
+  .notice-close:hover{color:var(--ink)}
+  @media(max-width:600px){.notice{right:12px;left:12px;bottom:12px;max-width:none}}
   .home-hero .brand{display:flex;align-items:center;gap:12px;margin-bottom:18px}
   .home-hero .brand .atom{width:30px;height:30px}
   .home-hero .brand span{font-family:var(--mono);font-size:15px;color:var(--ink-2)}
@@ -2717,6 +2730,7 @@ const NEXT_DATA = {
     miss:[
       ['ルーティングは設定ファイルで書く','App Router は<strong>ファイルの置き場所</strong>で決まる。設定不要。'],
       ['どんな名前のファイルでも画面になる','画面になるのは <code>page.tsx</code> だけ。他のファイルは画面にならない（部品として使う）。'],
+      ['置くのは .html ファイルだ','置くのは <strong>React を書いた .tsx / .jsx</strong>。page・layout 等の特別なファイルは <code>.tsx .ts .jsx .js</code> が使える。HTML はそれをサーバーが実行して<strong>生成する出力</strong>で、自分で .html を置くのではない。'],
       ['app の中のコンポーネントはブラウザで動く','App Router では<strong>デフォルトで Server Component</strong>（サーバーで動く）。次のトピックで詳しく。'],
       ['Pages Router と書き方は同じ','レイアウトやデータ取得の考え方が変わる。同じではない。']
     ],
@@ -2761,6 +2775,9 @@ const NEXT_DATA = {
     lessons:[
       {id:"boundary", num:"01", ctx:"最重要", title:"境界をどこに引くか", sub:"'use client' を最小にする", ready:true},
       {id:"compose",  num:"02", ctx:"共通",   title:"サーバーとクライアントを組む", sub:"children で混ぜる", ready:true},
+      {id:"serializable-props", num:"03", ctx:"EC", title:"境界を越える props の制約", sub:"渡せる値・渡せない値", ready:true},
+      {id:"context-provider", num:"04", ctx:"Webサイト", title:"テーマ Context の置き方", sub:"Provider は Client、中身は Server", ready:true},
+      {id:"use-client-spread", num:"05", ctx:"共通", title:"'use client' はどこまで伝わるか", sub:"import で広がる理由", ready:true},
     ]
   },
 
@@ -2900,6 +2917,151 @@ const NEXT_DATA = {
     lessons:[
       {id:"dynamic-id", num:"01", ctx:"Webサイト", title:"1ファイルで全記事", sub:"[id] と params", ready:true},
     ]
+  },
+
+  "rendering": {
+    name:"レンダリング戦略",
+    cat:"レンダリング / 静的と動的",
+    tagline:"いつビルド時に静的化され、いつリクエスト時に動的になるかは、何を使うかで自動的に決まる。",
+    lede:"App Router では SSR か SSG かを明示的に選ばない。データの取り方で Next.js が自動判定する——この発想の転換が要点。",
+    def:'App Router では、ページが<b>ビルド時に静的化（SSG）</b>されるか<b>リクエスト時に動的（SSR）</b>になるかを、明示的に選ばない。cookies・headers・未キャッシュ取得などの<b>動的な要素を使うか</b>で Next.js が自動的に決める。',
+    why:[
+      '旧 Pages Router では <code>getServerSideProps</code>（動的）か <code>getStaticProps</code>（静的）かを<strong>自分で宣言</strong>していた。App Router にこれらは無い。代わりに、<strong>コンポーネントが何を使うか</strong>で静的か動的かが決まる。',
+      '動的データ源（cookies()、headers()、検索パラメータ、キャッシュしない fetch）を<strong>使わなければ静的</strong>（ビルド時に1度生成して使い回す）。使えば<strong>動的</strong>（リクエストごとに生成）。さらに <code>revalidate</code> を指定すると、静的だが一定間隔で裏で更新する<strong>ISR</strong>になる。「どう書くか」が「いつ生成されるか」を決める。'
+    ],
+    code:[
+      '<span class="cm">// 動的な要素なし → 静的（ビルド時に生成）</span>',
+      '<span class="kw">async function</span> <span class="fn">Page</span>() {',
+      '  <span class="kw">const</span> posts = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">\'.../posts\'</span>).<span class="fn">then</span>(r => r.json());',
+      '  <span class="kw">return</span> &lt;<span class="fn">List</span> posts={posts} /&gt;;',
+      '}',
+      '',
+      '<span class="cm">// ISR: 静的だが一定間隔で裏で更新</span>',
+      '<span class="kw">export const</span> revalidate = <span class="par">3600</span>; <span class="cm">// 1時間ごと</span>',
+      '',
+      '<span class="cm">// cookies() を読む → 自動的に動的（リクエストごと）</span>'
+    ],
+    codeCap:"動的な要素を使わなければ静的、使えば動的。revalidate を足せば ISR。書き方が生成タイミングを決める。",
+    yes:["公開・安定した内容（marketing/docs/記事）→ 静的","時々更新される内容（商品一覧・ニュース）→ ISR(revalidate)","ユーザー固有・リアルタイム → 動的（cookies 等で自動的に）"],
+    no:["SSR/SSG を getServerSideProps/getStaticProps で宣言する（App Router に無い）","静的にしたいページで不用意に cookies() を読む（動的化してしまう）"],
+    noNote:"<strong>判断の軸は「内容の性質」</strong>。公開で安定なら静的、時々更新なら ISR、ユーザー固有やリアルタイムなら動的。動的になるのは cookies/headers/未キャッシュ取得などを使った時。静的にしたいなら、それらを避ける。明示的な SSR/SSG 宣言ではなく、使うものが決める。",
+    miss:[
+      ['App Router でも getServerSideProps で SSR を指定する','App Router に<strong>それらは無い</strong>。何を使うかで自動判定される。'],
+      ['Server Component は常にリクエストごとに実行される','違う。<strong>動的な要素が無ければビルド時に1度だけ</strong>実行され静的化される。'],
+      ['ISR は特別な関数が要る','<code>export const revalidate = 秒数</code> を書くだけ。静的＋定期更新になる。'],
+      ['cookies() を読んでも静的なまま','読むと<strong>自動的に動的</strong>になる。静的にしたいページでは使わない。']
+    ],
+    lessons:[
+      {id:"static-dynamic", num:"01", ctx:"Webサイト", title:"静的か動的かは自動で決まる", sub:"何を使うかが分ける", ready:true},
+      {id:"isr", num:"02", ctx:"EC", title:"商品一覧を定期更新（ISR）", sub:"静的の速さと鮮度の両立", ready:true},
+      {id:"streaming", num:"03", ctx:"業務ツール", title:"重い部分を後から流し込む", sub:"loading と Suspense", ready:true},
+    ]
+  },
+
+  "navigation": {
+    name:"リンクとナビゲーション",
+    cat:"基礎 / 画面遷移",
+    tagline:"&lt;Link&gt; でページ間を移動すると、全リロードせず必要な部分だけ差し替わる。",
+    lede:"a タグの代わりに next/link の &lt;Link&gt; を使うと、共有レイアウトを保ったまま素早く遷移し、先読みも効く。",
+    def:'<code>next/link</code> の <code>&lt;Link&gt;</code> でページ間を移動すると、<b>全ページリロードせず</b>に必要な部分だけ差し替わる（クライアントサイドナビゲーション）。共有レイアウトは保たれ、表示中のリンク先は自動で先読みされる。',
+    why:[
+      '素の <code>&lt;a&gt;</code> でのページ遷移は<strong>全ページを再読み込み</strong>する。共有のヘッダーやサイドバーも作り直され、状態も失われ、表示も一瞬白くなる。',
+      '<code>&lt;Link&gt;</code> は<strong>必要な部分だけ差し替える</strong>。共有レイアウトは再描画されず保たれ、画面内に見えるリンク先は<strong>自動で先読み</strong>されるので、クリック時の表示が速い。SPA のような体験になる。'
+    ],
+    code:[
+      '<span class="kw">import</span> Link <span class="kw">from</span> <span class="str">\'next/link\'</span>;',
+      '',
+      '<span class="cm">// a タグではなく Link を使う</span>',
+      '&lt;<span class="fn">Link</span> href=<span class="str">"/products/123"</span>&gt;商品を見る&lt;/<span class="fn">Link</span>&gt;',
+      '',
+      '<span class="cm">// 動的な遷移はテンプレートリテラルで</span>',
+      '&lt;<span class="fn">Link</span> href={`/products/${id}`}&gt;{name}&lt;/<span class="fn">Link</span>&gt;'
+    ],
+    codeCap:"Link はクライアントサイド遷移と先読みを担う。共有レイアウトを保ったまま必要な部分だけ差し替わる。",
+    yes:["アプリ内のページ間移動すべて","ナビゲーションメニュー・一覧から詳細へのリンク","素早い遷移と先読みが欲しい時"],
+    no:["外部サイトへのリンク（普通の a タグでよい）","ページ遷移ではないボタン操作（onClick で処理）"],
+    noNote:"<strong>アプリ内の遷移は Link</strong>、外部サイトは普通の <code>&lt;a&gt;</code>。Link はクライアントサイド遷移・先読み・レイアウト保持という Next.js の利点を引き出す。プログラムから遷移したい時は <code>useRouter</code> の router.push も使える。",
+    miss:[
+      ['アプリ内リンクも a タグでよい','<code>&lt;a&gt;</code> は<strong>全リロード</strong>。Link なら必要な部分だけ差し替わり速い。'],
+      ['Link は先読みのために手動設定が要る','表示中のリンクは<strong>自動で先読み</strong>される。設定不要。'],
+      ['Link を使うと毎回レイアウトも作り直される','逆。<strong>共有レイアウトは保たれる</strong>のが Link の利点。'],
+      ['外部リンクも Link にすべき','外部サイトは普通の <code>&lt;a&gt;</code> でよい。Link はアプリ内遷移向け。']
+    ],
+    lessons:[
+      {id:"link-nav", num:"01", ctx:"Webサイト", title:"a タグではなく Link", sub:"クライアント遷移と先読み", ready:true},
+      {id:"prefetch-control", num:"02", ctx:"EC", title:"大量リンクの先読みを抑える", sub:"prefetch を絞る判断", ready:true},
+    ]
+  },
+
+  "image": {
+    name:"画像の最適化",
+    cat:"最適化 / 画像",
+    tagline:"next/image の &lt;Image&gt; を使うと、サイズ最適化・遅延読み込み・レイアウトずれ防止が自動で効く。",
+    lede:"img タグの代わりに &lt;Image&gt; を使うと、適切なサイズへの変換や遅延読み込みを Next.js が引き受ける。",
+    def:'<code>next/image</code> の <code>&lt;Image&gt;</code> は、<b>画像を自動で最適化</b>する。表示サイズに合わせた変換、画面外の画像の遅延読み込み、読み込み前の領域確保（レイアウトのガクつき防止）を引き受ける。',
+    why:[
+      '素の <code>&lt;img&gt;</code> は、巨大な元画像をそのまま送ってしまったり、読み込み完了まで高さが0で<strong>レイアウトがガクッとずれ</strong>たり、画面外の画像まで一度に読み込んだりしがち。',
+      '<code>&lt;Image&gt;</code> は<strong>表示サイズに合った画像を配信</strong>し、<strong>画面外は遅延読み込み</strong>し、<strong>幅・高さから領域を先に確保</strong>してガクつきを防ぐ。width/height（または fill）を指定するのは、この領域確保のため。'
+    ],
+    code:[
+      '<span class="kw">import</span> Image <span class="kw">from</span> <span class="str">\'next/image\'</span>;',
+      '',
+      '<span class="cm">// width/height で領域を確保し、最適化・遅延読み込みが効く</span>',
+      '&lt;<span class="fn">Image</span>',
+      '  src=<span class="str">"/product.jpg"</span>',
+      '  width={<span class="par">400</span>} height={<span class="par">300</span>}',
+      '  alt=<span class="str">"商品写真"</span>',
+      '/&gt;'
+    ],
+    codeCap:"Image はサイズ最適化・遅延読み込み・領域確保を自動化。width/height はガクつき防止のための指定。",
+    yes:["商品写真・サムネイル・コンテンツ画像","多くの画像を並べる一覧（遅延読み込みが効く）","レイアウトのガクつきを防ぎたい時"],
+    no:["ごく小さなアイコン（SVG で十分なことも）","最適化が不要な装飾用の単純な画像"],
+    noNote:"<strong>コンテンツ画像は基本 Image</strong>。サイズ最適化と遅延読み込みの恩恵が大きい。width/height は必須級（領域確保のため）で、サイズが可変なら fill とコンテナ側の指定を使う。alt は常に付ける。アイコンは SVG など別手段が向くこともある。",
+    miss:[
+      ['Image はただの img の別名','違う。<strong>サイズ最適化・遅延読み込み・領域確保</strong>を自動で行う。'],
+      ['width/height は省略してよい','領域確保のため<strong>基本は必須</strong>（可変なら fill）。省くとガクつきの原因。'],
+      ['すべての画像が一度に読み込まれる','画面外は<strong>遅延読み込み</strong>される。一覧でも初期表示が軽い。'],
+      ['alt は無くてよい','アクセシビリティのため<strong>常に付ける</strong>。']
+    ],
+    lessons:[
+      {id:"next-image", num:"01", ctx:"EC", title:"商品画像を最適化する", sub:"自動変換・遅延読み込み・ガクつき防止", ready:true},
+      {id:"image-priority", num:"02", ctx:"EC", title:"主役画像を優先で読む", sub:"priority と sizes の使い分け", ready:true},
+    ]
+  },
+
+  "route-handlers": {
+    name:"Route Handlers（APIルート）",
+    cat:"データ / API エンドポイント",
+    tagline:"route.ts を置くと、その URL が API エンドポイントになる。外部公開やWebhook受けに使う。",
+    lede:"page.tsx が画面なら、route.ts は API。GET/POST などの HTTP メソッドを関数として書ける。",
+    def:'<code>route.ts</code>（route.js）を置くと、その URL が<b>API エンドポイント</b>になる。<code>GET</code>・<code>POST</code> などの関数を export し、Web 標準の <code>Request</code>/<code>Response</code> でHTTPを扱う。画面ではなく<b>データを返す</b>口。',
+    why:[
+      'ページ表示のデータ取得は Server Component で直接、フォーム更新は Server Actions で足りることが多い。だが<strong>外部に公開するAPI</strong>、<strong>Webhook の受け口</strong>、<strong>外部クライアントが叩くJSON API</strong>が必要な場面がある。',
+      'Route Handlers は <code>app/api/.../route.ts</code> に <code>GET</code> や <code>POST</code> 関数を書くと、その URL がエンドポイントになる。<strong>page.tsx が画面、route.ts が API</strong> という対応。Web 標準の Request/Response を使うので、特別な作法が少ない。'
+    ],
+    code:[
+      '<span class="cm">// app/api/products/route.ts</span>',
+      '<span class="kw">import</span> { NextResponse } <span class="kw">from</span> <span class="str">\'next/server\'</span>;',
+      '',
+      '<span class="kw">export async function</span> <span class="fn">GET</span>() {',
+      '  <span class="kw">const</span> products = <span class="kw">await</span> <span class="fn">db</span>.products.<span class="fn">findMany</span>();',
+      '  <span class="kw">return</span> NextResponse.<span class="fn">json</span>(products);',
+      '}'
+    ],
+    codeCap:"route.ts に GET/POST 関数を書くとその URL が API に。Web 標準の Request/Response で扱う。",
+    yes:["外部に公開する JSON API","Webhook（決済・外部サービスからの通知）の受け口","外部クライアント（モバイル等）が叩くAPI"],
+    no:["ページ表示用のデータ取得（→ Server Component で直接 await）","フォーム送信・更新（→ Server Actions で十分なことが多い）"],
+    noNote:"<strong>まず Server Component と Server Actions で足りないか問う</strong>。画面用の取得は Server Component、更新は Server Actions が App Router の基本。Route Handlers は「外部に公開する口」「Webhook 受け」など、HTTPエンドポイントそのものが要る時に使う。役割を分けて選ぶ。",
+    miss:[
+      ['データ取得には必ず API ルートを作る','App Router では<strong>Server Component で直接取得</strong>が基本。APIルートは外部公開等の時。'],
+      ['route.ts と page.tsx は同じフォルダに両方置ける','原則どちらか。<strong>route.ts は API、page.tsx は画面</strong>で役割が違う。'],
+      ['Route Handlers は特別な戻り値が要る','Web 標準の <strong>Response</strong>（や NextResponse.json）を返すだけ。'],
+      ['GET も POST も1つの関数で受ける','メソッドごとに <strong>GET / POST 関数を分けて</strong> export する。']
+    ],
+    lessons:[
+      {id:"api-route", num:"01", ctx:"業務ツール", title:"API エンドポイントを作る", sub:"route.ts と HTTP メソッド", ready:true},
+      {id:"get-vs-action", num:"02", ctx:"Webサイト", title:"GET の落とし穴と使い分け", sub:"副作用は GET に置かない", ready:true},
+    ]
   }
 };
 
@@ -3003,6 +3165,107 @@ const NEXT_LESSONS = {
        staticCode:true},
     ],
     doneMsg:"Client は Server を直接インポートできないが、children として受け取れる。Client が操作を、Server が中身を担い、合成で組み合わせる。children を使った合成が、Next.js の境界設計でそのまま活きました。"
+  },
+
+  "serializable-props":{
+    concept:"Server / Client Components", title:"境界を越える props の制約",
+    scenario:"EC商品ページ。Server Component で商品を取得し、Client Component の「カートに追加」ボタンに渡す。",
+    steps:[
+      {eyebrow:"STEP 1 — 境界を越える時の制約", lbl:"シリアライズ可能", sub:"ネットワークを渡る",
+       prompt:"Server Component から Client Component に props を渡す。何でも渡せる?",
+       question:"何でも渡せる？",
+       opts:[{t:"シリアライズ可能な値だけ。境界を越えてクライアントに送られるから",ok:true},{t:"同じアプリ内なので、どんな値でも自由に渡せる",ok:false},{t:"props は渡せず、すべて再取得が必要",ok:false}],
+       why:"Server→Client の props は<b>ネットワークを越えてクライアントに送られる</b>ため、<b>シリアライズ可能</b>（文字列・数値・真偽値・プレーンなオブジェクトや配列）でなければならない。同じアプリ内でもプロセス境界を越えるので、何でも渡せるわけではない。",
+       code:null},
+      {eyebrow:"STEP 2 — 渡せる値", lbl:"プリミティブと素の値", sub:"安全なもの",
+       prompt:"次のうち、Client Component に props として渡して安全なのは?",
+       question:"① 渡して安全なのは？",
+       opts:[{t:"商品名・価格・id などの文字列や数値、プレーンなオブジェクト",ok:true},{t:"データ取得に使った関数そのもの",ok:false},{t:"クラスのインスタンス（例: 独自の Product クラス）",ok:false}],
+       why:"<b>文字列・数値・真偽値・プレーンなオブジェクトや配列</b>は安全に渡せる。一方、<b>関数</b>（後述の Server Actions を除く）や<b>クラスのインスタンス</b>はシリアライズできず渡せない。「素のデータに変換してから渡す」が基本。",
+       code:['<span class="cm">// Server Component</span>','<span class="kw">const</span> product = <span class="kw">await</span> <span class="fn">getProduct</span>(id);','&lt;<span class="fn">AddToCart</span>','  id={product.id} name={product.name} price={product.price} /&gt;'],
+       staticCode:true},
+      {eyebrow:"STEP 3 — 渡せないものの扱い", lbl:"素のデータに直す", sub:"変換してから渡す",
+       prompt:"取得結果に Date 型や独自クラスが含まれる。Client にどう渡す?",
+       question:"② Date やクラスは？",
+       opts:[{t:"文字列や数値など素の値に変換してから渡す",ok:true},{t:"そのまま渡せばクライアントで自動復元される",ok:false},{t:"渡せないので Client 側で再取得するしかない",ok:false}],
+       why:"Date やクラスインスタンスはそのままでは越えられない。<code>date.toISOString()</code> のように<b>素の値へ変換して渡す</b>のが定石。クライアントで必要なら受け取った文字列から組み立て直す。再取得が常に必要なわけではなく、まず変換を考える。",
+       code:['&lt;<span class="fn">OrderRow</span> createdAt={order.createdAt.<span class="fn">toISOString</span>()} /&gt;'],
+       staticCode:true},
+      {eyebrow:"STEP 4 — 関数を渡したい時", lbl:"Server Actions は例外", sub:"参照で渡る",
+       prompt:"「保存する関数」を Client に渡したい。普通の関数は渡せないが、例外は?",
+       question:"③ 関数を渡す手段は？",
+       opts:[{t:"'use server' を付けた Server Action なら渡せる",ok:true},{t:"どんな関数でも props で渡せる",ok:false},{t:"関数は一切渡せない",ok:false}],
+       why:"普通の関数は渡せないが、<code>\"use server\"</code> を付けた<b>Server Action は例外的に渡せる</b>（値ではなく参照として送られる）。これで Client のボタンからサーバー処理を呼べる。「関数は基本ダメ、Server Action だけ別」と覚える。",
+       code:null},
+    ],
+    doneMsg:"Server→Client の props はネットワークを越えるためシリアライズ可能な値に限る。関数やクラス・Date は素のデータに変換し、関数を渡したい時は Server Action を使う。境界を越えるデータの制約が掴めました。"
+  },
+
+  "context-provider":{
+    concept:"Server / Client Components", title:"テーマ Context の置き方",
+    scenario:"サイト全体でダークモードを共有したい。React Context のテーマプロバイダを App Router でどう置くか。",
+    steps:[
+      {eyebrow:"STEP 1 — Context の制約", lbl:"Server では使えない", sub:"まず前提",
+       prompt:"React Context（createContext / useContext）は Server Component で使える?",
+       question:"Server Component で Context は？",
+       opts:[{t:"使えない。Context は状態を持つ仕組みで Client 側のもの",ok:true},{t:"使える。どこでも自由に使える",ok:false},{t:"Server 専用の機能だ",ok:false}],
+       why:"<b>Context は Server Component では使えない</b>。状態や購読を伴う仕組みで、サーバーで一度実行されて終わる Server Component とは相容れない。だからテーマプロバイダは Client Component にする必要がある——ここが出発点。",
+       code:null},
+      {eyebrow:"STEP 2 — プロバイダを Client にする", lbl:"'use client'", sub:"境界を作る",
+       prompt:"テーマプロバイダのファイル先頭に①を付けて Client Component にする。",
+       question:"① プロバイダに付けるのは？",
+       opts:[{t:'"use client"',ok:true},{t:'"use server"',ok:false},{t:"何も付けない（Server のまま）",ok:false}],
+       why:"プロバイダは状態を持ち Context を提供するので <code>\"use client\"</code> を付けて Client Component にする。これで useState や createContext が使える。Context を扱う以上、プロバイダ自体は Client 側になるのは避けられない。",
+       code:['<span class="b1">①</span>;','<span class="kw">export function</span> <span class="fn">ThemeProvider</span>({ children }: { children: <span class="fn">ReactNode</span> }) {','  <span class="kw">const</span> [theme, setTheme] = <span class="fn">useState</span>(<span class="str">\'light\'</span>);','  <span class="kw">return</span> &lt;<span class="fn">Ctx.Provider</span> value={{ theme, setTheme }}&gt;{children}&lt;/<span class="fn">Ctx.Provider</span>&gt;;','}'],
+       fill:{slot:"b1",val:'<span class="str">"use client"</span>'}},
+      {eyebrow:"STEP 3 — 中身は Server のまま", lbl:"children で包む", sub:"全部 Client にしない",
+       prompt:"このプロバイダでアプリ全体を包む。中のページは全部 Client になってしまう?",
+       question:"② children で包むと中身は？",
+       opts:[{t:"Server のまま。children は包まれるだけで Client 化しない",ok:true},{t:"プロバイダが Client なので中身も全部 Client になる",ok:false},{t:"中身は再描画され続ける",ok:false}],
+       why:"プロバイダが Client でも、<b>children として渡された中身は Server のまま</b>。children はサーバーで先に描画され、Client プロバイダはそれを「包む」だけで再描画しない。だから全体を Client 化せずに Context を行き渡らせられる。合成の利点そのもの。",
+       code:['<span class="cm">// app/layout.tsx（Server Component のまま）</span>','&lt;<span class="fn">ThemeProvider</span>&gt;','  {children}  <span class="cm">// 各ページは Server のまま</span>','&lt;/<span class="fn">ThemeProvider</span>&gt;'],
+       staticCode:true},
+      {eyebrow:"STEP 4 — できるだけ深く置く", lbl:"配置の判断", sub:"静的部分を活かす",
+       prompt:"プロバイダはどこに置くのが良い?",
+       question:"③ プロバイダの配置は？",
+       opts:[{t:"必要な範囲をできるだけ深く包む（全体を覆いすぎない）",ok:true},{t:"とにかく最上位で全要素を直接包む",ok:false},{t:"ページごとに個別に置き直す",ok:false}],
+       why:"プロバイダは<b>必要な範囲をできるだけ深く</b>包むのが良い。children を通すので全体を Client 化はしないが、境界をむやみに上げず必要な所に絞ると、Server の静的な部分を活かしやすい。「広く共有」と「不必要に覆わない」のバランス。",
+       code:null},
+    ],
+    doneMsg:"Context は Server Component で使えないため、プロバイダは 'use client' にする。だが children で包めば中身は Server のまま保たれる。全体を Client 化せず Context を行き渡らせる——テーマや認証で頻出の置き方が掴めました。"
+  },
+
+  "use-client-spread":{
+    concept:"Server / Client Components", title:"'use client' はどこまで伝わるか",
+    scenario:"あるコンポーネントに 'use client' を付けたら、そこから import している別のコンポーネントまでクライアント側になった。なぜか。",
+    steps:[
+      {eyebrow:"STEP 1 — 伝播の仕組み", lbl:"import 先も巻き込む", sub:"モジュール単位",
+       prompt:"'use client' を付けたファイルが、別のコンポーネントを import している。その import 先は?",
+       question:"import 先はどうなる？",
+       opts:[{t:"一緒にクライアントバンドルに入る（境界の内側になる）",ok:true},{t:"import 先は影響を受けず Server のまま",ok:false},{t:"import 先だけ別に判定される",ok:false}],
+       why:"<code>\"use client\"</code> は<b>そのファイルと、そこから import するものすべて</b>をクライアント側に含める。境界の「内側」に入った import 先は、自分で 'use client' を書いていなくても Client Component として扱われる。これが伝播の仕組み。",
+       code:null},
+      {eyebrow:"STEP 2 — import では戻せない", lbl:"一方向", sub:"再確立できない",
+       prompt:"Client Component の中で Server Component を import すれば、そこだけ Server に戻せる?",
+       question:"import で Server に戻せる？",
+       opts:[{t:"戻せない。クライアント境界の内側で import したものは Client になる",ok:true},{t:"戻せる。import すれば Server に戻る",ok:false},{t:"'use server' を付ければ戻る",ok:false}],
+       why:"いったんクライアント境界に入ると、<b>import で Server を再確立することはできない</b>。Client の中で import したコンポーネントはクライアント側になる。Server を組み合わせたいなら import ではなく、前に学んだ<b>children や props で渡す合成</b>を使う。",
+       code:null},
+      {eyebrow:"STEP 3 — だから末端に置く", lbl:"境界を下げる", sub:"バンドルを小さく",
+       prompt:"この伝播を踏まえ、'use client' はどこに置くべき?",
+       question:"① 'use client' の置き場所は？",
+       opts:[{t:"操作が要る末端のコンポーネントだけに置く",ok:true},{t:"ページの最上位に置いてまとめて管理する",ok:false},{t:"共通の import 元に置く",ok:false}],
+       why:"伝播するからこそ、<b>操作が要る末端だけ</b>に 'use client' を置く。上位に置くと、そこから import される多くのコンポーネントまで巻き込んでクライアントバンドルが膨らむ。「境界は下げる・小さくする」——最重要レッスンの原則がこの仕組みから導かれる。",
+       code:['<span class="cm">// ✕ ページ全体に付けると配下を巻き込む</span>','<span class="cm">// ○ 操作する末端だけに付ける</span>','<span class="str">"use client"</span>;  <span class="cm">// LikeButton.tsx のような葉に</span>'],
+       staticCode:true},
+      {eyebrow:"STEP 4 — 切り出す対処", lbl:"葉に分割", sub:"実践",
+       prompt:"あるページで1つのボタンだけ onClick が要る。どう直す?",
+       question:"② どう切り出す？",
+       opts:[{t:"そのボタンを別ファイルに切り出し、そのファイルだけ 'use client'",ok:true},{t:"ページ全体に 'use client' を付ける",ok:false},{t:"ページを丸ごと Client Component にする",ok:false}],
+       why:"<b>ボタンを別ファイルに切り出し、そのファイルだけ 'use client'</b> にする。ページや周りのコンポーネントは Server のまま保てる。1つの操作のためにページ全体を巻き込まない——伝播の仕組みを理解すると、この対処が自然に出てくる。",
+       code:null},
+    ],
+    doneMsg:"'use client' はそのファイルと import 先すべてをクライアントに含め、import では Server に戻せない。だから操作の要る末端だけに置き、必要なら葉に切り出す。境界を小さく保つ理由が、伝播の仕組みから腑に落ちました。"
   },
 
   "server-fetch":{
@@ -3140,6 +3403,305 @@ const NEXT_LESSONS = {
        fill:{slot:"b3",val:'getPost(id)'}},
     ],
     doneMsg:"[id] の動的フォルダ1つで全記事ページを賄い、値は params で受け取り、その id でサーバー取得する。動的ルートとサーバー取得が繋がって、件数可変のページが作れる——Next.js のルーティングの実用形が掴めました。"
+  },
+
+  "static-dynamic":{
+    concept:"レンダリング戦略", title:"静的か動的かは自動で決まる",
+    scenario:"会社サイトの「会社概要」ページ。内容はめったに変わらず、誰が見ても同じ。",
+    steps:[
+      {eyebrow:"STEP 1 — 旧来の宣言は無い", lbl:"発想の転換", sub:"明示的に選ばない",
+       prompt:"App Router で「このページは静的に（SSG）」と指定したい。どうする?",
+       question:"静的化の指定は？",
+       opts:[{t:"明示的な指定は不要。動的な要素を使わなければ自動的に静的になる",ok:true},{t:"getStaticProps を export する",ok:false},{t:"export const ssg = true を書く",ok:false}],
+       why:"App Router に <code>getStaticProps</code>/<code>getServerSideProps</code> は<b>無い</b>。静的か動的かは<b>コンポーネントが何を使うか</b>で自動的に決まる。動的な要素を使わなければビルド時に1度生成され静的になる。「宣言する」発想から「使うもので決まる」発想への転換が要点。",
+       code:null},
+      {eyebrow:"STEP 2 — 何が動的化を招くか", lbl:"動的の引き金", sub:"使うと動的に",
+       prompt:"会社概要を静的に保ちたい。ページ内で<b>避けるべき</b>ものは?",
+       question:"① 静的を保つには避けるのは？",
+       opts:[{t:"cookies() や headers() などリクエスト依存の読み取り",ok:true},{t:"普通の文章や画像の表示",ok:false},{t:"子コンポーネントへの props 渡し",ok:false}],
+       why:"<code>cookies()</code>・<code>headers()</code>・検索パラメータ・キャッシュしない fetch など<b>リクエストごとに変わる要素</b>を使うと、Next.js はそのページを動的（リクエストごとに生成）と判定する。静的に保ちたいなら、これらを使わない。普通の表示や props は静的のまま。",
+       code:['<span class="cm">// 静的なまま（リクエスト依存の要素なし）</span>','<span class="kw">export default function</span> <span class="fn">About</span>() {','  <span class="kw">return</span> &lt;<span class="fn">main</span>&gt;…会社概要…&lt;/<span class="fn">main</span>&gt;;','}'],
+       staticCode:true},
+      {eyebrow:"STEP 3 — ユーザー固有は動的に", lbl:"動的が要る時", sub:"自動で切り替わる",
+       prompt:"別のページでログイン中ユーザー名を表示する。これは?",
+       question:"② ユーザー名を出すページは？",
+       opts:[{t:"cookies 等を読むので自動的に動的になる（それが正しい）",ok:true},{t:"無理やり静的にすべき",ok:false},{t:"静的のまま全員に同じ名前が出る",ok:false}],
+       why:"ユーザー固有の表示は<b>リクエストごとに変わる</b>べきもの。cookies 等を読むことで<b>自動的に動的</b>になり、それが正しい挙動。静的にしたら全員に同じHTMLが配信され破綻する。「内容の性質」が静的/動的を決め、使うものがそれを実現する。",
+       code:null},
+      {eyebrow:"STEP 4 — 判断の軸", lbl:"性質で選ぶ", sub:"静的/ISR/動的",
+       prompt:"静的・動的を分ける<b>判断の軸</b>として妥当なのは?",
+       question:"③ 判断の軸は？",
+       opts:[{t:"内容の性質（公開で安定か、ユーザー固有か、時々更新か）",ok:true},{t:"ページの見た目の派手さ",ok:false},{t:"コンポーネントの行数",ok:false}],
+       why:"<b>内容の性質</b>で決める。公開・安定（会社概要・記事）は静的、ユーザー固有・リアルタイムは動的、時々更新（商品一覧）は ISR。見た目や行数は無関係。性質を見極め、それに応じて「使うもの」を選ぶのが App Router のレンダリングの考え方。",
+       code:null},
+    ],
+    doneMsg:"App Router では SSR/SSG を宣言しない。動的な要素（cookies 等）を使わなければ静的、使えば動的に自動で決まる。判断の軸は内容の性質——「宣言する」から「使うもので決まる」への発想の転換が掴めました。"
+  },
+
+  "isr":{
+    concept:"レンダリング戦略", title:"商品一覧を定期更新（ISR）",
+    scenario:"EC の商品一覧。アクセスは多く速さが欲しいが、価格や在庫はたまに変わる。",
+    steps:[
+      {eyebrow:"STEP 1 — 静的と動的の間", lbl:"両立したい", sub:"速さと鮮度",
+       prompt:"商品一覧を「静的なみの速さ」で出しつつ「たまの更新」も反映したい。完全な静的・動的のどちらでもしっくりこない。何を使う?",
+       question:"速さと鮮度を両立するには？",
+       opts:[{t:"ISR（静的に生成しつつ、一定間隔で裏で更新する）",ok:true},{t:"完全な動的にして毎回生成する",ok:false},{t:"完全な静的にして更新は諦める",ok:false}],
+       why:"完全な動的は毎リクエスト生成で遅くなりがち、完全な静的は更新が反映されない。<b>ISR</b>はその中間で、静的の速さを保ちつつ<b>一定間隔で裏で再生成</b>する。アクセスが多く・速さが要り・たまに更新される商品一覧に向く。",
+       code:null},
+      {eyebrow:"STEP 2 — revalidate を指定", lbl:"間隔を書く", sub:"これだけ",
+       prompt:"1時間ごとに裏で更新したい。①でページに書くのは?",
+       question:"① ISR の指定は？",
+       opts:[{t:"export const revalidate = 3600",ok:true},{t:"export const isr = true",ok:false},{t:"getStaticProps に revalidate を返す",ok:false}],
+       why:"<code>export const revalidate = 3600</code>（秒）を書くだけ。これでページは静的に生成されつつ、1時間ごとに裏で再生成される。<code>getStaticProps</code> は App Router には無い。特別な関数ではなく、この一行の宣言で ISR になる。",
+       code:['<span class="b1">①</span>;','','<span class="kw">export default async function</span> <span class="fn">Products</span>() {','  <span class="kw">const</span> items = <span class="kw">await</span> <span class="fn">fetchProducts</span>();','  <span class="kw">return</span> &lt;<span class="fn">Grid</span> items={items} /&gt;;','}'],
+       fill:{slot:"b1",val:'<span class="kw">export const</span> revalidate = <span class="par">3600</span>'}},
+      {eyebrow:"STEP 3 — 更新の仕組み", lbl:"古い版を見せて裏で更新", sub:"stale-while-revalidate",
+       prompt:"revalidate の間隔が過ぎた後、最初にアクセスしたユーザーが見るのは?",
+       question:"② 間隔経過後の最初のアクセスは？",
+       opts:[{t:"まず古い版が表示され、裏で再生成されて次から新しくなる",ok:true},{t:"再生成を待たされてから新しい版を見る",ok:false},{t:"エラーになる",ok:false}],
+       why:"ISR は<b>古い版をすぐ見せつつ、裏で再生成</b>する方式。間隔経過後の最初のユーザーは古い版を即座に見て、その裏で更新が走り、次のユーザーから新しい版になる。待たされないので速さを保てる。これが「静的の速さ＋たまの鮮度」の仕組み。",
+       code:null},
+      {eyebrow:"STEP 4 — 即時更新したい時", lbl:"オンデマンド再検証", sub:"間隔を待たない",
+       prompt:"商品を編集したら<b>すぐ</b>一覧に反映したい。間隔を待ちたくない。③は?",
+       question:"③ 即時反映するには？",
+       opts:[{t:"更新時に revalidatePath / revalidateTag を呼んで明示的に再検証する",ok:true},{t:"revalidate を 0 にする",ok:false},{t:"ISR では即時反映はできない",ok:false}],
+       why:"時間間隔とは別に、<b>更新が起きた時に <code>revalidatePath('/products')</code> 等を呼ぶ</b>ことで、間隔を待たず即座に再検証できる（オンデマンド再検証）。Server Actions での更新後に呼ぶのが定番。時間ベースとオンデマンドを組み合わせて鮮度を制御する。",
+       code:null},
+    ],
+    doneMsg:"ISR は静的の速さと、たまの鮮度を両立する。revalidate で間隔を宣言し、古い版を見せつつ裏で更新。即時反映が要る時は revalidatePath で明示的に再検証する。商品一覧のような「速くてたまに変わる」ページの考え方が掴めました。"
+  },
+
+  streaming:{
+    concept:"レンダリング戦略", title:"重い部分を後から流し込む",
+    scenario:"業務ダッシュボード。集計グラフの取得が遅く、ページ全体がそれに引きずられて真っ白なまま待たされる。",
+    steps:[
+      {eyebrow:"STEP 1 — 全部を待たない", lbl:"遅い一部に引きずられる", sub:"問題の構造",
+       prompt:"ページに「すぐ出る部分」と「取得が遅い集計」が混在する。全体が遅い集計を待つと?",
+       question:"全部待つと？",
+       opts:[{t:"速い部分まで一緒に待たされ、ページが真っ白なままになる",ok:true},{t:"速い部分だけ先に出て、遅い部分は自動で諦められる",ok:false},{t:"遅い集計は表示されなくなる",ok:false}],
+       why:"1つの遅いデータ取得にページ全体が引きずられると、すぐ出せるヘッダーや一覧まで待たされ、<b>真っ白な時間</b>が生まれる。速い所は先に見せ、遅い所だけ後から出したい——これがストリーミングの狙い。",
+       code:null},
+      {eyebrow:"STEP 2 — 区切りで待つ", lbl:"loading.tsx", sub:"段の読込表示",
+       prompt:"あるルート区画の読み込み中に、自動で表示される枠を置くファイルは?",
+       question:"① 読込中の表示ファイルは？",
+       opts:[{t:"loading.tsx",ok:true},{t:"spinner.tsx",ok:false},{t:"page.tsx に手書きする",ok:false}],
+       why:"<code>loading.tsx</code> をルート区画に置くと、その区画の準備中に<b>自動で表示</b>される。内部的には Suspense の境界として働き、ページ全体ではなくその区画だけを「待ち」にできる。名前で役割が決まる規約。",
+       code:null},
+      {eyebrow:"STEP 3 — 一部だけ Suspense で囲む", lbl:"細かく流す", sub:"重い所を切り出す",
+       prompt:"ページ内で、遅い集計グラフ<b>だけ</b>を後から流したい。②で囲むのは?",
+       question:"② 何で囲む？",
+       opts:[{t:"&lt;Suspense fallback={…}&gt; で遅いコンポーネントを囲む",ok:true},{t:"useState で loading を持って分岐する",ok:false},{t:"そのコンポーネントを 'use client' にする",ok:false}],
+       why:"遅い部分を <code>&lt;Suspense fallback={…}&gt;</code> で囲むと、その中身の準備を待つ間 fallback を見せ、<b>準備でき次第そこだけ差し替わる</b>。ページの他の部分は先に表示される。Server Component のままでよく、useState の loading 管理は不要。",
+       code:['&lt;<span class="fn">Dashboard</span>&gt;','  &lt;<span class="fn">Header</span> /&gt;          <span class="cm">// すぐ出る</span>','  &lt;<span class="b1">①</span> fallback={&lt;<span class="fn">Skeleton</span> /&gt;}&gt;','    &lt;<span class="fn">SlowChart</span> /&gt;     <span class="cm">// 遅い。後から流れてくる</span>','  &lt;/<span class="b1">①</span>&gt;','&lt;/<span class="fn">Dashboard</span>&gt;'],
+       fill:{slot:"b1",val:'Suspense'}},
+      {eyebrow:"STEP 4 — 体験の効果", lbl:"早く見え始める", sub:"何が良くなるか",
+       prompt:"Suspense で遅い集計を切り出した。ユーザー体験はどう変わる?",
+       question:"③ 体験はどう変わる？",
+       opts:[{t:"速い部分が即表示され、遅い集計だけ後から埋まる",ok:true},{t:"全体の表示が遅い集計に合わせて遅くなる",ok:false},{t:"集計が出るまで何も表示されない",ok:false}],
+       why:"ヘッダーや枠が<b>即座に表示</b>され、遅い集計はスケルトンを見せながら準備でき次第流し込まれる。「真っ白で待つ」が「骨組みは見えていて中身が埋まる」に変わり、体感が大きく改善する。重い所を切り出すほど効く。",
+       code:null},
+    ],
+    doneMsg:"遅い一部にページ全体を引きずらせず、loading.tsx や Suspense で「速い所は即・遅い所は後から」流し込む。Server Component のまま、真っ白な待ち時間を骨組み表示に変えられる——ストリーミングの考え方が掴めました。"
+  },
+
+  "link-nav":{
+    concept:"リンクとナビゲーション", title:"a タグではなく Link",
+    scenario:"会社サイトのナビメニュー。トップ・サービス・会社概要を行き来する。ヘッダーは全ページ共通。",
+    steps:[
+      {eyebrow:"STEP 1 — a タグの問題", lbl:"全リロード", sub:"何が無駄か",
+       prompt:"ページ遷移に素の <code>&lt;a href=\"/about\"&gt;</code> を使うと、何が起きる?",
+       question:"a タグでの遷移は？",
+       opts:[{t:"全ページが再読み込みされ、共通ヘッダーも作り直され一瞬白くなる",ok:true},{t:"必要な部分だけ差し替わり共通部分は保たれる",ok:false},{t:"遷移できずエラーになる",ok:false}],
+       why:"素の <code>&lt;a&gt;</code> は<b>全ページを再読み込み</b>する。共通のヘッダーやサイドバーも毎回作り直され、画面が一瞬白くなり、スクロール位置などの状態も失われる。アプリ内の遷移としては無駄が多い。",
+       code:null},
+      {eyebrow:"STEP 2 — Link を使う", lbl:"next/link", sub:"href で遷移先",
+       prompt:"クライアントサイド遷移にする。①の Link の書き方は?",
+       question:"① Link の遷移先指定は？",
+       opts:[{t:'&lt;Link href="/about"&gt;会社概要&lt;/Link&gt;',ok:true},{t:'&lt;Link to="/about"&gt;会社概要&lt;/Link&gt;',ok:false},{t:'&lt;Link onClick="/about"&gt;会社概要&lt;/Link&gt;',ok:false}],
+       why:"<code>&lt;Link href=\"/about\"&gt;</code> と <b>href</b> で遷移先を指定する（<code>to</code> ではない——それは別ライブラリの書き方）。これでクライアントサイド遷移になり、必要な部分だけ差し替わる。子に表示テキストやコンポーネントを置ける。",
+       code:['<span class="kw">import</span> Link <span class="kw">from</span> <span class="str">\'next/link\'</span>;','&lt;<span class="fn">nav</span>&gt;','  <span class="b1">①</span>','&lt;/<span class="fn">nav</span>&gt;'],
+       fill:{slot:"b1",val:'&lt;<span class="fn">Link</span> href=<span class="str">"/about"</span>&gt;会社概要&lt;/<span class="fn">Link</span>&gt;'}},
+      {eyebrow:"STEP 3 — 得られる利点", lbl:"保持と先読み", sub:"速い遷移",
+       prompt:"Link にしたことで得られる利点は?",
+       question:"② Link の利点は？",
+       opts:[{t:"共有レイアウトが保たれ、見えているリンク先は自動で先読みされる",ok:true},{t:"遷移のたびに全コンポーネントが作り直される",ok:false},{t:"JavaScript が無効でも必ず動く",ok:false}],
+       why:"Link は<b>共有レイアウトを保ったまま</b>必要な部分だけ差し替え、画面内に見えるリンク先を<b>自動で先読み</b>する。だからクリック時の表示が速い。ヘッダーが作り直されず状態も保たれ、SPA のような滑らかな体験になる。",
+       code:null},
+      {eyebrow:"STEP 4 — 使い分け", lbl:"内部と外部", sub:"外部は a タグ",
+       prompt:"外部サイト（例: https://example.com）へのリンクは?",
+       question:"③ 外部リンクは？",
+       opts:[{t:"普通の a タグでよい。Link はアプリ内遷移向け",ok:true},{t:"必ず Link を使う",ok:false},{t:"外部リンクは貼れない",ok:false}],
+       why:"<b>アプリ内の遷移は Link</b>、外部サイトは普通の <code>&lt;a&gt;</code> でよい。Link のクライアント遷移・先読み・レイアウト保持はアプリ内でこそ意味がある。外部は別サイトへ出ていくので素の a タグが素直。用途で使い分ける。",
+       code:null},
+    ],
+    doneMsg:"アプリ内の遷移は Link を使うと、全リロードせず必要な部分だけ差し替わり、共有レイアウトが保たれ先読みも効く。外部サイトは素の a タグ。Next.js の画面遷移の基本が掴めました。"
+  },
+
+  "prefetch-control":{
+    concept:"リンクとナビゲーション", title:"大量リンクの先読みを抑える",
+    scenario:"EC商品一覧。1ページに商品カードを100件並べ、それぞれ詳細ページへの Link を置いている。",
+    steps:[
+      {eyebrow:"STEP 1 — 先読みの既定", lbl:"自動プリフェッチ", sub:"便利だが諸刃",
+       prompt:"画面内に入った Link を、Next.js は既定でどう扱う?",
+       question:"Link の既定の挙動は？",
+       opts:[{t:"ビューポートに入ると、その遷移先を自動で先読み（プリフェッチ）する",ok:true},{t:"クリックされて初めて遷移先を読み込む",ok:false},{t:"先読みは手動で指定しない限り一切しない",ok:false}],
+       why:"Link は<b>画面に入った時点で遷移先を自動プリフェッチ</b>する。だからクリック時の遷移が速い。1つ2つなら理想的な挙動。ただしリンクが大量にあると、この自動先読みが裏目に出ることがある。",
+       code:null},
+      {eyebrow:"STEP 2 — 大量だと負荷に", lbl:"100件の先読み", sub:"問題の発生",
+       prompt:"商品カード100件すべてに Link がある。一覧を開くと何が起きうる?",
+       question:"100件の Link を並べると？",
+       opts:[{t:"100件分の先読みが一斉に走り、通信が無駄に膨らむ",ok:true},{t:"先読みは1件ずつ順番に行われ負荷は出ない",ok:false},{t:"件数が多いと Next.js が自動で先読みを止める",ok:false}],
+       why:"画面内の Link がすべて先読み対象になるため、<b>100件分のプリフェッチが一斉に走り</b>、通信帯域を無駄に使う。多くのユーザーはそのうち数件しか開かない。便利な自動先読みが、大量リンクでは負荷になる。",
+       code:null},
+      {eyebrow:"STEP 3 — 先読みを切る", lbl:"prefetch={false}", sub:"一覧では抑える",
+       prompt:"一覧の各カードで自動先読みを止める。①で Link に渡すのは?",
+       question:"① 先読みを止めるには？",
+       opts:[{t:"prefetch={false}",ok:true},{t:"prefetch={true}",ok:false},{t:"preload={false}",ok:false}],
+       why:"<code>prefetch={false}</code> で<b>自動先読みを止められる</b>。一覧のように「多数あるが大半は開かれない」リンクに向く。クリック時の遷移自体はクライアントサイドで行われるので、全リロードにはならない。先読みだけを切る指定。",
+       code:['{products.map(p => (','  &lt;<span class="fn">Link</span> key={p.id} href={`/items/${p.id}`} <span class="b1">①</span>&gt;','    {p.name}','  &lt;/<span class="fn">Link</span>&gt;','))}'],
+       fill:{slot:"b1",val:'prefetch={false}'}},
+      {eyebrow:"STEP 4 — 使い分けの判断", lbl:"どこを残すか", sub:"高価値は残す",
+       prompt:"先読みを残すべきリンクは?",
+       question:"② 先読みを残すのは？",
+       opts:[{t:"遷移される可能性が高い少数の重要リンク（カート・購入手続きなど）",ok:true},{t:"とにかく全リンクで先読みを切るのが最善",ok:false},{t:"件数に関わらず常に全部で先読みを残す",ok:false}],
+       why:"カートや購入手続きなど<b>遷移される可能性が高い少数のリンク</b>は先読みを残すと体験が良い。逆に大量の一覧は切る。「全部切る」でも「全部残す」でもなく、<b>遷移の見込みで判断</b>する——最適化に共通する「効く所に絞る」姿勢。",
+       code:null},
+    ],
+    doneMsg:"Link は既定で画面内の遷移先を自動先読みする。大量にあると一斉先読みが負荷になるため、一覧では prefetch={false} で抑え、遷移見込みの高い重要リンクは残す。先読みを遷移の見込みで使い分ける判断が掴めました。"
+  },
+
+  "next-image":{
+    concept:"画像の最適化", title:"商品画像を最適化する",
+    scenario:"EC の商品一覧。多数の商品写真を並べる。元画像は大きく、読み込みでレイアウトがガクつく。",
+    steps:[
+      {eyebrow:"STEP 1 — img タグの課題", lbl:"何が問題か", sub:"重い・ガクつく",
+       prompt:"商品写真を素の <code>&lt;img&gt;</code> で多数並べると、起きがちな問題は?",
+       question:"img タグの課題は？",
+       opts:[{t:"巨大な元画像がそのまま送られ、読み込み前は高さ0でレイアウトがずれる",ok:true},{t:"画像が一切表示されない",ok:false},{t:"alt が自動で付くので何もしなくてよい",ok:false}],
+       why:"素の <code>&lt;img&gt;</code> は<b>巨大な元画像をそのまま配信</b>しがちで重く、読み込み完了まで<b>高さが0でレイアウトがガクッとずれ</b>る。画面外の画像まで一度に読み込むこともある。一覧で多数並べると体験が悪化する。",
+       code:null},
+      {eyebrow:"STEP 2 — Image を使う", lbl:"next/image", sub:"自動最適化",
+       prompt:"最適化を効かせる。①で使うコンポーネントは?",
+       question:"① 何を使う？",
+       opts:[{t:"next/image の &lt;Image&gt;",ok:true},{t:"素の &lt;img&gt; のまま class を付ける",ok:false},{t:"&lt;picture&gt; タグを手書きする",ok:false}],
+       why:"<code>next/image</code> の <code>&lt;Image&gt;</code> を使うと、<b>表示サイズに合った画像の配信・遅延読み込み・領域確保</b>が自動で効く。素の img や手書きの picture では、これらを自前で用意することになる。Next.js に最適化を任せる。",
+       code:['<span class="kw">import</span> Image <span class="kw">from</span> <span class="str">\'next/image\'</span>;','&lt;<span class="b1">①</span> src=<span class="str">"/p.jpg"</span> width={<span class="par">300</span>} height={<span class="par">300</span>} alt=<span class="str">"商品"</span> /&gt;'],
+       fill:{slot:"b1",val:'<span class="fn">Image</span>'}},
+      {eyebrow:"STEP 3 — width/height の意味", lbl:"領域を先に確保", sub:"ガクつき防止",
+       prompt:"<code>width</code> と <code>height</code> を指定するのは、主に何のため?",
+       question:"② width/height の役割は？",
+       opts:[{t:"読み込み前に領域を確保し、レイアウトのガクつきを防ぐため",ok:true},{t:"画像を強制的にその画素数で送らせるため",ok:false},{t:"見た目の装飾のため",ok:false}],
+       why:"width/height は<b>読み込み前に表示領域を確保</b>するためで、これでレイアウトのガクつき（CLS）を防ぐ。実際に配信される画像は表示サイズに最適化される。サイズが可変なら <code>fill</code> とコンテナ側の指定を使う。領域確保が主目的。",
+       code:null},
+      {eyebrow:"STEP 4 — 一覧での効果", lbl:"遅延読み込み", sub:"初期表示が軽い",
+       prompt:"Image で商品一覧を組むと、画面外の画像は?",
+       question:"③ 画面外の画像は？",
+       opts:[{t:"遅延読み込みされ、スクロールで近づいてから読み込まれる",ok:true},{t:"全部まとめて最初に読み込まれる",ok:false},{t:"表示されない",ok:false}],
+       why:"<code>&lt;Image&gt;</code> は画面外の画像を<b>遅延読み込み</b>する。スクロールで近づいてから読むので、多数並ぶ一覧でも<b>初期表示が軽い</b>。サイズ最適化と合わせて、画像の多いECサイトで効果が大きい。alt は常に付けてアクセシビリティも担保する。",
+       code:null},
+    ],
+    doneMsg:"商品画像は next/image の &lt;Image&gt; でサイズ最適化・遅延読み込み・領域確保が自動で効く。width/height はガクつき防止のための領域確保。画像の多い一覧でこそ恩恵が大きい——画像最適化の考え方が掴めました。"
+  },
+
+  "image-priority":{
+    concept:"画像の最適化", title:"主役画像を優先で読む",
+    scenario:"EC商品ページ。画面上部に大きな主役画像（メインビジュアル）、下にレスポンシブで幅が変わるサムネイル群。",
+    steps:[
+      {eyebrow:"STEP 1 — 既定は遅延読み込み", lbl:"lazy がデフォルト", sub:"上部画像には不利",
+       prompt:"next/image は既定で画像を遅延読み込み（lazy）する。画面最上部の主役画像にはどう影響する?",
+       question:"主役画像が遅延だと？",
+       opts:[{t:"最初に見える主役画像の表示が遅れ、第一印象の表示速度が落ちる",ok:true},{t:"上部の画像も遅延した方が常に速くなる",ok:false},{t:"上部画像には遅延は一切影響しない",ok:false}],
+       why:"遅延読み込みは「下にスクロールして初めて読む」ので、画面外の画像には有効。だが<b>最初から見えている主役画像</b>まで遅延すると、一番大事な表示が遅れる。最上部の大きな画像は、むしろ優先して読みたい。",
+       code:null},
+      {eyebrow:"STEP 2 — 主役を優先", lbl:"priority", sub:"最初に見える画像へ",
+       prompt:"主役画像を優先的に読み込ませる。①で Image に渡すのは?",
+       question:"① 優先読み込みの指定は？",
+       opts:[{t:"priority",ok:true},{t:"loading=\"lazy\"",ok:false},{t:"eager={false}",ok:false}],
+       why:"<code>priority</code> を付けると<b>遅延せず優先的に</b>読み込まれる。最初に見える主役画像（いわゆる LCP 画像）に付けると、第一印象の表示が速くなる。<b>画面で最初に見える1枚だけ</b>に付けるのが基本で、付けすぎると優先の意味が薄れる。",
+       code:['&lt;<span class="fn">Image</span> src={hero} alt=<span class="str">"主役"</span>','  width={<span class="par">1200</span>} height={<span class="par">600</span>} <span class="b1">①</span> /&gt;'],
+       fill:{slot:"b1",val:'priority'}},
+      {eyebrow:"STEP 3 — レスポンシブ幅を伝える", lbl:"sizes", sub:"表示幅のヒント",
+       prompt:"サムネイルは画面幅で表示サイズが変わる。最適なファイルを選ばせる②は?",
+       question:"② 表示幅を伝えるのは？",
+       opts:[{t:"sizes（表示される幅の目安を伝える）",ok:true},{t:"quality（画質だけ指定する）",ok:false},{t:"何も指定しなくても常に最適になる",ok:false}],
+       why:"<code>sizes</code> で「この画像は実際どのくらいの幅で表示されるか」を伝えると、next/image が<b>その幅に合った解像度のファイル</b>を選ぶ。スマホに巨大画像を送らずに済む。レスポンシブで幅が変わる画像で効く。quality は画質で別の話。",
+       code:['&lt;<span class="fn">Image</span> src={thumb} alt=<span class="str">"商品"</span> fill','  <span class="b2">②</span>={<span class="str">"(max-width: 768px) 50vw, 25vw"</span>} /&gt;'],
+       fill:{slot:"b2",val:'sizes'}},
+      {eyebrow:"STEP 4 — 使い分け", lbl:"主役と脇役", sub:"全部 priority にしない",
+       prompt:"一覧の何十枚ものサムネイルにも priority を付けるべき?",
+       question:"③ サムネイル群には？",
+       opts:[{t:"付けない。priority は最初に見える主役だけ。残りは遅延でよい",ok:true},{t:"全画像に priority を付けるほど速くなる",ok:false},{t:"priority は画像が多いほど必須になる",ok:false}],
+       why:"<b>priority は最初に見える主役の1枚に絞る</b>。全部に付けると「全部優先＝優先なし」になり、かえって主役の表示が遅れる。スクロールで現れるサムネイルは遅延読み込みのままでよい。優先すべきものを見極める、が要点。",
+       code:null},
+    ],
+    doneMsg:"既定の遅延読み込みは画面外の画像に有効だが、最初に見える主役画像には priority を付けて優先する。レスポンシブ画像には sizes で表示幅を伝える。priority は主役だけに絞る——画像の読み込み優先度を使い分ける判断が掴めました。"
+  },
+
+  "api-route":{
+    concept:"Route Handlers（APIルート）", title:"API エンドポイントを作る",
+    scenario:"web業務サイト。決済サービスからの Webhook を受け取り、外部に公開する受注 JSON API も用意したい。",
+    steps:[
+      {eyebrow:"STEP 1 — まず他で足りるか", lbl:"役割を見極める", sub:"画面か更新かAPIか",
+       prompt:"このサイトでページ表示のデータ取得は Server Component、フォーム更新は Server Actions で足りている。Route Handlers が要るのは?",
+       question:"Route Handlers が要るのは？",
+       opts:[{t:"Webhook 受けや、外部クライアントが叩く公開 API が要る時",ok:true},{t:"ページ表示用のデータ取得すべて",ok:false},{t:"フォームでの更新すべて",ok:false}],
+       why:"画面用の取得は Server Component で直接、更新は Server Actions で足りることが多い。Route Handlers が活きるのは<b>HTTPエンドポイントそのものが要る時</b>——Webhook の受け口、外部クライアント（モバイル等）が叩く公開API。まず他で足りないかを問う。",
+       code:null},
+      {eyebrow:"STEP 2 — route.ts を置く", lbl:"page と対", sub:"画面ではなくAPI",
+       prompt:"<code>/api/orders</code> という API を作る。①のファイルは?",
+       question:"① 作るファイルは？",
+       opts:[{t:"app/api/orders/route.ts",ok:true},{t:"app/api/orders/page.tsx",ok:false},{t:"app/api/orders/api.ts",ok:false}],
+       why:"API は <code>route.ts</code> を置く。<b>page.tsx が画面、route.ts が API</b> という対応。<code>app/api/orders/route.ts</code> なら <code>/api/orders</code> がエンドポイントになる。page.tsx は画面用なのでAPIにはならない。",
+       code:['app/api/orders/<span class="b1">①</span>'],
+       fill:{slot:"b1",val:'route.ts'}},
+      {eyebrow:"STEP 3 — メソッドを関数で", lbl:"GET/POST を export", sub:"メソッドごとに",
+       prompt:"受注一覧を返す GET を作る。②のように<b>メソッド名の関数</b>を export する。",
+       question:"② 何を export する？",
+       opts:[{t:"export async function GET() { ... }",ok:true},{t:"export default function handler() { ... }",ok:false},{t:"export const get = ...",ok:false}],
+       why:"<b>HTTPメソッド名の関数</b>（<code>GET</code>・<code>POST</code> など）を export する。<code>GET</code> は取得、<code>POST</code> は作成、というように分ける。1つの handler で全メソッドを受ける旧来の書き方ではなく、メソッドごとに関数を分けるのが Route Handlers の形。",
+       code:['<span class="kw">import</span> { NextResponse } <span class="kw">from</span> <span class="str">\'next/server\'</span>;','<span class="b2">②</span> {','  <span class="kw">const</span> orders = <span class="kw">await</span> <span class="fn">db</span>.orders.<span class="fn">findMany</span>();','  <span class="kw">return</span> NextResponse.<span class="fn">json</span>(orders);','}'],
+       fill:{slot:"b2",val:'<span class="kw">export async function</span> <span class="fn">GET</span>()'}},
+      {eyebrow:"STEP 4 — Web 標準で返す", lbl:"Response を返す", sub:"特別な作法は少ない",
+       prompt:"レスポンスの返し方として正しいのは?",
+       question:"③ レスポンスは？",
+       opts:[{t:"Response（や NextResponse.json）で Web 標準のレスポンスを返す",ok:true},{t:"res.send() で返す（Express のように）",ok:false},{t:"return するだけで自動でJSONになる",ok:false}],
+       why:"Route Handlers は<b>Web 標準の Request/Response</b> を使う。<code>NextResponse.json(data)</code> や素の <code>Response</code> を返す。<code>res.send()</code> のような旧来のNode/Express式ではない。標準APIなので作法が少なく、Webhook の検証なども標準的に書ける。",
+       code:null},
+    ],
+    doneMsg:"Route Handlers は route.ts に GET/POST 等の関数を書き、Web 標準の Response を返す API の口。まず Server Component と Server Actions で足りないか問い、Webhook や公開API などHTTPエンドポイントが要る時に使う——役割を分けて選ぶ判断が掴めました。"
+  },
+
+  "get-vs-action":{
+    concept:"Route Handlers（APIルート）", title:"GET の落とし穴と使い分け",
+    scenario:"ログアウト処理を作る。「/logout を叩いたらセッションを消す」route.ts を書いたら、なぜかログインした直後に勝手にログアウトされる。",
+    steps:[
+      {eyebrow:"STEP 1 — 謎の自動ログアウト", lbl:"原因を探す", sub:"GET と先読み",
+       prompt:"GET の /logout でセッションを消す実装。ヘッダーに <code>&lt;Link href=\"/logout\"&gt;</code> がある。ログイン直後に勝手にログアウトされる原因は?",
+       question:"勝手にログアウトされる原因は？",
+       opts:[{t:"Link の自動先読みが /logout に GET を投げ、副作用が走ってしまう",ok:true},{t:"セッションの保存に失敗しているから",ok:false},{t:"ログアウト処理にバグがあるから",ok:false}],
+       why:"Link は画面内に入ると遷移先を<b>自動で先読み（GET）</b>する。/logout が GET で<b>副作用（セッション削除）</b>を持つと、先読みのGETだけでログアウトが実行されてしまう。保存やロジックのバグではなく、「GETで副作用」という設計が原因。",
+       code:null},
+      {eyebrow:"STEP 2 — GET の原則", lbl:"GET は安全であるべき", sub:"読み取り専用",
+       prompt:"この落とし穴が教える、GET の原則は?",
+       question:"GET はどうあるべき？",
+       opts:[{t:"GET は読み取り専用にし、状態を変える副作用を持たせない",ok:true},{t:"GET でも自由に副作用を持たせてよい",ok:false},{t:"GET は使わず全て POST にすべき",ok:false}],
+       why:"GET は<b>読み取り専用・安全</b>であるべき、というのが Web の原則。先読みやブラウザの先読み機能、再読み込みなどが GET を予期せず叩きうるから。状態を変える操作（削除・更新）を GET に置くと事故になる。GET 自体は取得用途で正しく使う。",
+       code:null},
+      {eyebrow:"STEP 3 — 副作用は POST へ", lbl:"状態を変える操作", sub:"安全でないメソッド",
+       prompt:"ログアウトのような状態を変える処理は、route.ts のどの関数にする?",
+       question:"① 状態を変える処理は？",
+       opts:[{t:"POST（安全でない＝状態を変える操作用）",ok:true},{t:"GET（取得用）",ok:false},{t:"どちらでも同じ",ok:false}],
+       why:"状態を変える操作は <code>POST</code>（や DELETE 等）にする。これらは先読みで勝手に叩かれない。<code>export async function POST()</code> としてログアウトを実装すれば、Link の先読みで誤発火しない。<b>メソッドに意味を持たせる</b>のが安全策。",
+       code:['<span class="cm">// app/logout/route.ts</span>','<span class="kw">export async function</span> <span class="b1">①</span>() {','  <span class="kw">await</span> <span class="fn">clearSession</span>();','  <span class="kw">return</span> <span class="fn">Response</span>.<span class="fn">redirect</span>(<span class="str">\'/\'</span>);','}'],
+       fill:{slot:"b1",val:'POST'}},
+      {eyebrow:"STEP 4 — そもそも何で作るか", lbl:"Server Actions と比較", sub:"役割で選ぶ",
+       prompt:"アプリ内のフォームからのログアウトなら、Route Handler 以外の選択肢は?",
+       question:"② アプリ内の操作なら？",
+       opts:[{t:"Server Actions も使える。APIルートを介さず関数を直接呼べる",ok:true},{t:"必ず Route Handler を経由しなければならない",ok:false},{t:"クライアントで fetch を書くしかない",ok:false}],
+       why:"アプリ内のフォーム操作なら <b>Server Actions</b> が向く（API ルートなしで直接呼べる）。Route Handler は Webhook や外部公開API などHTTPの口が要る時。どちらも副作用は安全なメソッド/仕組みで扱う点は共通。<b>用途で使い分ける</b>。",
+       code:null},
+    ],
+    doneMsg:"GET で副作用を持つと、Link の自動先読みで誤発火する。GET は読み取り専用にし、状態を変える操作は POST に置く。アプリ内の操作は Server Actions も選べる——HTTPメソッドの意味と、APIルートの使い分けが掴めました。"
   }
 };
 
@@ -3148,6 +3710,26 @@ const NEXT_LESSONS = {
    ============================================================ */
 const viewEl = document.getElementById('view');
 const crumbEl = document.getElementById('crumb');
+
+/* ---------- お知らせ（ホーム3画面の右下に表示。×で閉じる・開くたび表示）---------- */
+const NOTICE = "🤖Next.js編増やしたよ〜🚀";
+function showNotice(){
+  // 既存があれば消してから作り直す（ホーム間移動でも1つだけ）
+  const old = document.getElementById('notice');
+  if(old) old.remove();
+  const el = document.createElement('div');
+  el.id = 'notice';
+  el.className = 'notice';
+  el.innerHTML = `<span class="notice-txt"></span><button class="notice-close" aria-label="閉じる">×</button>`;
+  el.querySelector('.notice-txt').textContent = NOTICE;
+  el.querySelector('.notice-close').onclick = () => el.remove();
+  document.body.appendChild(el);
+}
+function hideNotice(){
+  const el = document.getElementById('notice');
+  if(el) el.remove();
+}
+
 const atomSVG = `<svg class="atom" viewBox="0 0 100 100"><ellipse class="orb" cx="50" cy="50" rx="44" ry="17"/><ellipse class="orb" cx="50" cy="50" rx="44" ry="17" transform="rotate(60 50 50)"/><ellipse class="orb" cx="50" cy="50" rx="44" ry="17" transform="rotate(120 50 50)"/><circle class="nuc" cx="50" cy="50" r="7"/></svg>`;
 // Next.js 編のロゴ（モノクロの三角＝Next ブランドを想起させる簡易マーク）
 const nextLogo = `<svg class="atom" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="none" stroke="var(--ink)" stroke-width="5"/><path d="M35 30 V70 M35 30 L66 72 M66 30 V70" stroke="var(--ink)" stroke-width="6" fill="none" stroke-linecap="round"/></svg>`;
@@ -3172,17 +3754,18 @@ function route(){
   const parts = location.hash.replace(/^#\/?/,'').split('/').filter(Boolean)
     .map(p => decodeURIComponent(p));
   window.scrollTo(0,0);
+  hideNotice(); // まず消す。ホーム3画面でのみ下で出し直す
   // Next.js 名前空間
   if(parts[0]==='next'){
     MODE='next'; applyTheme();
-    if(parts.length===1) return renderNextHome();
+    if(parts.length===1){ renderNextHome(); showNotice(); return; }
     if(parts.length===2) return renderConcept(parts[1]);
     return renderLesson(parts[1], parts[2]);
   }
   MODE='react'; applyTheme();
-  if(parts.length===0) return renderTopGate();
+  if(parts.length===0){ renderTopGate(); showNotice(); return; }
   if(parts[0]==='react'){
-    if(parts.length===1) return renderHome();
+    if(parts.length===1){ renderHome(); showNotice(); return; }
     if(parts.length===2) return renderConcept(parts[1]);
     return renderLesson(parts[1], parts[2]);
   }
@@ -3214,7 +3797,7 @@ function renderTopGate(){
         <div class="gate-nm">Next.js 編</div>
         <div class="gate-ds">App Router・Server/Client の境界・サーバー取得・
           Server Actions など。フレームワークの考え方を。</div>
-        <div class="gate-meta">6 トピック ・ 8 の考え方</div>
+        <div class="gate-meta">10 トピック ・ 12 の考え方</div>
         <div class="gate-go">はじめる →</div>
       </a>
     </div>
@@ -3227,9 +3810,13 @@ function renderNextHome(){
   crumbEl.innerHTML = `${nextLogo}<a class="crumb" onclick="go('/')">ホーム</a><span class="sep">/</span><span class="here">Next.js 編</span>`;
   const CATS = [
     ["基礎 / ルーティング", [["app-router"],["dynamic-routes"]]],
+    ["基礎 / 画面遷移", [["navigation"]]],
     ["基礎 / コンポーネントの境界", [["server-client"]]],
+    ["レンダリング / 静的と動的", [["rendering"]]],
     ["データ / 取得と更新", [["data-fetching"],["server-actions"]]],
+    ["データ / API エンドポイント", [["route-handlers"]]],
     ["構造 / 共通UI", [["layouts"]]],
+    ["最適化 / 画像", [["image"]]],
   ];
   const cards = CATS.map(([label, techs])=>{
     const items = techs.map(([key])=>{
