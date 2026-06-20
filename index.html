@@ -69,6 +69,19 @@
   .gate-meta{font-size:11.5px;color:var(--ink-3);font-family:var(--mono);margin-bottom:10px}
   .gate-go{font-size:13px;color:var(--react);font-weight:600}
   .gate.react .gate-go{color:#61dafb}
+  /* お知らせ（右下トースト） */
+  .notice{position:fixed;right:18px;bottom:18px;z-index:50;
+    max-width:340px;display:flex;align-items:flex-start;gap:10px;
+    background:var(--panel-2);border:1px solid var(--line);
+    border-left:3px solid var(--react);border-radius:12px;
+    padding:13px 14px;box-shadow:0 8px 28px rgba(0,0,0,.38);
+    animation:notice-in .26s ease}
+  @keyframes notice-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .notice-txt{font-size:13px;line-height:1.6;color:var(--ink);flex:1;min-width:0}
+  .notice-close{flex:none;background:none;border:none;cursor:pointer;
+    color:var(--ink-3);font-size:18px;line-height:1;padding:0 2px;margin-top:-1px}
+  .notice-close:hover{color:var(--ink)}
+  @media(max-width:600px){.notice{right:12px;left:12px;bottom:12px;max-width:none}}
   .home-hero .brand{display:flex;align-items:center;gap:12px;margin-bottom:18px}
   .home-hero .brand .atom{width:30px;height:30px}
   .home-hero .brand span{font-family:var(--mono);font-size:15px;color:var(--ink-2)}
@@ -417,6 +430,7 @@ const DATA = {
     ],
     lessons:[
       {id:"cart",  num:"01", ctx:"EC", title:"カートの状態", sub:"複数の更新を action に集約", ready:true},
+      {id:"wizard", num:"02", ctx:"業務ツール", title:"複数ステップの入力フォーム", sub:"段階と入力を1つの状態に", ready:true},
     ]
   },
 
@@ -453,6 +467,49 @@ const DATA = {
       {id:"deps",    num:"02", ctx:"管理ツール", title:"依存配列で再取得", sub:"何を見張るか", ready:true},
       {id:"cleanup", num:"03", ctx:"共通",     title:"購読のクリーンアップ", sub:"後始末で漏れを防ぐ", ready:true},
       {id:"no-effect",num:"04",ctx:"共通",     title:"Effect が要らない時", sub:"計算で済むか見抜く", ready:true},
+    ]
+  },
+
+  "カスタムフック": {
+    name:"カスタムフック",
+    cat:"ロジックの再利用 / 自前のフック",
+    tagline:"フックを使ったロジックを use で始まる関数に切り出し、複数の場所で再利用する。",
+    lede:"同じ「状態＋副作用」のかたまりが何度も出てきたら、自前のフックにまとめる。共有されるのはロジックで、状態ではない。",
+    def:'<code>use</code> で始まる<b>自前の関数</b>で、中で useState や useEffect などのフックを呼ぶ。複数のコンポーネントで重複する<b>ステートフルなロジック</b>を切り出して再利用する。組み込みフックと同じ規約に従う。',
+    why:[
+      '「オンライン状態を購読する」「入力を少し遅らせる」といった<strong>状態＋副作用のかたまり</strong>が複数のコンポーネントに重複することがある。コピペで増やすと、直すときに全箇所を直すことになる。',
+      'カスタムフックは、その<strong>ロジックだけを use で始まる関数に切り出す</strong>。使う側は <code>const isOnline = useOnlineStatus()</code> のように呼ぶだけ。重要なのは、共有されるのは<strong>ロジックであって状態ではない</strong>点。各コンポーネントで呼ぶと、state はそれぞれ独立する。'
+    ],
+    code:[
+      '<span class="cm">// 自前のフック: use で始め、中でフックを使う</span>',
+      '<span class="kw">function</span> <span class="fn">useOnlineStatus</span>(): <span class="kw">boolean</span> {',
+      '  <span class="kw">const</span> [isOnline, setIsOnline] = <span class="fn">useState</span>(<span class="kw">true</span>);',
+      '  <span class="fn">useEffect</span>(() => {',
+      '    <span class="kw">const</span> <span class="fn">on</span> = () => <span class="fn">setIsOnline</span>(<span class="kw">true</span>), <span class="fn">off</span> = () => <span class="fn">setIsOnline</span>(<span class="kw">false</span>);',
+      '    window.<span class="fn">addEventListener</span>(<span class="str">\'online\'</span>, on);',
+      '    window.<span class="fn">addEventListener</span>(<span class="str">\'offline\'</span>, off);',
+      '    <span class="kw">return</span> () => { <span class="cm">/* 後始末で解除 */</span> };',
+      '  }, []);',
+      '  <span class="kw">return</span> isOnline;',
+      '}',
+      '',
+      '<span class="cm">// 使う側はロジックを知らなくていい</span>',
+      '<span class="kw">const</span> isOnline = <span class="fn">useOnlineStatus</span>();'
+    ],
+    codeCap:"フックを使うロジックを use で始まる関数にまとめる。使う側は呼ぶだけ。state は呼んだ側ごとに独立。",
+    yes:["状態＋副作用のかたまりが複数箇所で重複する時","フォーム・データ取得など定型ロジックを共通化したい時","コンポーネントの本体をロジックから切り離して読みやすくしたい時"],
+    no:["1か所でしか使わない単純なロジック（まだ切り出さなくてよい）","フックを使わないただの計算（普通の関数で十分）","状態そのものを複数コンポーネントで共有したい時（→ Context や Zustand）"],
+    noNote:"<strong>共有されるのはロジックであって状態ではない</strong>。同じ値を複数の場所で共有したいなら Context や外部ストアの出番。カスタムフックは「同じ手順を使い回す」もので、「同じ値を見せる」ものではない。まず重複が実際に現れてから切り出すのが自然。",
+    miss:[
+      ['カスタムフックを使うと state が複数コンポーネントで共有される','されない。<strong>呼んだ側ごとに state は独立</strong>する。共有したいなら Context や外部ストア。'],
+      ['名前は何でもよい','<strong>use で始め、次を大文字</strong>にする規約がある。これで中でフックを呼べ、Lint もルール違反を検知できる。'],
+      ['フックを使わない処理もカスタムフックにすべき','フックを呼ばないなら<strong>ただの関数</strong>で十分。use を付けるのは中でフックを使う時。'],
+      ['1か所でしか使わなくても必ず切り出す','重複が無いうちは切り出す必要はない。<strong>重複が現れてから</strong>でよい。']
+    ],
+    lessons:[
+      {id:"extract",  num:"01", ctx:"共通",     title:"重複ロジックを切り出す", sub:"なぜ・命名・state は独立", ready:true},
+      {id:"toggle-hook", num:"02", ctx:"スマホサイト", title:"開閉ロジックを共通化", sub:"値と操作を返す useToggle", ready:true},
+      {id:"debounce", num:"03", ctx:"EC", title:"入力を遅らせて検索", sub:"よくあるパターン useDebounce", ready:true},
     ]
   },
 
@@ -519,6 +576,7 @@ const DATA = {
     ],
     lessons:[
       {id:"heavy", num:"01", ctx:"管理ツール", title:"重い計算をキャッシュ", sub:"いつ使うべきかの判断", ready:true},
+      {id:"filter-sort", num:"02", ctx:"EC", title:"絞り込みと並び替え", sub:"条件が変わった時だけ再計算", ready:true},
     ]
   },
 
@@ -556,6 +614,7 @@ const DATA = {
     ],
     lessons:[
       {id:"basic",  num:"01", ctx:"業務ツール", title:"データ取得を任せる", sub:"useEffect をやめる判断", ready:true},
+      {id:"polling", num:"02", ctx:"業務ツール", title:"ダッシュボードを最新に保つ", sub:"自動再検証と定期更新", ready:true},
     ]
   },
 
@@ -590,6 +649,7 @@ const DATA = {
     ],
     lessons:[
       {id:"memo-child", num:"01", ctx:"管理ツール", title:"子の再描画を防ぐ", sub:"参照の同一性・React.memo と対", ready:true},
+      {id:"effect-dep", num:"02", ctx:"EC", title:"Effect の依存に渡す関数", sub:"再実行ループを防ぐ", ready:true},
     ]
   },
 
@@ -625,6 +685,7 @@ const DATA = {
     ],
     lessons:[
       {id:"heavy-filter", num:"01", ctx:"業務ツール", title:"重い絞り込みで固めない", sub:"急ぐ更新を優先する", ready:true},
+      {id:"tab-switch", num:"02", ctx:"EC", title:"重いタブの切替", sub:"切替操作を止めない", ready:true},
     ]
   },
 
@@ -657,6 +718,7 @@ const DATA = {
     ],
     lessons:[
       {id:"defer-list", num:"01", ctx:"業務ツール", title:"重い表示を遅れて追従", sub:"値の側から優先順位を付ける", ready:true},
+      {id:"suggest", num:"02", ctx:"EC", title:"検索サジェストの遅延", sub:"入力を妨げず候補を出す", ready:true},
     ]
   },
 
@@ -693,6 +755,7 @@ const DATA = {
     ],
     lessons:[
       {id:"label", num:"01", ctx:"業務ツール", title:"ラベルと入力を結ぶ", sub:"衝突しない一意ID", ready:true},
+      {id:"aria", num:"02", ctx:"スマホサイト", title:"開閉パネルの aria 紐付け", sub:"支援技術に状態を伝える", ready:true},
     ]
   },
 
@@ -727,6 +790,7 @@ const DATA = {
     ],
     lessons:[
       {id:"measure", num:"01", ctx:"Webサイト", title:"描画前に測る", sub:"useEffect との違い", ready:true},
+      {id:"sticky-header", num:"02", ctx:"スマホサイト", title:"固定ヘッダーの高さ分の余白", sub:"測ってから本文を配置", ready:true},
     ]
   },
 
@@ -762,6 +826,7 @@ const DATA = {
     ],
     lessons:[
       {id:"form-action", num:"01", ctx:"業務ツール", title:"送信状態をまとめる", sub:"結果・処理中を1つに（React 19）", ready:true},
+      {id:"coupon", num:"02", ctx:"EC", title:"クーポン適用フォーム", sub:"成否メッセージを結果に持つ（React 19）", ready:true},
     ]
   },
 
@@ -800,6 +865,7 @@ const DATA = {
     ],
     lessons:[
       {id:"query-mutation", num:"01", ctx:"管理ツール", title:"取得と更新", sub:"queryKey とキャッシュ無効化", ready:true},
+      {id:"list-detail", num:"02", ctx:"業務ツール", title:"一覧と詳細のキャッシュ共有", sub:"queryKey の設計", ready:true},
     ]
   },
 
@@ -837,6 +903,7 @@ const DATA = {
     ],
     lessons:[
       {id:"store", num:"01", ctx:"Webサイト", title:"グローバル状態を共有", sub:"Context との使い分け・部分購読", ready:true},
+      {id:"cart-store", num:"02", ctx:"EC", title:"サイト全体のカート", sub:"離れた場所から読み書き", ready:true},
     ]
   },
 
@@ -874,6 +941,7 @@ const DATA = {
     ],
     lessons:[
       {id:"rhf-form", num:"01", ctx:"業務ツール", title:"大きなフォームを扱う", sub:"非制御・制御との対比", ready:true},
+      {id:"rhf-zod", num:"02", ctx:"EC", title:"会員登録の入力検証", sub:"Zod スキーマと繋ぐ", ready:true},
     ]
   },
 
@@ -911,6 +979,7 @@ const DATA = {
     ],
     lessons:[
       {id:"schema", num:"01", ctx:"業務ツール", title:"型と検証を一元化", sub:"スキーマ1つから両方を得る", ready:true},
+      {id:"api-parse", num:"02", ctx:"業務ツール", title:"API 応答を検証する", sub:"外から来るデータを信頼しない", ready:true},
     ]
   }
 };
@@ -1471,6 +1540,41 @@ const LESSONS = {
     doneMsg:"更新が多く絡み合う状態では、ロジックを reducer に集約し、コンポーネントは「何が起きたか」を dispatch する。useState の上位互換ではなく、複雑さに応じて選ぶ——状態管理の引き出しが増えました。"
   },
 
+  wizard:{
+    concept:"useReducer", title:"複数ステップの入力フォーム",
+    scenario:"会員登録を「基本情報→住所→確認」の3ステップで進める。現在のステップと各入力をまとめて持つ。",
+    steps:[
+      {eyebrow:"STEP 1 — 何を状態に持つか", lbl:"段階と入力をまとめる", sub:"絡み合う更新",
+       prompt:"今いるステップ番号と、各ステップの入力値を扱う。これらを useState でバラバラに持つと何が起きやすい?",
+       question:"バラバラの useState だと？",
+       opts:[{t:"「次へ進む時に入力も検証してから step を上げる」等の連動が各所に散らばる",ok:true},{t:"ステップ番号と入力は無関係なので問題は起きない",ok:false},{t:"useState が複数あると React がエラーを出す",ok:false}],
+       why:"ステップを進める時は「今の入力を確定し、検証し、次の step にする」と<b>複数の値が連動</b>する。useState が散らばると、この連動が各所に分散して追いにくい。<b>段階と入力を1つの状態</b>にまとめ、更新ルールを集約したい。",
+       code:null},
+      {eyebrow:"STEP 2 — 状態の形を決める", lbl:"State 型", sub:"step と data",
+       prompt:"状態の型を決める。①に入れるべきフィールドは?",
+       question:"① State に持つのは？",
+       opts:[{t:"step（今の段階）と data（各入力をまとめたもの）",ok:true},{t:"step だけ。入力は別の useState に分ける",ok:false},{t:"画面に表示する文言すべて",ok:false}],
+       why:"「今どの段階か（step）」と「これまでの入力（data）」を<b>1つの State 型</b>にまとめる。これで「進む・戻る・入力する」がすべて同じ状態への操作になり、reducer 1か所で扱える。表示文言は状態ではなく描画側の責務。",
+       code:['<span class="kw">type</span> <span class="fn">State</span> = {','  <span class="b1">①</span>','};'],
+       fill:{slot:"b1",val:'step: <span class="kw">number</span>; data: { name: <span class="kw">string</span>; address: <span class="kw">string</span> }'}},
+      {eyebrow:"STEP 3 — 更新ルールを集約", lbl:"reducer で分岐", sub:"進む・入力する",
+       prompt:"「次へ進む」action を処理する。②で step を1つ進める（元の state は壊さない）。",
+       question:"② 次へ進む処理は？",
+       opts:[{t:"{ ...state, step: state.step + 1 }",ok:true},{t:"state.step++ してから state を返す",ok:false},{t:"{ step: state.step + 1 }（data を含めない）",ok:false}],
+       why:"<code>{ ...state, step: state.step + 1 }</code> で<b>既存の data を保ったまま</b> step だけ進める。<code>state.step++</code> は元を直接書き換えるので不可。data を含めない形だと入力が消える。スプレッドで「一部だけ更新」が定石。",
+       code:['<span class="kw">case</span> <span class="str">\'next\'</span>:','  <span class="kw">return</span> <span class="b2">②</span>;'],
+       fill:{slot:"b2",val:'{ ...state, step: state.step + <span class="par">1</span> }'}},
+      {eyebrow:"STEP 4 — 送るのは出来事", lbl:"dispatch", sub:"何が起きたか",
+       prompt:"「次へ」ボタンを押した時、③で送るものは?",
+       question:"③ ボタンで送るのは？",
+       opts:[{t:"dispatch({ type: 'next' })（出来事を送る）",ok:true},{t:"次の State 全体を組み立てて送る",ok:false},{t:"setState(step + 1) を直接呼ぶ",ok:false}],
+       why:"コンポーネントは<b>「次へ進む出来事」</b>を <code>dispatch({type:'next'})</code> で送るだけ。どう状態が変わるかは reducer が引き受ける。これにより「進む条件の変更」などが reducer 1か所の修正で済み、ボタン側は変えずに保てる。",
+       code:['&lt;<span class="fn">button</span> onClick={() => dispatch(<span class="b3">③</span>)}&gt;次へ&lt;/<span class="fn">button</span>&gt;'],
+       fill:{slot:"b3",val:"{ type: 'next' }"}},
+    ],
+    doneMsg:"ステップ番号と入力をまとめた1つの State にし、進む・戻る・入力を reducer に集約する。コンポーネントは出来事を dispatch するだけ。段階が絡み合うフォームで、状態の散らばりを防ぐ設計が掴めました。"
+  },
+
   fetch:{
     concept:"useEffect", title:"データ取得",
     scenario:"ユーザー一覧をサーバーから取得して表示する。",
@@ -1606,6 +1710,110 @@ const LESSONS = {
     doneMsg:"計算で出せる値に Effect は要らない。描画中に計算すれば、余分な往復もズレもない。「これは本当に外界との同期か」をまず疑う——公式が Effect を『避難ハッチ』と呼ぶ理由が体感できました。"
   },
 
+  extract:{
+    concept:"カスタムフック", title:"重複ロジックを切り出す",
+    scenario:"オンライン状態に応じて表示を変えたい。ステータス表示と保存ボタンの2か所で同じ購読ロジックを書いている。",
+    steps:[
+      {eyebrow:"STEP 1 — 重複を見抜く", lbl:"切り出す合図", sub:"同じ状態＋副作用",
+       prompt:"2つのコンポーネントに、オンライン状態の useState と購読の useEffect が<b>そっくり同じ</b>で書かれている。どうする?",
+       question:"同じロジックの重複に気づいたら？",
+       opts:[{t:"その状態＋副作用のかたまりを、自前のフックに切り出して共通化する",ok:true},{t:"片方をコピーして両方に貼り、変更時は両方直す",ok:false},{t:"状態を Context に上げて1つの値を共有する",ok:false}],
+       why:"同じ「状態＋副作用」が複数箇所にあるのが<b>カスタムフックの合図</b>。切り出せば直す場所が1つになる。コピペは直し漏れの元。Context は「同じ値を共有」する道具で、ここで欲しいのは「同じ手順を使い回す」こと——目的が違う。",
+       code:null},
+      {eyebrow:"STEP 2 — 名前の規約", lbl:"use で始める", sub:"次は大文字",
+       prompt:"切り出す関数の名前。中で useState や useEffect を使う。①の名前として正しいのは?",
+       question:"① 関数名は？",
+       opts:[{t:"useOnlineStatus（use + 大文字始まり）",ok:true},{t:"getOnlineStatus（use で始まらない）",ok:false},{t:"onlineStatus（小文字始まり）",ok:false}],
+       why:"カスタムフックは<b>use で始め、次を大文字</b>にする規約。これに従うと中で他のフックを呼べ、Lint もフックのルール違反を検知できる。<code>get...</code> のように use で始まらない名前だと、中で useState を呼べない（フックと見なされない）。",
+       code:['<span class="kw">function</span> <span class="b1">①</span>(): <span class="kw">boolean</span> {','  <span class="kw">const</span> [isOnline, setIsOnline] = <span class="fn">useState</span>(<span class="kw">true</span>);'],
+       fill:{slot:"b1",val:'<span class="fn">useOnlineStatus</span>'}},
+      {eyebrow:"STEP 3 — 値を返す", lbl:"必要なものを返す", sub:"使う側が読む",
+       prompt:"購読ロジックの末尾で、コンポーネントに使わせたい値を返す。②は?",
+       question:"② フックが返すのは？",
+       opts:[{t:"isOnline（コンポーネントが必要とする値）",ok:true},{t:"setIsOnline だけ（値を返さない）",ok:false},{t:"何も返さない",ok:false}],
+       why:"カスタムフックは<b>必要な値を return</b> する。ここでは <code>isOnline</code> を返せば、使う側は <code>const isOnline = useOnlineStatus()</code> で読める。返す形は自由で、値1つでも、配列やオブジェクトでもよい。使う側が何を欲しいかで決める。",
+       code:['  <span class="fn">useEffect</span>(() => { <span class="cm">/* online/offline を購読 */</span> }, []);','  <span class="kw">return</span> <span class="b2">②</span>;','}'],
+       fill:{slot:"b2",val:'isOnline'}},
+      {eyebrow:"STEP 4 — state は独立する", lbl:"共有されるのはロジック", sub:"値ではない",
+       prompt:"2つのコンポーネントが同じ useOnlineStatus() を呼ぶ。両者の isOnline は?",
+       question:"③ それぞれの状態は？",
+       opts:[{t:"呼んだ側ごとに独立した state になる",ok:true},{t:"1つの state を2つで共有する",ok:false},{t:"後から呼んだ方が先の値を上書きする",ok:false}],
+       why:"カスタムフックが共有するのは<b>ロジックであって状態ではない</b>。呼ぶたびに中の useState は別々に作られ、state は独立する。「同じ値を複数の場所に見せたい」なら Context や外部ストアの役割——ここを混同しないのが要点。",
+       code:null},
+    ],
+    doneMsg:"同じ状態＋副作用の重複が、カスタムフックを切り出す合図。use で始め必要な値を返す。共有されるのはロジックで、state は呼んだ側ごとに独立する——カスタムフックの本質と、Context との役割の違いが掴めました。"
+  },
+
+  "toggle-hook":{
+    concept:"カスタムフック", title:"開閉ロジックを共通化",
+    scenario:"スマホサイトでハンバーガーメニュー・モーダル・アコーディオン。どれも「開閉する boolean と切り替え」を同じように書いている。",
+    steps:[
+      {eyebrow:"STEP 1 — 共通の形を見つける", lbl:"開閉は同じ構造", sub:"値＋操作",
+       prompt:"メニュー・モーダル・アコーディオンに共通するのは「boolean の状態と、それを切り替える操作」。これをどう扱う?",
+       question:"共通する開閉ロジックは？",
+       opts:[{t:"値と操作をまとめて返すカスタムフックにする",ok:true},{t:"画面ごとに毎回 useState と切替関数を書く",ok:false},{t:"3つの開閉状態を1つの Context にまとめる",ok:false}],
+       why:"「boolean ＋ 切り替え」という<b>同じ構造</b>が繰り返されるなら、カスタムフックにまとめられる。Context にまとめるのは別問題（メニューとモーダルは無関係な別々の状態で、共有したいわけではない）。各画面で独立して使える形にしたい。",
+       code:null},
+      {eyebrow:"STEP 2 — 引数で初期値を受ける", lbl:"柔軟にする", sub:"使う側が決める",
+       prompt:"最初に開いているか閉じているかは使う側で違う。①の引数で初期値を受け取る。",
+       question:"① 初期値の受け取りは？",
+       opts:[{t:"(initial: boolean = false)",ok:true},{t:"引数は受けず、常に false 始まり固定",ok:false},{t:"初期値は呼び出し後に setter で渡す",ok:false}],
+       why:"<b>引数を受けて柔軟にする</b>のがカスタムフックの定石。<code>initial</code> を受ければ、開いた状態で始めたいモーダルにも、閉じた状態で始めたいメニューにも使える。デフォルト値 <code>= false</code> を付ければ、省略時は閉じた状態から始まる。",
+       code:['<span class="kw">function</span> <span class="fn">useToggle</span>(<span class="b1">①</span>) {','  <span class="kw">const</span> [open, setOpen] = <span class="fn">useState</span>(initial);'],
+       fill:{slot:"b1",val:'initial: <span class="kw">boolean</span> = <span class="kw">false</span>'}},
+      {eyebrow:"STEP 3 — 値と操作を返す", lbl:"配列で返す", sub:"useState に似せる",
+       prompt:"開閉状態 open と、切り替え関数 toggle を返す。②は?",
+       question:"② 返すものは？",
+       opts:[{t:"[open, toggle]（状態と操作の組）",ok:true},{t:"open だけ（操作は返さない）",ok:false},{t:"setOpen をそのまま返す",ok:false}],
+       why:"<code>[open, toggle]</code> のように<b>状態と操作を組で返す</b>と、useState に似た使い心地になり呼ぶ側が直感的。toggle は <code>setOpen(v => !v)</code> を包んだもの。生の setOpen を返すより、用途に合った操作（toggle）を渡す方が使う側は楽。",
+       code:['  <span class="kw">const</span> toggle = () => <span class="fn">setOpen</span>(v => !v);','  <span class="kw">return</span> <span class="b2">②</span>;','}'],
+       fill:{slot:"b2",val:'[open, toggle] <span class="kw">as const</span>'}},
+      {eyebrow:"STEP 4 — 使い回す", lbl:"各画面で独立", sub:"state は別々",
+       prompt:"メニューとモーダルでそれぞれ useToggle を呼ぶ。両者の開閉状態は?",
+       question:"③ それぞれの開閉は？",
+       opts:[{t:"独立している。メニューを開いてもモーダルは閉じたまま",ok:true},{t:"連動して同時に開閉する",ok:false},{t:"片方しか使えない",ok:false}],
+       why:"呼ぶたびに中の useState は別々に作られるので、<b>各画面の開閉は独立</b>する。メニューの開閉とモーダルの開閉は干渉しない。同じロジック（開閉の手順）を使い回しつつ、状態はそれぞれ持てる——カスタムフックの利点そのもの。",
+       code:['<span class="kw">const</span> [menuOpen, toggleMenu] = <span class="fn">useToggle</span>();','<span class="kw">const</span> [modalOpen, toggleModal] = <span class="fn">useToggle</span>();'],
+       staticCode:true},
+    ],
+    doneMsg:"「boolean ＋ 切り替え」の繰り返しは useToggle にまとめられる。引数で初期値を受けて柔軟にし、状態と操作を組で返す。呼ぶたびに状態は独立——よくある開閉ロジックを再利用する形が掴めました。"
+  },
+
+  debounce:{
+    concept:"カスタムフック", title:"入力を遅らせて検索",
+    scenario:"EC検索ボックス。1文字ごとにAPIを叩くと多すぎる。入力が落ち着いてから検索したい。",
+    steps:[
+      {eyebrow:"STEP 1 — 何を遅らせるか", lbl:"打鍵ごとに叩かない", sub:"値の追従を遅らす",
+       prompt:"1文字打つたびに検索APIを呼ぶと、リクエストが多すぎる。狙いは?",
+       question:"やりたいことは？",
+       opts:[{t:"入力が一定時間止まってから、確定した値で検索する",ok:true},{t:"入力欄の反映自体を遅らせて、打鍵をもたつかせる",ok:false},{t:"検索結果のリストだけを遅れて描画する",ok:false}],
+       why:"狙いは<b>「入力が落ち着いてからAPIを呼ぶ」</b>こと（デバウンス）。入力欄の表示は即座でよく、遅らせたいのは<b>検索のトリガーになる値</b>。この「値の追従を遅らせる」ロジックをカスタムフックにする。表示自体を遅らせるのは別の話。",
+       code:null},
+      {eyebrow:"STEP 2 — 遅延した値を持つ", lbl:"useDebounce", sub:"値と遅延を受ける",
+       prompt:"値 value を delay ミリ秒遅れて追従させるフックを作る。①の内部状態の初期値は?",
+       question:"① 内部 state の初期値は？",
+       opts:[{t:"value（最初は元の値と同じ）",ok:true},{t:"空文字で固定",ok:false},{t:"undefined",ok:false}],
+       why:"遅延版の初期値は<b>元の値そのもの</b>。最初から正しい値を持てる。空文字や undefined で始めると、初回に一瞬おかしな値になる。「遅れて追従する版」なので、出発点は現在の値に合わせる。",
+       code:['<span class="kw">function</span> <span class="fn">useDebounce</span>&lt;T&gt;(value: T, delay: <span class="kw">number</span>): T {','  <span class="kw">const</span> [debounced, setDebounced] = <span class="fn">useState</span>(<span class="b1">①</span>);'],
+       fill:{slot:"b1",val:'value'}},
+      {eyebrow:"STEP 3 — タイマーと後始末", lbl:"useEffect で遅延", sub:"前のタイマーを消す",
+       prompt:"value が変わるたびタイマーをセットし、delay 後に反映する。②のクリーンアップで何をする?",
+       question:"② クリーンアップですることは？",
+       opts:[{t:"前回のタイマーを clearTimeout で取り消す",ok:true},{t:"何もしない（タイマーは放置）",ok:false},{t:"debounced を空にリセットする",ok:false}],
+       why:"value が変わるたび新しいタイマーをセットし、<b>前のタイマーは clearTimeout で取り消す</b>。これで「最後の入力から delay 経過した時だけ」反映される。後始末しないとタイマーが積もり、古い値で何度も反映されてしまう。購読やタイマーは始めたら終える。",
+       code:['  <span class="fn">useEffect</span>(() => {','    <span class="kw">const</span> id = <span class="fn">setTimeout</span>(() => <span class="fn">setDebounced</span>(value), delay);','    <span class="kw">return</span> () => <span class="b2">②</span>;','  }, [value, delay]);','  <span class="kw">return</span> debounced;','}'],
+       fill:{slot:"b2",val:'<span class="fn">clearTimeout</span>(id)'}},
+      {eyebrow:"STEP 4 — 検索に使う", lbl:"遅延値で叩く", sub:"入力は即・検索は遅",
+       prompt:"入力 query をそのまま入力欄に、遅延版を検索に使う。③の検索の依存配列は?",
+       question:"③ 検索 Effect の依存は？",
+       opts:[{t:"[debouncedQuery]（遅延版が変わった時だけ検索）",ok:true},{t:"[query]（1文字ごとに検索）",ok:false},{t:"[]（最初の1回だけ）",ok:false}],
+       why:"入力欄は即時の <code>query</code>、検索の Effect は<b>遅延版 <code>debouncedQuery</code> に依存</b>させる。これで打鍵中はAPIを呼ばず、入力が落ち着いてから1回だけ検索が走る。<code>[query]</code> だと1文字ごとに叩いてしまい、デバウンスの意味がなくなる。",
+       code:['<span class="kw">const</span> debouncedQuery = <span class="fn">useDebounce</span>(query, <span class="par">400</span>);','<span class="fn">useEffect</span>(() => { <span class="fn">search</span>(debouncedQuery); }, <span class="b3">③</span>);'],
+       fill:{slot:"b3",val:'[debouncedQuery]'}},
+    ],
+    doneMsg:"デバウンスは「入力が落ち着いてから値を反映する」ロジック。useDebounce にまとめ、タイマーと後始末を内に閉じ込める。入力は即時、検索は遅延版に依存させる——よくあるパターンをカスタムフックで再利用する形が掴めました。"
+  },
+
   focus:{
     concept:"useRef", title:"input にフォーカス",
     scenario:"検索ボックスを、ページを開いた瞬間に入力可能（フォーカス）にしたい。",
@@ -1707,6 +1915,39 @@ const LESSONS = {
     doneMsg:"最適化は計測から。本当に重い計算だけを useMemo(() => …, [依存]) で包み、依存が変わった時だけ再計算する。「付ければ速くなる」ではなく「必要な箇所に絞る」——パフォーマンス最適化の正しい姿勢が身につきました。"
   },
 
+  "filter-sort":{
+    concept:"useMemo", title:"絞り込みと並び替え",
+    scenario:"ECの商品一覧。カテゴリで絞り込み、価格で並び替える。在庫数の表示も別途更新される。",
+    steps:[
+      {eyebrow:"STEP 1 — まず計算で出す", lbl:"派生は計算", sub:"state にしない",
+       prompt:"絞り込み・並び替えの結果リストを、どう持つのが基本?",
+       question:"結果リストは？",
+       opts:[{t:"元データと条件から描画中に計算する（state にしない）",ok:true},{t:"結果専用の state を用意し、条件が変わるたび手で更新する",ok:false},{t:"並び替えのたびに元データを直接ソートして保持する",ok:false}],
+       why:"絞り込み・並び替えの結果は<b>元データと条件から導ける</b>派生値。専用 state にすると条件と結果がずれる元になる。まずは描画中に <code>filter().sort()</code> で計算するのが基本。元データを直接 sort すると破壊してしまうので避ける。",
+       code:null},
+      {eyebrow:"STEP 2 — 重さを見極める", lbl:"いつ useMemo か", sub:"計測してから",
+       prompt:"商品が数千件あり、在庫表示の更新など<b>無関係な再描画</b>のたびに絞り込みが走って重い。どう判断する?",
+       question:"useMemo を入れる判断は？",
+       opts:[{t:"重さを計測した上で、絞り込み・並び替えを useMemo で包む",ok:true},{t:"件数に関わらず、絞り込みは常に useMemo で包む",ok:false},{t:"重そうなのでとりあえず全部 useMemo にする",ok:false}],
+       why:"件数が多く、関係ない再描画のたびに重い計算が繰り返されるなら useMemo の出番。ただし<b>まず計測</b>。少件数なら不要で、むやみに包むと可読性が下がるだけ。「重いと確認できてから」が原則。",
+       code:null},
+      {eyebrow:"STEP 3 — 依存配列を正しく", lbl:"何で再計算するか", sub:"条件だけ",
+       prompt:"絞り込みは products・category・sortKey に依存する。①の依存配列は?",
+       question:"① 依存配列は？",
+       opts:[{t:"[products, category, sortKey]",ok:true},{t:"[]（一度だけ計算して固定する）",ok:false},{t:"[products]（条件を入れない）",ok:false}],
+       why:"計算が使う値を<b>すべて</b>依存配列に入れる。<code>[]</code> だと条件を変えても結果が更新されない。<code>category</code> や <code>sortKey</code> を抜くと、絞り込み条件を変えたのにリストが変わらないバグになる。使う値は漏れなく。",
+       code:['<span class="kw">const</span> shown = <span class="fn">useMemo</span>(() =>','  products.<span class="fn">filter</span>(p => p.category === category)','    .<span class="fn">sort</span>(byPrice[sortKey]),','  <span class="b1">①</span>);'],
+       fill:{slot:"b1",val:'[products, category, sortKey]'}},
+      {eyebrow:"STEP 4 — 無関係な更新で再計算しない", lbl:"効果を理解", sub:"在庫表示は別",
+       prompt:"在庫数の表示だけが更新された（products・category・sortKey は不変）。この時、絞り込みは?",
+       question:"② 無関係な更新では？",
+       opts:[{t:"再計算されず、前回の結果が再利用される",ok:true},{t:"在庫表示が変わるたび、絞り込みも毎回再計算される",ok:false},{t:"依存が変わっていなくてもリストが一度空になる",ok:false}],
+       why:"依存（products/category/sortKey）が変わっていなければ、useMemo は<b>前回の絞り込み結果を再利用</b>する。在庫表示のような無関係な再描画で重い計算が走らなくなる——これが「関係ない更新でも毎回重い」を防ぐ効果。",
+       code:null},
+    ],
+    doneMsg:"絞り込み・並び替えは元データと条件から計算する派生値。件数が多く重いと計測できたら useMemo で包み、条件を依存配列に漏れなく入れる。無関係な更新で再計算を防ぐ、という最適化の使い所が掴めました。"
+  },
+
   basic:{
     concept:"SWR", title:"データ取得を任せる",
     scenario:"useEffect で書いていたユーザー取得を、SWR に置き換える。",
@@ -1740,6 +1981,39 @@ const LESSONS = {
     doneMsg:"手書きの useEffect 取得の面倒（3 state・依存・競合・キャッシュ）を、useSWR が引き受ける。キーでキャッシュを共有し、サーバーデータにこそ使う。「いつ自前をやめてライブラリに任せるか」という判断が、外部ライブラリ学習の核心です。"
   },
 
+  polling:{
+    concept:"SWR", title:"ダッシュボードを最新に保つ",
+    scenario:"web業務サイトの管理ダッシュボード。受注件数などを、常に最新の状態で見せたい。",
+    steps:[
+      {eyebrow:"STEP 1 — 何で最新に保つか", lbl:"再検証のきっかけ", sub:"自前で組まない",
+       prompt:"ダッシュボードを最新に保ちたい。自前で setInterval を組む前に、SWR で考えるべきは?",
+       question:"まず考えるのは？",
+       opts:[{t:"SWR が標準で持つ自動再検証（再フォーカス時など）で足りないか",ok:true},{t:"とにかく setInterval で1秒ごとに再取得する",ok:false},{t:"ページを定期的にリロードさせる",ok:false}],
+       why:"SWR は<b>画面に戻った時（再フォーカス）や再接続時に自動で再検証</b>する機能を標準で持つ。多くのダッシュボードはこれで十分。自前の setInterval やリロードを組む前に、標準機能で足りないかを問うのが先。",
+       code:null},
+      {eyebrow:"STEP 2 — 定期更新が要るなら", lbl:"refreshInterval", sub:"オプションで指定",
+       prompt:"刻々と変わる数値で、一定間隔の更新も欲しい。①のオプションで5秒ごとに再取得する。",
+       question:"① 定期更新の指定は？",
+       opts:[{t:"{ refreshInterval: 5000 }",ok:true},{t:"{ setInterval: 5000 }",ok:false},{t:"第3引数に 5000 を渡す",ok:false}],
+       why:"SWR は第3引数のオプションで <code>refreshInterval</code> を指定でき、その間隔で再取得する。自前のタイマー管理（設置・解除・競合）が不要になる。キャッシュや競合の面倒も SWR が引き受けたまま、定期更新だけ足せる。",
+       code:['<span class="kw">const</span> { data } = <span class="fn">useSWR</span>&lt;<span class="fn">Stats</span>&gt;(','  <span class="str">\'/api/stats\'</span>, fetcher,','  <span class="b1">①</span>',');'],
+       fill:{slot:"b1",val:'{ refreshInterval: <span class="par">5000</span> }'}},
+      {eyebrow:"STEP 3 — 更新中も表示を保つ", lbl:"古い値を見せる", sub:"stale-while-revalidate",
+       prompt:"再取得の最中、画面はどうなるのが望ましい? SWR の既定の挙動は?",
+       question:"② 再取得中の表示は？",
+       opts:[{t:"前回の値を見せたまま、裏で新しい値に差し替える",ok:true},{t:"再取得のたびに一旦ローディング表示で空になる",ok:false},{t:"更新が終わるまで操作できなくなる",ok:false}],
+       why:"SWR の名前の由来でもある<b>「古い値を見せつつ裏で再検証」</b>。再取得のたびに空にならないので、ダッシュボードがチラつかず、数値が滑らかに更新される。これが定期更新でも体験を保てる理由。",
+       code:null},
+      {eyebrow:"STEP 4 — 過度な更新を避ける", lbl:"間隔の判断", sub:"やりすぎない",
+       prompt:"更新間隔をどう決めるのが妥当?",
+       question:"③ 更新間隔の決め方は？",
+       opts:[{t:"データの変化頻度に見合う間隔にする（速すぎる更新は負荷になる）",ok:true},{t:"短ければ短いほど良いので 100ms にする",ok:false},{t:"間隔は固定で、必ず1秒と決まっている",ok:false}],
+       why:"更新が速すぎるとサーバー負荷や通信が増えるだけで、体感は変わらないことが多い。<b>データが実際に変わる頻度</b>に見合う間隔にする。秒単位で十分なことがほとんど。ここでも「やりすぎない」判断が要る。",
+       code:null},
+    ],
+    doneMsg:"まず SWR 標準の自動再検証で足りるか問い、必要なら refreshInterval で定期更新。再取得中も古い値を見せてチラつかせず、間隔はデータの変化頻度に合わせる。ダッシュボードを最新に保つ判断が掴めました。"
+  },
+
   "memo-child":{
     concept:"useCallback", title:"子の再描画を防ぐ",
     scenario:"重い子コンポーネント（React.memo 済み）に、関数を props で渡している。",
@@ -1771,6 +2045,40 @@ const LESSONS = {
        code:null},
     ],
     doneMsg:"関数は毎描画で作り直され、memo した子の最適化を壊す。useCallback で参照を安定させると memo が効く。ただし参照の同一性が要る場面だけ——useMemo の関数版として、使いどころの判断が掴めました。"
+  },
+
+  "effect-dep":{
+    concept:"useCallback", title:"Effect の依存に渡す関数",
+    scenario:"EC商品ページ。表示中の商品IDが変わったら、関連商品を取得する関数を Effect で呼ぶ。",
+    steps:[
+      {eyebrow:"STEP 1 — 関数を依存に入れると", lbl:"毎回別物の関数", sub:"問題の発端",
+       prompt:"取得関数 fetchRelated を useEffect の依存配列に入れた。この関数が毎描画で作り直されると?",
+       question:"関数を依存に入れると？",
+       opts:[{t:"毎描画で関数が別物になり、Effect が毎回再実行されてしまう",ok:true},{t:"関数は依存配列に入れられないのでエラーになる",ok:false},{t:"関数は常に同じものとして扱われ、何も起きない",ok:false}],
+       why:"コンポーネント内で定義した関数は<b>毎描画で新しく作られる</b>。それを Effect の依存に入れると「依存が毎回変わった」と判定され、Effect が<b>毎描画で再実行</b>される。取得が無限に走るような不具合の元。",
+       code:null},
+      {eyebrow:"STEP 2 — 関数の参照を固定", lbl:"useCallback", sub:"依存が変わる時だけ作り直す",
+       prompt:"fetchRelated は productId を使う。①の依存配列にすると、productId が変わった時だけ関数が作り直される。",
+       question:"① useCallback の依存配列は？",
+       opts:[{t:"[productId]",ok:true},{t:"[]（productId を使っているのに空）",ok:false},{t:"省略する",ok:false}],
+       why:"<code>[productId]</code> にすると、productId が変わった時<b>だけ</b>関数が新しくなり、それ以外は同じ参照を保つ。<code>[]</code> だと古い productId を掴んだままになり、省略すると毎回作り直されて固定の意味がない。使う値を依存に入れる。",
+       code:['<span class="kw">const</span> fetchRelated = <span class="fn">useCallback</span>(() => {','  <span class="fn">api</span>.<span class="fn">getRelated</span>(productId).<span class="fn">then</span>(setItems);','}, <span class="b1">①</span>);'],
+       fill:{slot:"b1",val:'[productId]'}},
+      {eyebrow:"STEP 3 — Effect の依存に渡す", lbl:"安定した関数を入れる", sub:"再実行を制御",
+       prompt:"この fetchRelated を Effect の依存に入れる。②の依存配列は?",
+       question:"② Effect の依存配列は？",
+       opts:[{t:"[fetchRelated]",ok:true},{t:"[]（関数を入れない）",ok:false},{t:"毎回新しい無名関数を直接書く",ok:false}],
+       why:"参照が安定した <code>fetchRelated</code> を依存に入れると、Effect は<b>productId が変わった時だけ</b>再実行される。useCallback で固定したからこそ、Effect の依存に入れても無駄な再実行が起きない。両者はセットで効く。",
+       code:['<span class="fn">useEffect</span>(() => {','  <span class="fn">fetchRelated</span>();','}, <span class="b2">②</span>);'],
+       fill:{slot:"b2",val:'[fetchRelated]'}},
+      {eyebrow:"STEP 4 — 使う判断", lbl:"いつ必要か", sub:"乱用しない",
+       prompt:"useCallback が役立つ場面として、ここで示されたのは?",
+       question:"③ useCallback が要る場面は？",
+       opts:[{t:"関数を Effect の依存や memo した子に渡し、参照の安定が要る時",ok:true},{t:"すべての関数を念のため包む時",ok:false},{t:"関数の処理を速くしたい時",ok:false}],
+       why:"<b>参照の安定が実際に要る場面</b>——Effect の依存に入れる、memo した子に渡す——に絞る。普通の関数を包んでも効果はなく可読性が下がるだけ。関数の処理自体が速くなるわけでもない。必要な所だけ、が原則。",
+       code:null},
+    ],
+    doneMsg:"コンポーネント内の関数は毎描画で別物になり、Effect の依存に入れると無駄な再実行を招く。useCallback で参照を固定し、依存に使う値を入れる。Effect と useCallback がセットで効く使い所が掴めました。"
   },
 
   "heavy-filter":{
@@ -1808,6 +2116,40 @@ const LESSONS = {
     doneMsg:"固まりは「急ぐ更新と重い更新が同優先で詰まる」のが原因。重い方だけ startTransition で包み、入力を優先し、isPending で処理中を伝える。UIが実際に固まる時の最適化が身につきました（React 18 以降）。"
   },
 
+  "tab-switch":{
+    concept:"useTransition", title:"重いタブの切替",
+    scenario:"EC商品ページの「概要 / レビュー / スペック」タブ。レビュータブは件数が多く描画が重い。",
+    steps:[
+      {eyebrow:"STEP 1 — 切替が固まる原因", lbl:"重い描画が即座に走る", sub:"操作を妨げる",
+       prompt:"重いレビュータブに切り替えると、一瞬画面が固まる。原因は?",
+       question:"切替が固まる原因は？",
+       opts:[{t:"タブ切替の更新と重い描画が同じ優先度で、描画が操作を妨げている",ok:true},{t:"タブの数が多すぎて切替の計算が複雑になっている",ok:false},{t:"レビューデータの取得に時間がかかっている",ok:false}],
+       why:"タブを切り替える操作（急ぐ）と、重いレビュー一覧の描画（急がなくてよい）が<b>同じ優先度</b>で処理されるため、重い描画が切替操作をブロックして固まる。両者に優先順位を付けるのが解決の方向。データ取得の遅さとは別の話。",
+       code:null},
+      {eyebrow:"STEP 2 — 重い切替を包む", lbl:"startTransition", sub:"急がない更新に",
+       prompt:"タブ切替の state 更新を「急がない」扱いにする。①で包むのは?",
+       question:"① startTransition で包むのは？",
+       opts:[{t:"setTab（タブを切り替える state 更新）",ok:true},{t:"タブのラベル文字列の取得",ok:false},{t:"何も包まず isPending だけ見る",ok:false}],
+       why:"重い描画を引き起こす <code>setTab</code> を <code>startTransition</code> で包むと、その更新は<b>急がない</b>扱いになる。クリックの反応自体は止まらず、重いタブ内容は手が空いてから描かれる。包むのは「重さの原因になる state 更新」。",
+       code:['<span class="kw">const</span> [isPending, startTransition] = <span class="fn">useTransition</span>();','<span class="kw">const</span> <span class="fn">selectTab</span> = (next: <span class="kw">string</span>) => {','  <span class="fn">startTransition</span>(() => <span class="b1">①</span>);','};'],
+       fill:{slot:"b1",val:'<span class="fn">setTab</span>(next)'}},
+      {eyebrow:"STEP 3 — 切替中を伝える", lbl:"isPending", sub:"体験を補う",
+       prompt:"切替の処理中、②の isPending をどう使う?",
+       question:"② isPending の使い道は？",
+       opts:[{t:"処理中だけ、切替先タブを薄く表示するなどで「準備中」を伝える",ok:true},{t:"処理中はタブ全体をクリック不可にする",ok:false},{t:"使わなくてよい",ok:false}],
+       why:"<code>isPending</code> が true の間だけ、薄い表示やインジケータで「切替中」を示すと体験が良い。クリック自体は急ぐ更新として効き続けるので、タブを操作不可にはしない。優先順位付けに表示を添えて仕上げる。",
+       code:['&lt;<span class="fn">div</span> style={{ opacity: isPending ? <span class="par">0.6</span> : <span class="par">1</span> }}&gt;','  &lt;<span class="fn">TabContent</span> tab={tab} /&gt;','&lt;/<span class="fn">div</span>&gt;'],
+       staticCode:true},
+      {eyebrow:"STEP 4 — 使う判断", lbl:"固まる時だけ", sub:"乱用しない",
+       prompt:"このタブが軽い（すぐ描ける）場合、useTransition は要る?",
+       question:"③ 軽いタブでは？",
+       opts:[{t:"不要。実際に固まる重いタブの時だけ使う",ok:true},{t:"タブ切替には常に必須",ok:false},{t:"軽くても付けた方が必ず速くなる",ok:false}],
+       why:"軽い切替はそもそも固まらないので useTransition は不要。<b>実際にカクつく重い切替の時だけ</b>使う。まず普通に作り、固まりを確認してから導入する。最適化系に共通する「必要な時だけ」の姿勢（React 18 以降の機能）。",
+       code:null},
+    ],
+    doneMsg:"重いタブ切替は、切替更新を startTransition で「急がない」扱いにして操作を止めない。isPending で切替中を伝え、軽いタブには使わない。タブUIで固まりを防ぐ判断が掴めました（React 18 以降）。"
+  },
+
   "defer-list":{
     concept:"useDeferredValue", title:"重い表示を遅れて追従",
     scenario:"入力に応じて重いリストを描く。更新する側はいじれず、値を受け取るだけ。",
@@ -1840,6 +2182,40 @@ const LESSONS = {
        code:null},
     ],
     doneMsg:"useDeferredValue は値の遅延版を作り、使う側から固まりを解く。入力は即・重い表示は遅れて、と値で分ける。更新を包める時は useTransition、値を受け取るだけなら useDeferredValue——2つの使い分けが掴めました（React 18 以降）。"
+  },
+
+  suggest:{
+    concept:"useDeferredValue", title:"検索サジェストの遅延",
+    scenario:"ECの検索ボックス。入力に応じて候補リストを出すが、候補の絞り込みが重く入力がもたつく。",
+    steps:[
+      {eyebrow:"STEP 1 — 入力を最優先に", lbl:"何を急がせるか", sub:"打鍵を止めない",
+       prompt:"検索ボックスで最も優先すべきは?",
+       question:"最優先すべきは？",
+       opts:[{t:"打った文字が即座に入力欄へ反映されること",ok:true},{t:"候補リストが文字と完全に同時に更新されること",ok:false},{t:"候補の件数を常に正確に保つこと",ok:false}],
+       why:"入力欄の反映が最優先。<b>打鍵が止まる</b>のが一番のストレスだから。候補リストは少し遅れて追従しても許容される。重い候補絞り込みを入力と同列に扱うと、打鍵がもたつく。優先順位を分けたい。",
+       code:null},
+      {eyebrow:"STEP 2 — 値の遅延版を作る", lbl:"useDeferredValue", sub:"候補用の遅い値",
+       prompt:"入力 query の「遅れた版」を作り、候補リストにはそちらを使う。①は?",
+       question:"① 遅延版の作り方は？",
+       opts:[{t:"useDeferredValue(query)",ok:true},{t:"useDeferredValue(setQuery)",ok:false},{t:"useDeferredValue(候補リスト)",ok:false}],
+       why:"<code>useDeferredValue(query)</code> に<b>入力値そのもの</b>を渡すと、その遅れた版が返る。候補はこの遅延版から作るので、入力の反映を妨げない。setter や候補リストを渡すのではなく、遅らせたい元の値を渡す。",
+       code:['<span class="kw">const</span> deferredQuery = <span class="b1">①</span>;'],
+       fill:{slot:"b1",val:'<span class="fn">useDeferredValue</span>(query)'}},
+      {eyebrow:"STEP 3 — 値を使い分ける", lbl:"入力は即・候補は遅", sub:"どちらを渡すか",
+       prompt:"入力欄と候補リスト、それぞれどちらの値を使う?",
+       question:"② 値の使い分けは？",
+       opts:[{t:"入力欄は query（即）、候補リストは deferredQuery（遅れて）",ok:true},{t:"入力欄も候補も deferredQuery",ok:false},{t:"入力欄も候補も query",ok:false}],
+       why:"入力欄は <code>query</code> で<b>即反映</b>（打った文字がすぐ出る）。重い候補リストは <code>deferredQuery</code> で<b>遅れて追従</b>。これで打鍵は滑らかなまま、候補は手が空いた時に更新される。急ぐ所と遅い所を値で分ける。",
+       code:['&lt;<span class="fn">input</span> value={query} onChange={onChange} /&gt;','&lt;<span class="fn">Suggestions</span> query={<span class="b2">②</span>} /&gt;'],
+       fill:{slot:"b2",val:'deferredQuery'}},
+      {eyebrow:"STEP 4 — debounce との違い", lbl:"仕組みの理解", sub:"固定時間ではない",
+       prompt:"これは「300ミリ秒待ってから候補を出す」debounce と同じ?",
+       question:"③ debounce との違いは？",
+       opts:[{t:"固定時間待つのではなく、React が手の空き具合で追従させる",ok:true},{t:"全く同じで、待ち時間を指定するだけ",ok:false},{t:"useDeferredValue の方が必ず待ち時間が長い",ok:false}],
+       why:"debounce は<b>決まった時間</b>待つ。useDeferredValue は時間指定ではなく、<b>React が優先度に応じて</b>遅い更新を後回しにする。入力が落ち着けば候補もすぐ追いつく。似た目的でも仕組みが違う（React 18 以降）。",
+       code:null},
+    ],
+    doneMsg:"検索サジェストは入力を最優先にし、候補リストは useDeferredValue の遅延版で追従させる。入力は即・候補は遅れて、と値で分ける。debounce と違い React が優先度で調整する点まで掴めました（React 18 以降）。"
   },
 
   label:{
@@ -1875,6 +2251,40 @@ const LESSONS = {
     doneMsg:"ラベルと入力の紐付けはアクセシビリティの基本。固定idは衝突するので useId で一意にする。ただし key には使わない（key はデータの id）——useId の正しい用途と境界が分かりました。"
   },
 
+  aria:{
+    concept:"useId", title:"開閉パネルの aria 紐付け",
+    scenario:"スマホサイトのFAQ。質問をタップすると答えが開くアコーディオン。同じ部品を何個も並べる。",
+    steps:[
+      {eyebrow:"STEP 1 — なぜ紐付けるか", lbl:"ボタンとパネルを結ぶ", sub:"支援技術に伝える",
+       prompt:"開閉ボタンと、開く答えパネルを aria で結ぶ。何のため?",
+       question:"なぜ aria で結ぶ？",
+       opts:[{t:"スクリーンリーダーに「このボタンがどのパネルを開くか」を伝えるため",ok:true},{t:"開閉のアニメーションを滑らかに見せるため",ok:false},{t:"開いている時の見た目を装飾するため",ok:false}],
+       why:"<code>aria-controls</code> でボタンと対象パネルを結ぶと、支援技術が「このボタンはどの領域を開閉するか」を理解できる。アクセシビリティのための紐付けで、見た目やアニメーションとは別の配慮。結ぶには両者を指す id が要る。",
+       code:null},
+      {eyebrow:"STEP 2 — 固定idの問題", lbl:"複数並べると衝突", sub:"FAQは何個も並ぶ",
+       prompt:"パネルの id を <code>\"answer\"</code> と固定した。FAQ項目を10個並べると?",
+       question:"固定idを10個並べると？",
+       opts:[{t:"id が重複し、どのボタンも同じパネルを指してしまう",ok:true},{t:"自動で answer1, answer2 と振られる",ok:false},{t:"特に問題は起きない",ok:false}],
+       why:"id は<b>ページ内で一意</b>であるべき。固定値だと同じFAQ部品を並べた時に <code>answer</code> が重複し、紐付けが壊れて全ボタンが同じパネルを指す。自動連番にもならない。一意性を保証する仕組みが要る。",
+       code:null},
+      {eyebrow:"STEP 3 — useId で一意に", lbl:"衝突しないID", sub:"部品ごとに別",
+       prompt:"衝突しない id を得る。①は?",
+       question:"① 一意なidの取得は？",
+       opts:[{t:"const id = useId()",ok:true},{t:'const id = "answer"',ok:false},{t:"const id = Math.random()",ok:false}],
+       why:"<code>useId()</code> は<b>衝突しない一意な id</b> を返す。同じFAQ部品を何個並べても別々の id になる。<code>Math.random()</code> は描画ごとに変わり不安定。useId は描画をまたいで安定し、サーバー描画でも一致する設計。",
+       code:['<span class="kw">function</span> <span class="fn">FaqItem</span>({ q, a }: <span class="fn">Props</span>) {','  <span class="kw">const</span> id = <span class="b1">①</span>;','  <span class="kw">const</span> [open, setOpen] = <span class="fn">useState</span>(<span class="kw">false</span>);'],
+       fill:{slot:"b1",val:'<span class="fn">useId</span>()'}},
+      {eyebrow:"STEP 4 — 紐付けに使う", lbl:"aria-controls と id", sub:"同じidで結ぶ",
+       prompt:"ボタンとパネルを同じ id で結ぶ。②のボタン側の属性は?",
+       question:"② ボタン側で id を指すのは？",
+       opts:[{t:"aria-controls={id}（同じ id をパネルにも付ける）",ok:true},{t:"key={id}",ok:false},{t:"className={id}",ok:false}],
+       why:"ボタンに <code>aria-controls={id}</code>、パネルに <code>id={id}</code> を付けて<b>同じ id で結ぶ</b>。これで支援技術が対応を理解できる。<code>key</code> はリスト要素の識別用で別物、<code>className</code> はスタイル用。aria 紐付けには id を使う。",
+       code:['&lt;<span class="fn">button</span> <span class="b2">②</span> onClick={() => setOpen(!open)}&gt;{q}&lt;/<span class="fn">button</span>&gt;','{open && &lt;<span class="fn">div</span> id={id}&gt;{a}&lt;/<span class="fn">div</span>&gt;}'],
+       fill:{slot:"b2",val:'aria-controls={id}'}},
+    ],
+    doneMsg:"開閉ボタンとパネルの aria 紐付けには一意な id が要る。固定idは同じ部品を並べると衝突するので useId で一意にし、aria-controls と id を同じ値で結ぶ。アクセシブルなアコーディオンの作り方が掴めました。"
+  },
+
   measure:{
     concept:"useLayoutEffect", title:"描画前に測る",
     scenario:"ツールチップを、対象要素のサイズを測ってから正しい位置に出したい。",
@@ -1906,6 +2316,40 @@ const LESSONS = {
        code:null},
     ],
     doneMsg:"測定→反映のちらつきは、描画後に走る useEffect が原因。useLayoutEffect は描画前に走るので防げる。違いはタイミングだけで、基本は useEffect、必要な時だけこちら——稀なフックの正しい立ち位置が分かりました。"
+  },
+
+  "sticky-header":{
+    concept:"useLayoutEffect", title:"固定ヘッダーの高さ分の余白",
+    scenario:"スマホサイトの上部固定ヘッダー。高さがフォントや表示で変わるため、本文の上余白を測って合わせたい。",
+    steps:[
+      {eyebrow:"STEP 1 — useEffect だとずれる", lbl:"描画後の測定", sub:"一瞬重なる",
+       prompt:"固定ヘッダーの高さを測って本文の上余白に反映する。useEffect で測ると何が起きうる?",
+       question:"useEffect で測ると？",
+       opts:[{t:"余白0で一度描かれ、本文がヘッダーに重なってから直るのでガクッと動く",ok:true},{t:"描画前に余白が反映され、最初から正しい位置で表示される",ok:false},{t:"ヘッダーがまだ無いため高さを測れずエラーになる",ok:false}],
+       why:"useEffect は<b>描画後</b>に走る。だから余白なしで一度表示→本文がヘッダーに隠れる→測って余白を入れる→ガクッと動く、というズレが見える。高さを測って<b>初期表示に反映</b>したいこの種の調整では、このタイミングが問題になる。",
+       code:null},
+      {eyebrow:"STEP 2 — 描画前に測る", lbl:"useLayoutEffect", sub:"反映を先に",
+       prompt:"ガクつきを防ぐ。①で測定と余白の反映を行うフックは?",
+       question:"① 描画前に測るには？",
+       opts:[{t:"useLayoutEffect",ok:true},{t:"useEffect",ok:false},{t:"useMemo",ok:false}],
+       why:"<code>useLayoutEffect</code> は<b>画面が描かれる直前</b>に走る。ヘッダー高さの測定と本文余白への反映を、画面に出る前に終えられるので、重なりやガクつきが見えない。書き方は useEffect と同じ。",
+       code:['<span class="kw">const</span> headerRef = <span class="fn">useRef</span>&lt;<span class="fn">HTMLElement</span>&gt;(<span class="kw">null</span>);','<span class="kw">const</span> [pad, setPad] = <span class="fn">useState</span>(<span class="par">0</span>);','<span class="b1">①</span>(() => {','  setPad(headerRef.current?.<span class="fn">offsetHeight</span> ?? <span class="par">0</span>);','}, []);'],
+       fill:{slot:"b1",val:'<span class="fn">useLayoutEffect</span>'}},
+      {eyebrow:"STEP 3 — 測った値を使う", lbl:"余白に反映", sub:"本文に適用",
+       prompt:"測ったヘッダー高さ pad を本文の上余白にする。②は?",
+       question:"② 本文への反映は？",
+       opts:[{t:"style={{ paddingTop: pad }}",ok:true},{t:"style={{ height: pad }}",ok:false},{t:"何もしない（測るだけ）",ok:false}],
+       why:"測った <code>pad</code> を本文の <code>paddingTop</code> に入れると、固定ヘッダーの真下から本文が始まり重ならない。<code>height</code> では本文の高さになってしまい意図と違う。測った値を実際に反映して初めて意味がある。",
+       code:['&lt;<span class="fn">header</span> ref={headerRef} className=<span class="str">"fixed-top"</span>&gt;…&lt;/<span class="fn">header</span>&gt;','&lt;<span class="fn">main</span> <span class="b2">②</span>&gt;…&lt;/<span class="fn">main</span>&gt;'],
+       fill:{slot:"b2",val:'style={{ paddingTop: pad }}'}},
+      {eyebrow:"STEP 4 — 基本は useEffect", lbl:"使いすぎない", sub:"描画をブロック",
+       prompt:"測定が不要な普通の副作用（データ取得など）は、どちらを使う?",
+       question:"③ 普通の副作用は？",
+       opts:[{t:"useEffect。useLayoutEffect は測定→反映のちらつきがある時だけ",ok:true},{t:"常に useLayoutEffect の方が安全",ok:false},{t:"どちらでも全く同じ",ok:false}],
+       why:"useLayoutEffect は<b>描画をブロック</b>するため、多用すると遅くなる。デフォルトは useEffect で、今回のような「測ってから表示しないとガクつく」場面に限って useLayoutEffect を使う。必要な時だけ、という姿勢。",
+       code:null},
+    ],
+    doneMsg:"固定ヘッダーの高さ分の余白は、描画後の useEffect だとガクつく。useLayoutEffect で描画前に測って反映すれば滑らか。ただし基本は useEffect で、測定→反映のちらつきがある時だけ——使い分けが掴めました。"
   },
 
   "form-action":{
@@ -1940,6 +2384,41 @@ const LESSONS = {
        code:null},
     ],
     doneMsg:"送信の結果・処理中フラグを useActionState が1つにまとめ、form の action に繋ぐ。送信中フラグも手書き不要。React 19 + フォーム/Server Actions 時代の、送信状態管理の新しい形が掴めました。"
+  },
+
+  coupon:{
+    concept:"useActionState", title:"クーポン適用フォーム",
+    scenario:"ECのカート画面。クーポンコードを入力して適用。成功すれば割引額、失敗すれば理由を表示する。",
+    steps:[
+      {eyebrow:"STEP 1 — 結果が成否で分かれる", lbl:"何を持つか", sub:"成功と失敗",
+       prompt:"クーポン適用の結果は「成功（割引額）」か「失敗（理由）」に分かれる。これを扱うには?",
+       question:"結果として持つべきは？",
+       opts:[{t:"成否と、それに応じたメッセージ（割引額 or エラー理由）を1つの結果にまとめる",ok:true},{t:"入力されたクーポンコードの文字列だけ",ok:false},{t:"成功した時だけ状態を持ち、失敗は無視する",ok:false}],
+       why:"適用結果は<b>成功か失敗か</b>で表示が分かれ、それぞれメッセージが伴う。これを1つの「結果」として持つと画面に出しやすい。失敗を無視すると「なぜ使えないか」を伝えられない。入力コード自体は結果ではない。",
+       code:null},
+      {eyebrow:"STEP 2 — アクションの状態を持つ", lbl:"useActionState", sub:"3つを受け取る",
+       prompt:"適用処理の状態を useActionState で管理する。①で受け取るのは?",
+       question:"① 返り値は？",
+       opts:[{t:"[state, formAction, isPending]",ok:true},{t:"[code, setCode]",ok:false},{t:"適用結果の文字列だけ",ok:false}],
+       why:"<code>[state, formAction, isPending]</code> を受け取る。<b>state</b>＝適用結果、<b>formAction</b>＝form に渡す包んだ処理、<b>isPending</b>＝適用中フラグ。成否の結果も処理中フラグも1つにまとまる（React 19 の機能）。",
+       code:['<span class="kw">const</span> <span class="b1">①</span> = <span class="fn">useActionState</span>(applyCoupon, <span class="kw">null</span>);'],
+       fill:{slot:"b1",val:'[state, formAction, isPending]'}},
+      {eyebrow:"STEP 3 — 処理の結果を返す", lbl:"成否を返す", sub:"次の state になる",
+       prompt:"適用処理 applyCoupon は何を返すべき?",
+       question:"② applyCoupon が返すのは？",
+       opts:[{t:"成功なら { ok: true, discount }、失敗なら { ok: false, message }",ok:true},{t:"何も返さず、別の state を直接更新する",ok:false},{t:"常に成功扱いの固定値",ok:false}],
+       why:"アクションが<b>返した値が次の state</b>になる。成否と内容を含むオブジェクトを返せば、画面はそれを見て割引額かエラーを出せる。別 state を直接いじるのではなく、結果を return するのが useActionState の流れ。",
+       code:['<span class="kw">async function</span> <span class="fn">applyCoupon</span>(prev, formData: <span class="kw">FormData</span>) {','  <span class="kw">const</span> res = <span class="kw">await</span> <span class="fn">check</span>(formData.get(<span class="str">\'code\'</span>));','  <span class="kw">return</span> <span class="b2">②</span>;','}'],
+       fill:{slot:"b2",val:"res.ok ? { ok: <span class=\"kw\">true</span>, discount: res.amount } : { ok: <span class=\"kw\">false</span>, message: res.reason }"}},
+      {eyebrow:"STEP 4 — 結果を表示する", lbl:"state と isPending", sub:"成否で出し分け",
+       prompt:"form を formAction に繋ぎ、結果を表示する。③の適用中の判定は?",
+       question:"③ 適用中の判定は？",
+       opts:[{t:"isPending（フックが返す処理中フラグ）",ok:true},{t:"自分で loading state を作る",ok:false},{t:"state.loading",ok:false}],
+       why:"<code>isPending</code> をそのまま使えば、適用中だけボタンを <code>disabled</code> にできる。手書きの loading 管理は不要。結果は <code>state</code> の <code>ok</code> を見て、割引額かエラー理由を出し分ける。状態が1か所にまとまる（React 19）。",
+       code:['&lt;<span class="fn">form</span> action={formAction}&gt;','  &lt;<span class="fn">input</span> name=<span class="str">"code"</span> /&gt;','  &lt;<span class="fn">button</span> disabled={isPending}&gt;適用&lt;/<span class="fn">button</span>&gt;','&lt;/<span class="fn">form</span>&gt;','{state?.ok === <span class="kw">false</span> && &lt;<span class="fn">p</span>&gt;{state.message}&lt;/<span class="fn">p</span>&gt;}'],
+       staticCode:true},
+    ],
+    doneMsg:"クーポン適用の成否とメッセージを1つの結果にまとめ、useActionState で state・formAction・isPending を扱う。アクションが返す値が次の state になり、成否で表示を出し分ける。EC のフォームで実用形が掴めました（React 19）。"
   },
 
   "query-mutation":{
@@ -1977,6 +2456,40 @@ const LESSONS = {
     doneMsg:"読み取りは useQuery、書き込みは useMutation、つなぐのは queryKey。更新後はキャッシュを無効化して自動再取得。SWR より一歩進んだ「取得と更新の体系的な管理」が掴めました。サーバーデータ専用、という前提は共通です。"
   },
 
+  "list-detail":{
+    concept:"TanStack Query", title:"一覧と詳細のキャッシュ共有",
+    scenario:"web業務サイトの受注管理。受注一覧と、各受注の詳細ページがある。同じデータを無駄なく扱いたい。",
+    steps:[
+      {eyebrow:"STEP 1 — キーで識別する", lbl:"queryKey の設計", sub:"一覧と詳細を区別",
+       prompt:"受注一覧と「受注123の詳細」を、それぞれどう識別する?",
+       question:"queryKey の付け方は？",
+       opts:[{t:"一覧は ['orders']、詳細は ['orders', 123] のように区別する",ok:true},{t:"どちらも同じ ['orders'] にする",ok:false},{t:"キーは付けず取得関数だけで管理する",ok:false}],
+       why:"queryKey は<b>キャッシュの識別子</b>。一覧は <code>['orders']</code>、個別の詳細は <code>['orders', id]</code> のように<b>配列で階層的に</b>表すのが定石。同じキーだと別物のデータが混ざる。キーで一覧と各詳細をきれいに区別する。",
+       code:null},
+      {eyebrow:"STEP 2 — 詳細を取得", lbl:"id をキーに含める", sub:"詳細ごとにキャッシュ",
+       prompt:"受注 id の詳細を取得する。①の queryKey は?",
+       question:"① 詳細の queryKey は？",
+       opts:[{t:"['orders', id]",ok:true},{t:"['orders']（id を含めない）",ok:false},{t:"[id]（orders を含めない）",ok:false}],
+       why:"<code>['orders', id]</code> とすると、受注ごとに<b>別々にキャッシュ</b>される。id を含めないと全詳細が同じキーになり混ざる。orders を含めないと他の id=123 のデータと衝突しうる。階層を表す配列で一意にする。",
+       code:['<span class="kw">const</span> { data } = <span class="fn">useQuery</span>({','  queryKey: <span class="b1">①</span>,','  queryFn: () => <span class="fn">fetchOrder</span>(id),','});'],
+       fill:{slot:"b1",val:"['orders', id]"}},
+      {eyebrow:"STEP 3 — 再訪で再取得を省く", lbl:"キャッシュの効果", sub:"一度取れば使い回す",
+       prompt:"一覧→詳細→一覧に戻る、と移動した時、一覧の再取得は?",
+       question:"② 一覧に戻った時は？",
+       opts:[{t:"キャッシュが有効な間は、即キャッシュを見せつつ必要に応じ再検証する",ok:true},{t:"戻るたびに必ず最初から取得し直す",ok:false},{t:"一度離れたキャッシュは消えて使えない",ok:false}],
+       why:"<code>['orders']</code> のキャッシュが残っていれば、戻った時に<b>即座にキャッシュを表示</b>し、設定に応じて裏で再検証する。毎回最初から取り直さないので、画面の切り替えが速い。キーでキャッシュを識別しているからこそ効く。",
+       code:null},
+      {eyebrow:"STEP 4 — 更新後に正しく無効化", lbl:"関係するキーだけ", sub:"狙って無効化",
+       prompt:"受注123を編集した。最新化のため無効化すべきキーは?",
+       question:"③ 無効化するキーは？",
+       opts:[{t:"['orders', 123]（その詳細）と、必要なら ['orders']（一覧）",ok:true},{t:"全キャッシュをまとめて消す",ok:false},{t:"何も無効化しなくても自動で最新になる",ok:false}],
+       why:"編集した詳細 <code>['orders', 123]</code> を無効化し、一覧の表示に影響するなら <code>['orders']</code> も無効化する。<b>関係するキーを狙って</b>無効化すれば、無関係なキャッシュは保ったまま該当箇所だけ再取得される。全消しは無駄な再取得を招く。",
+       code:['qc.<span class="fn">invalidateQueries</span>({ queryKey: [<span class="str">\'orders\'</span>, <span class="par">123</span>] });'],
+       staticCode:true},
+    ],
+    doneMsg:"queryKey を ['orders'] と ['orders', id] のように階層で設計すると、一覧と詳細を区別しつつキャッシュを使い回せる。更新後は関係するキーだけ狙って無効化する。キャッシュ設計の勘所が掴めました。"
+  },
+
   store:{
     concept:"Zustand", title:"グローバル状態を共有",
     scenario:"ログイン情報やテーマを、アプリ全体で頻繁に読み書きする。",
@@ -2009,6 +2522,41 @@ const LESSONS = {
        code:null},
     ],
     doneMsg:"まず useState/Context を検討し、辛くなってから Zustand。外部ストアを create で作り、必要な値だけ部分購読し、Provider は不要。クライアント状態専用——「状態の出どころで道具を選ぶ」判断が深まりました。"
+  },
+
+  "cart-store":{
+    concept:"Zustand", title:"サイト全体のカート",
+    scenario:"ECサイト。ヘッダーの個数バッジ、商品ページの「追加」ボタン、カート画面が、同じカート状態を共有する。",
+    steps:[
+      {eyebrow:"STEP 1 — 共有範囲を見極める", lbl:"離れた場所が読む", sub:"道具を選ぶ",
+       prompt:"カート状態は、ヘッダー・商品ページ・カート画面という<b>離れた場所</b>が読み書きする。どう持つ?",
+       question:"カート状態の持ち方は？",
+       opts:[{t:"アプリ全体で共有するクライアント状態として、外部ストアで持つ",ok:true},{t:"各画面がそれぞれ useState で別々に持つ",ok:false},{t:"サーバーデータなので TanStack Query で持つ",ok:false}],
+       why:"カートは離れた多くの場所が同じ状態を共有する<b>クライアント状態</b>。各画面が別々に useState で持つと同期できない。サーバーに保存する側面はあっても、画面上で共有する「今のカート」はクライアント状態。広く共有するので外部ストアが向く。",
+       code:null},
+      {eyebrow:"STEP 2 — ストアを定義", lbl:"create", sub:"状態と操作",
+       prompt:"カートストアを定義する。①の set の役割は?",
+       question:"① set とは？",
+       opts:[{t:"状態を更新する関数",ok:true},{t:"ストアを破棄する関数",ok:false},{t:"購読を登録する関数",ok:false}],
+       why:"<code>create((set) => ...)</code> の <code>set</code> は<b>状態を更新する関数</b>。<code>set((s) => ({ items: [...s.items, item] }))</code> のように前の状態から次を作る。ストアはコンポーネントの<b>外</b>に置き、どこからでも使える。",
+       code:['<span class="kw">type</span> <span class="fn">CartStore</span> = { items: <span class="fn">Item</span>[]; add: (i: <span class="fn">Item</span>) => <span class="kw">void</span> };','<span class="kw">const</span> useCart = <span class="fn">create</span>&lt;<span class="fn">CartStore</span>&gt;((<span class="b1">①</span>) => ({','  items: [],','  add: (i) => set((s) => ({ items: [...s.items, i] })),','}));'],
+       fill:{slot:"b1",val:'set'}},
+      {eyebrow:"STEP 3 — 必要な値だけ購読", lbl:"部分購読", sub:"バッジは個数だけ",
+       prompt:"ヘッダーの個数バッジは「件数」だけ要る。再描画を抑える②の購読は?",
+       question:"② バッジでの購読は？",
+       opts:[{t:"useCart((s) => s.items.length)（件数だけ選ぶ）",ok:true},{t:"useCart()（ストア全体を取る）",ok:false},{t:"useCart((s) => s)（全体を返す）",ok:false}],
+       why:"<b>必要な値だけ選んで購読</b>する <code>useCart((s) => s.items.length)</code> が要点。これなら件数以外が変わってもバッジは再描画されない。全体を取ると、カートの何が変わっても毎回再描画されてしまう。",
+       code:['<span class="kw">const</span> count = <span class="b2">②</span>;','<span class="kw">return</span> &lt;<span class="fn">span</span>&gt;🛒 {count}&lt;/<span class="fn">span</span>&gt;;'],
+       fill:{slot:"b2",val:'useCart((s) => s.items.length)'}},
+      {eyebrow:"STEP 4 — どこからでも操作", lbl:"Provider 不要", sub:"離れた場所から",
+       prompt:"商品ページの「追加」ボタンからカートに追加する。Provider で囲む必要は?",
+       question:"③ 追加操作と Provider は？",
+       opts:[{t:"Provider 不要。useCart から add を取り出して呼ぶだけ",ok:true},{t:"商品ページを Provider で囲む必要がある",ok:false},{t:"ヘッダーとカート画面を同じ Provider で囲む",ok:false}],
+       why:"Zustand はストアが外にあるため<b>Provider 不要</b>。商品ページでも <code>const add = useCart((s) => s.add)</code> で取り出して呼ぶだけ。離れた場所が同じストアを直接使えるので、ヘッダーのバッジも自動で最新になる。",
+       code:['<span class="kw">const</span> add = useCart((s) => s.add);','&lt;<span class="fn">button</span> onClick={() => add(product)}&gt;カートに追加&lt;/<span class="fn">button</span>&gt;'],
+       staticCode:true},
+    ],
+    doneMsg:"離れた多くの場所が共有する「今のカート」はクライアント状態。外部ストアに置き、バッジは件数だけ部分購読、Provider なしでどこからでも操作する。サイト全体で共有する状態の扱い方が掴めました。"
   },
 
   "rhf-form":{
@@ -2045,6 +2593,41 @@ const LESSONS = {
     doneMsg:"制御コンポーネントは毎キーストローク再描画する。RHF は register で非制御に繋ぎ、handleSubmit で検証を通す。ただし小さなフォームには useState で十分——制御/非制御の違いと、ライブラリ導入の判断が掴めました。"
   },
 
+  "rhf-zod":{
+    concept:"React Hook Form", title:"会員登録の入力検証",
+    scenario:"ECの会員登録フォーム。メール形式・パスワードの長さ・確認用パスワードの一致を検証する。",
+    steps:[
+      {eyebrow:"STEP 1 — 検証をどこに書くか", lbl:"手書きか集約か", sub:"二重管理を避ける",
+       prompt:"複数項目の検証ルール（形式・長さ・一致）を、どう持つのが見通しがよい?",
+       question:"検証ルールの持ち方は？",
+       opts:[{t:"スキーマに一元化し、RHF と繋いで使う",ok:true},{t:"各入力の onChange に検証を1つずつ手書きする",ok:false},{t:"送信後にサーバーの結果だけで検証する",ok:false}],
+       why:"検証を各所に手書きすると、ルールが散らばり型ともずれやすい。<b>スキーマ1つに集約</b>して RHF と繋ぐと、ルールと型が一元化され見通しがよい。サーバー検証も大切だが、入力時のフィードバックにはクライアント側の検証が要る。",
+       code:null},
+      {eyebrow:"STEP 2 — スキーマを定義", lbl:"Zod スキーマ", sub:"ルール込みの形",
+       prompt:"登録フォームのスキーマを定義する。①のパスワード（8文字以上）の検証は?",
+       question:"① パスワードの検証は？",
+       opts:[{t:"z.string().min(8)",ok:true},{t:"z.string()（長さは問わない）",ok:false},{t:"z.password()",ok:false}],
+       why:"<code>z.string().min(8)</code> で「文字列かつ8文字以上」という<b>検証ルール込みの形</b>を定義する。単なる string では長さを保証できない。<code>z.password()</code> という関数は無い。スキーマにルールを書き込むのが Zod の発想。",
+       code:['<span class="kw">const</span> schema = z.<span class="fn">object</span>({','  email: z.<span class="fn">string</span>().<span class="fn">email</span>(),','  password: <span class="b1">①</span>,','});'],
+       fill:{slot:"b1",val:'z.<span class="fn">string</span>().<span class="fn">min</span>(<span class="par">8</span>)'}},
+      {eyebrow:"STEP 3 — RHF と繋ぐ", lbl:"resolver", sub:"検証を委ねる",
+       prompt:"このスキーマを RHF の検証として使う。②の繋ぎ方は?",
+       question:"② スキーマの繋ぎ方は？",
+       opts:[{t:"useForm({ resolver: zodResolver(schema) })",ok:true},{t:"useForm(schema) と直接渡す",ok:false},{t:"register に schema を渡す",ok:false}],
+       why:"<code>resolver: zodResolver(schema)</code> で RHF にスキーマを<b>検証担当として委ねる</b>。これで送信時にスキーマで検証され、エラーが <code>formState.errors</code> に入る。型も <code>z.infer</code> で揃えられ、検証と型が一元化される。",
+       code:['<span class="kw">type</span> <span class="fn">Form</span> = z.<span class="fn">infer</span>&lt;<span class="kw">typeof</span> schema&gt;;','<span class="kw">const</span> { register, handleSubmit, formState } =','  <span class="fn">useForm</span>&lt;<span class="fn">Form</span>&gt;({ <span class="b2">②</span> });'],
+       fill:{slot:"b2",val:'resolver: zodResolver(schema)'}},
+      {eyebrow:"STEP 4 — エラーを表示", lbl:"errors を出す", sub:"項目ごとに",
+       prompt:"メール欄の検証エラーを表示する。③は?",
+       question:"③ エラー表示は？",
+       opts:[{t:"formState.errors.email?.message を表示する",ok:true},{t:"スキーマを再度自分で実行して判定する",ok:false},{t:"送信が成功するまで何も出さない",ok:false}],
+       why:"検証は RHF + Zod が済ませ、結果は <code>formState.errors</code> に入る。<code>errors.email?.message</code> を出せば、項目ごとに理由を表示できる。自分で再検証する必要はない。入力時にフィードバックできるのがクライアント検証の利点。",
+       code:['&lt;<span class="fn">input</span> {...<span class="fn">register</span>(<span class="str">\'email\'</span>)} /&gt;','{formState.errors.email && &lt;<span class="fn">span</span>&gt;{formState.errors.email.message}&lt;/<span class="fn">span</span>&gt;}'],
+       staticCode:true},
+    ],
+    doneMsg:"検証ルールは Zod スキーマに一元化し、zodResolver で RHF に委ねる。型は z.infer で揃え、エラーは formState.errors から項目ごとに表示。ライブラリ同士を組み合わせる、実務の定番構成が掴めました。"
+  },
+
   schema:{
     concept:"Zod", title:"型と検証を一元化",
     scenario:"フォーム入力やAPI応答が、想定の形か実行時にも確かめたい。",
@@ -2078,6 +2661,41 @@ const LESSONS = {
        fill:{slot:"b3",val:'User.safeParse(input)'}},
     ],
     doneMsg:"型はコンパイル時に消えるので、外から届くデータには実行時検証が要る。Zod はスキーマ1つから型(z.infer)と検証(safeParse)の両方を得て、二重管理のズレを防ぐ。RHF や Server Actions と組む定番の土台が掴めました。"
+  },
+
+  "api-parse":{
+    concept:"Zod", title:"API 応答を検証する",
+    scenario:"web業務サイトで外部APIから受注データを取得。型を付けても、実際に返る形が想定通りとは限らない。",
+    steps:[
+      {eyebrow:"STEP 1 — 型注釈は保証ではない", lbl:"as の落とし穴", sub:"実行時は素通り",
+       prompt:"<code>const data = (await res.json()) as Order</code> と型注釈を付けた。これで安全?",
+       question:"as Order で安全になる？",
+       opts:[{t:"ならない。実行時には何の検証もされず、形が違っても素通りする",ok:true},{t:"なる。as を付ければ実行時もその型が保証される",ok:false},{t:"なる。json() が自動で型をチェックする",ok:false}],
+       why:"<code>as Order</code> は「コンパイラにそう思わせる」だけで、<b>実行時には何も検証されない</b>。APIが想定と違う形を返しても素通りし、後で「undefined を読んだ」等のエラーになる。外から届くデータは<b>実行時に検証</b>する必要がある。",
+       code:null},
+      {eyebrow:"STEP 2 — 応答の形を定義", lbl:"スキーマ", sub:"期待する形",
+       prompt:"受注応答のスキーマを定義する。①の total（数値）の定義は?",
+       question:"① total の定義は？",
+       opts:[{t:"z.number()",ok:true},{t:"z.string()",ok:false},{t:"number（Zod を使わず）",ok:false}],
+       why:"<code>z.number()</code> で「数値であること」を実行時に検証できる形にする。APIがうっかり文字列で返したら弾ける。素の <code>number</code> は TypeScript の型注釈で実行時には効かない。スキーマは<b>実行時に検証できる形</b>。",
+       code:['<span class="kw">const</span> OrderSchema = z.<span class="fn">object</span>({','  id: z.<span class="fn">string</span>(),','  total: <span class="b1">①</span>,','});'],
+       fill:{slot:"b1",val:'z.<span class="fn">number</span>()'}},
+      {eyebrow:"STEP 3 — 安全に検証", lbl:"safeParse", sub:"成否で受ける",
+       prompt:"応答を検証する。不正な応答で<b>例外を投げず</b>、成否で扱いたい。②は?",
+       question:"② 安全な検証は？",
+       opts:[{t:"OrderSchema.safeParse(json)（成否を返す）",ok:true},{t:"OrderSchema.parse(json)（不正で例外）",ok:false},{t:"json as Order（検証なし）",ok:false}],
+       why:"<code>safeParse</code> は <code>{ success, data }</code> または <code>{ success: false, error }</code> を返すので、<b>例外を投げずに成否で分岐</b>できる。APIの不正応答を画面のエラー表示に繋げやすい。<code>parse</code> は例外を投げ、<code>as</code> は検証しない。",
+       code:['<span class="kw">const</span> json = <span class="kw">await</span> res.<span class="fn">json</span>();','<span class="kw">const</span> result = <span class="b2">②</span>;'],
+       fill:{slot:"b2",val:'OrderSchema.safeParse(json)'}},
+      {eyebrow:"STEP 4 — 検証後は型が付く", lbl:"成功なら型安全", sub:"data に型が乗る",
+       prompt:"検証に成功した後の result.data は?",
+       question:"③ 成功後の data は？",
+       opts:[{t:"スキーマから推論された型が付いていて、安全に使える",ok:true},{t:"型は any のままで結局保証されない",ok:false},{t:"検証しても型は付かず as が必要",ok:false}],
+       why:"<code>safeParse</code> が成功した時の <code>result.data</code> には<b>スキーマから推論された型</b>が付く。検証を通った＝形が保証されたデータなので、以降は型安全に使える。実行時検証と型付けが1つのスキーマから両立する——Zod の核心。",
+       code:['<span class="kw">if</span> (result.success) {','  <span class="fn">render</span>(result.data); <span class="cm">// Order 型として安全に使える</span>','} <span class="kw">else</span> {','  <span class="fn">showError</span>(<span class="str">\'応答の形式が不正です\'</span>);','}'],
+       staticCode:true},
+    ],
+    doneMsg:"as による型注釈は実行時には素通りする。外部APIの応答はスキーマで safeParse し、成否で分岐する。成功後の data には型が付くので、実行時検証と型安全が1つのスキーマで両立する——外から来るデータの扱い方が掴めました。"
   }
 };
 
@@ -2112,6 +2730,7 @@ const NEXT_DATA = {
     miss:[
       ['ルーティングは設定ファイルで書く','App Router は<strong>ファイルの置き場所</strong>で決まる。設定不要。'],
       ['どんな名前のファイルでも画面になる','画面になるのは <code>page.tsx</code> だけ。他のファイルは画面にならない（部品として使う）。'],
+      ['置くのは .html ファイルだ','置くのは <strong>React を書いた .tsx / .jsx</strong>。page・layout 等の特別なファイルは <code>.tsx .ts .jsx .js</code> が使える。HTML はそれをサーバーが実行して<strong>生成する出力</strong>で、自分で .html を置くのではない。'],
       ['app の中のコンポーネントはブラウザで動く','App Router では<strong>デフォルトで Server Component</strong>（サーバーで動く）。次のトピックで詳しく。'],
       ['Pages Router と書き方は同じ','レイアウトやデータ取得の考え方が変わる。同じではない。']
     ],
@@ -2156,6 +2775,9 @@ const NEXT_DATA = {
     lessons:[
       {id:"boundary", num:"01", ctx:"最重要", title:"境界をどこに引くか", sub:"'use client' を最小にする", ready:true},
       {id:"compose",  num:"02", ctx:"共通",   title:"サーバーとクライアントを組む", sub:"children で混ぜる", ready:true},
+      {id:"serializable-props", num:"03", ctx:"EC", title:"境界を越える props の制約", sub:"渡せる値・渡せない値", ready:true},
+      {id:"context-provider", num:"04", ctx:"Webサイト", title:"テーマ Context の置き方", sub:"Provider は Client、中身は Server", ready:true},
+      {id:"use-client-spread", num:"05", ctx:"共通", title:"'use client' はどこまで伝わるか", sub:"import で広がる理由", ready:true},
     ]
   },
 
@@ -2295,6 +2917,151 @@ const NEXT_DATA = {
     lessons:[
       {id:"dynamic-id", num:"01", ctx:"Webサイト", title:"1ファイルで全記事", sub:"[id] と params", ready:true},
     ]
+  },
+
+  "rendering": {
+    name:"レンダリング戦略",
+    cat:"レンダリング / 静的と動的",
+    tagline:"いつビルド時に静的化され、いつリクエスト時に動的になるかは、何を使うかで自動的に決まる。",
+    lede:"App Router では SSR か SSG かを明示的に選ばない。データの取り方で Next.js が自動判定する——この発想の転換が要点。",
+    def:'App Router では、ページが<b>ビルド時に静的化（SSG）</b>されるか<b>リクエスト時に動的（SSR）</b>になるかを、明示的に選ばない。cookies・headers・未キャッシュ取得などの<b>動的な要素を使うか</b>で Next.js が自動的に決める。',
+    why:[
+      '旧 Pages Router では <code>getServerSideProps</code>（動的）か <code>getStaticProps</code>（静的）かを<strong>自分で宣言</strong>していた。App Router にこれらは無い。代わりに、<strong>コンポーネントが何を使うか</strong>で静的か動的かが決まる。',
+      '動的データ源（cookies()、headers()、検索パラメータ、キャッシュしない fetch）を<strong>使わなければ静的</strong>（ビルド時に1度生成して使い回す）。使えば<strong>動的</strong>（リクエストごとに生成）。さらに <code>revalidate</code> を指定すると、静的だが一定間隔で裏で更新する<strong>ISR</strong>になる。「どう書くか」が「いつ生成されるか」を決める。'
+    ],
+    code:[
+      '<span class="cm">// 動的な要素なし → 静的（ビルド時に生成）</span>',
+      '<span class="kw">async function</span> <span class="fn">Page</span>() {',
+      '  <span class="kw">const</span> posts = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">\'.../posts\'</span>).<span class="fn">then</span>(r => r.json());',
+      '  <span class="kw">return</span> &lt;<span class="fn">List</span> posts={posts} /&gt;;',
+      '}',
+      '',
+      '<span class="cm">// ISR: 静的だが一定間隔で裏で更新</span>',
+      '<span class="kw">export const</span> revalidate = <span class="par">3600</span>; <span class="cm">// 1時間ごと</span>',
+      '',
+      '<span class="cm">// cookies() を読む → 自動的に動的（リクエストごと）</span>'
+    ],
+    codeCap:"動的な要素を使わなければ静的、使えば動的。revalidate を足せば ISR。書き方が生成タイミングを決める。",
+    yes:["公開・安定した内容（marketing/docs/記事）→ 静的","時々更新される内容（商品一覧・ニュース）→ ISR(revalidate)","ユーザー固有・リアルタイム → 動的（cookies 等で自動的に）"],
+    no:["SSR/SSG を getServerSideProps/getStaticProps で宣言する（App Router に無い）","静的にしたいページで不用意に cookies() を読む（動的化してしまう）"],
+    noNote:"<strong>判断の軸は「内容の性質」</strong>。公開で安定なら静的、時々更新なら ISR、ユーザー固有やリアルタイムなら動的。動的になるのは cookies/headers/未キャッシュ取得などを使った時。静的にしたいなら、それらを避ける。明示的な SSR/SSG 宣言ではなく、使うものが決める。",
+    miss:[
+      ['App Router でも getServerSideProps で SSR を指定する','App Router に<strong>それらは無い</strong>。何を使うかで自動判定される。'],
+      ['Server Component は常にリクエストごとに実行される','違う。<strong>動的な要素が無ければビルド時に1度だけ</strong>実行され静的化される。'],
+      ['ISR は特別な関数が要る','<code>export const revalidate = 秒数</code> を書くだけ。静的＋定期更新になる。'],
+      ['cookies() を読んでも静的なまま','読むと<strong>自動的に動的</strong>になる。静的にしたいページでは使わない。']
+    ],
+    lessons:[
+      {id:"static-dynamic", num:"01", ctx:"Webサイト", title:"静的か動的かは自動で決まる", sub:"何を使うかが分ける", ready:true},
+      {id:"isr", num:"02", ctx:"EC", title:"商品一覧を定期更新（ISR）", sub:"静的の速さと鮮度の両立", ready:true},
+      {id:"streaming", num:"03", ctx:"業務ツール", title:"重い部分を後から流し込む", sub:"loading と Suspense", ready:true},
+    ]
+  },
+
+  "navigation": {
+    name:"リンクとナビゲーション",
+    cat:"基礎 / 画面遷移",
+    tagline:"&lt;Link&gt; でページ間を移動すると、全リロードせず必要な部分だけ差し替わる。",
+    lede:"a タグの代わりに next/link の &lt;Link&gt; を使うと、共有レイアウトを保ったまま素早く遷移し、先読みも効く。",
+    def:'<code>next/link</code> の <code>&lt;Link&gt;</code> でページ間を移動すると、<b>全ページリロードせず</b>に必要な部分だけ差し替わる（クライアントサイドナビゲーション）。共有レイアウトは保たれ、表示中のリンク先は自動で先読みされる。',
+    why:[
+      '素の <code>&lt;a&gt;</code> でのページ遷移は<strong>全ページを再読み込み</strong>する。共有のヘッダーやサイドバーも作り直され、状態も失われ、表示も一瞬白くなる。',
+      '<code>&lt;Link&gt;</code> は<strong>必要な部分だけ差し替える</strong>。共有レイアウトは再描画されず保たれ、画面内に見えるリンク先は<strong>自動で先読み</strong>されるので、クリック時の表示が速い。SPA のような体験になる。'
+    ],
+    code:[
+      '<span class="kw">import</span> Link <span class="kw">from</span> <span class="str">\'next/link\'</span>;',
+      '',
+      '<span class="cm">// a タグではなく Link を使う</span>',
+      '&lt;<span class="fn">Link</span> href=<span class="str">"/products/123"</span>&gt;商品を見る&lt;/<span class="fn">Link</span>&gt;',
+      '',
+      '<span class="cm">// 動的な遷移はテンプレートリテラルで</span>',
+      '&lt;<span class="fn">Link</span> href={`/products/${id}`}&gt;{name}&lt;/<span class="fn">Link</span>&gt;'
+    ],
+    codeCap:"Link はクライアントサイド遷移と先読みを担う。共有レイアウトを保ったまま必要な部分だけ差し替わる。",
+    yes:["アプリ内のページ間移動すべて","ナビゲーションメニュー・一覧から詳細へのリンク","素早い遷移と先読みが欲しい時"],
+    no:["外部サイトへのリンク（普通の a タグでよい）","ページ遷移ではないボタン操作（onClick で処理）"],
+    noNote:"<strong>アプリ内の遷移は Link</strong>、外部サイトは普通の <code>&lt;a&gt;</code>。Link はクライアントサイド遷移・先読み・レイアウト保持という Next.js の利点を引き出す。プログラムから遷移したい時は <code>useRouter</code> の router.push も使える。",
+    miss:[
+      ['アプリ内リンクも a タグでよい','<code>&lt;a&gt;</code> は<strong>全リロード</strong>。Link なら必要な部分だけ差し替わり速い。'],
+      ['Link は先読みのために手動設定が要る','表示中のリンクは<strong>自動で先読み</strong>される。設定不要。'],
+      ['Link を使うと毎回レイアウトも作り直される','逆。<strong>共有レイアウトは保たれる</strong>のが Link の利点。'],
+      ['外部リンクも Link にすべき','外部サイトは普通の <code>&lt;a&gt;</code> でよい。Link はアプリ内遷移向け。']
+    ],
+    lessons:[
+      {id:"link-nav", num:"01", ctx:"Webサイト", title:"a タグではなく Link", sub:"クライアント遷移と先読み", ready:true},
+      {id:"prefetch-control", num:"02", ctx:"EC", title:"大量リンクの先読みを抑える", sub:"prefetch を絞る判断", ready:true},
+    ]
+  },
+
+  "image": {
+    name:"画像の最適化",
+    cat:"最適化 / 画像",
+    tagline:"next/image の &lt;Image&gt; を使うと、サイズ最適化・遅延読み込み・レイアウトずれ防止が自動で効く。",
+    lede:"img タグの代わりに &lt;Image&gt; を使うと、適切なサイズへの変換や遅延読み込みを Next.js が引き受ける。",
+    def:'<code>next/image</code> の <code>&lt;Image&gt;</code> は、<b>画像を自動で最適化</b>する。表示サイズに合わせた変換、画面外の画像の遅延読み込み、読み込み前の領域確保（レイアウトのガクつき防止）を引き受ける。',
+    why:[
+      '素の <code>&lt;img&gt;</code> は、巨大な元画像をそのまま送ってしまったり、読み込み完了まで高さが0で<strong>レイアウトがガクッとずれ</strong>たり、画面外の画像まで一度に読み込んだりしがち。',
+      '<code>&lt;Image&gt;</code> は<strong>表示サイズに合った画像を配信</strong>し、<strong>画面外は遅延読み込み</strong>し、<strong>幅・高さから領域を先に確保</strong>してガクつきを防ぐ。width/height（または fill）を指定するのは、この領域確保のため。'
+    ],
+    code:[
+      '<span class="kw">import</span> Image <span class="kw">from</span> <span class="str">\'next/image\'</span>;',
+      '',
+      '<span class="cm">// width/height で領域を確保し、最適化・遅延読み込みが効く</span>',
+      '&lt;<span class="fn">Image</span>',
+      '  src=<span class="str">"/product.jpg"</span>',
+      '  width={<span class="par">400</span>} height={<span class="par">300</span>}',
+      '  alt=<span class="str">"商品写真"</span>',
+      '/&gt;'
+    ],
+    codeCap:"Image はサイズ最適化・遅延読み込み・領域確保を自動化。width/height はガクつき防止のための指定。",
+    yes:["商品写真・サムネイル・コンテンツ画像","多くの画像を並べる一覧（遅延読み込みが効く）","レイアウトのガクつきを防ぎたい時"],
+    no:["ごく小さなアイコン（SVG で十分なことも）","最適化が不要な装飾用の単純な画像"],
+    noNote:"<strong>コンテンツ画像は基本 Image</strong>。サイズ最適化と遅延読み込みの恩恵が大きい。width/height は必須級（領域確保のため）で、サイズが可変なら fill とコンテナ側の指定を使う。alt は常に付ける。アイコンは SVG など別手段が向くこともある。",
+    miss:[
+      ['Image はただの img の別名','違う。<strong>サイズ最適化・遅延読み込み・領域確保</strong>を自動で行う。'],
+      ['width/height は省略してよい','領域確保のため<strong>基本は必須</strong>（可変なら fill）。省くとガクつきの原因。'],
+      ['すべての画像が一度に読み込まれる','画面外は<strong>遅延読み込み</strong>される。一覧でも初期表示が軽い。'],
+      ['alt は無くてよい','アクセシビリティのため<strong>常に付ける</strong>。']
+    ],
+    lessons:[
+      {id:"next-image", num:"01", ctx:"EC", title:"商品画像を最適化する", sub:"自動変換・遅延読み込み・ガクつき防止", ready:true},
+      {id:"image-priority", num:"02", ctx:"EC", title:"主役画像を優先で読む", sub:"priority と sizes の使い分け", ready:true},
+    ]
+  },
+
+  "route-handlers": {
+    name:"Route Handlers（APIルート）",
+    cat:"データ / API エンドポイント",
+    tagline:"route.ts を置くと、その URL が API エンドポイントになる。外部公開やWebhook受けに使う。",
+    lede:"page.tsx が画面なら、route.ts は API。GET/POST などの HTTP メソッドを関数として書ける。",
+    def:'<code>route.ts</code>（route.js）を置くと、その URL が<b>API エンドポイント</b>になる。<code>GET</code>・<code>POST</code> などの関数を export し、Web 標準の <code>Request</code>/<code>Response</code> でHTTPを扱う。画面ではなく<b>データを返す</b>口。',
+    why:[
+      'ページ表示のデータ取得は Server Component で直接、フォーム更新は Server Actions で足りることが多い。だが<strong>外部に公開するAPI</strong>、<strong>Webhook の受け口</strong>、<strong>外部クライアントが叩くJSON API</strong>が必要な場面がある。',
+      'Route Handlers は <code>app/api/.../route.ts</code> に <code>GET</code> や <code>POST</code> 関数を書くと、その URL がエンドポイントになる。<strong>page.tsx が画面、route.ts が API</strong> という対応。Web 標準の Request/Response を使うので、特別な作法が少ない。'
+    ],
+    code:[
+      '<span class="cm">// app/api/products/route.ts</span>',
+      '<span class="kw">import</span> { NextResponse } <span class="kw">from</span> <span class="str">\'next/server\'</span>;',
+      '',
+      '<span class="kw">export async function</span> <span class="fn">GET</span>() {',
+      '  <span class="kw">const</span> products = <span class="kw">await</span> <span class="fn">db</span>.products.<span class="fn">findMany</span>();',
+      '  <span class="kw">return</span> NextResponse.<span class="fn">json</span>(products);',
+      '}'
+    ],
+    codeCap:"route.ts に GET/POST 関数を書くとその URL が API に。Web 標準の Request/Response で扱う。",
+    yes:["外部に公開する JSON API","Webhook（決済・外部サービスからの通知）の受け口","外部クライアント（モバイル等）が叩くAPI"],
+    no:["ページ表示用のデータ取得（→ Server Component で直接 await）","フォーム送信・更新（→ Server Actions で十分なことが多い）"],
+    noNote:"<strong>まず Server Component と Server Actions で足りないか問う</strong>。画面用の取得は Server Component、更新は Server Actions が App Router の基本。Route Handlers は「外部に公開する口」「Webhook 受け」など、HTTPエンドポイントそのものが要る時に使う。役割を分けて選ぶ。",
+    miss:[
+      ['データ取得には必ず API ルートを作る','App Router では<strong>Server Component で直接取得</strong>が基本。APIルートは外部公開等の時。'],
+      ['route.ts と page.tsx は同じフォルダに両方置ける','原則どちらか。<strong>route.ts は API、page.tsx は画面</strong>で役割が違う。'],
+      ['Route Handlers は特別な戻り値が要る','Web 標準の <strong>Response</strong>（や NextResponse.json）を返すだけ。'],
+      ['GET も POST も1つの関数で受ける','メソッドごとに <strong>GET / POST 関数を分けて</strong> export する。']
+    ],
+    lessons:[
+      {id:"api-route", num:"01", ctx:"業務ツール", title:"API エンドポイントを作る", sub:"route.ts と HTTP メソッド", ready:true},
+      {id:"get-vs-action", num:"02", ctx:"Webサイト", title:"GET の落とし穴と使い分け", sub:"副作用は GET に置かない", ready:true},
+    ]
   }
 };
 
@@ -2398,6 +3165,107 @@ const NEXT_LESSONS = {
        staticCode:true},
     ],
     doneMsg:"Client は Server を直接インポートできないが、children として受け取れる。Client が操作を、Server が中身を担い、合成で組み合わせる。children を使った合成が、Next.js の境界設計でそのまま活きました。"
+  },
+
+  "serializable-props":{
+    concept:"Server / Client Components", title:"境界を越える props の制約",
+    scenario:"EC商品ページ。Server Component で商品を取得し、Client Component の「カートに追加」ボタンに渡す。",
+    steps:[
+      {eyebrow:"STEP 1 — 境界を越える時の制約", lbl:"シリアライズ可能", sub:"ネットワークを渡る",
+       prompt:"Server Component から Client Component に props を渡す。何でも渡せる?",
+       question:"何でも渡せる？",
+       opts:[{t:"シリアライズ可能な値だけ。境界を越えてクライアントに送られるから",ok:true},{t:"同じアプリ内なので、どんな値でも自由に渡せる",ok:false},{t:"props は渡せず、すべて再取得が必要",ok:false}],
+       why:"Server→Client の props は<b>ネットワークを越えてクライアントに送られる</b>ため、<b>シリアライズ可能</b>（文字列・数値・真偽値・プレーンなオブジェクトや配列）でなければならない。同じアプリ内でもプロセス境界を越えるので、何でも渡せるわけではない。",
+       code:null},
+      {eyebrow:"STEP 2 — 渡せる値", lbl:"プリミティブと素の値", sub:"安全なもの",
+       prompt:"次のうち、Client Component に props として渡して安全なのは?",
+       question:"① 渡して安全なのは？",
+       opts:[{t:"商品名・価格・id などの文字列や数値、プレーンなオブジェクト",ok:true},{t:"データ取得に使った関数そのもの",ok:false},{t:"クラスのインスタンス（例: 独自の Product クラス）",ok:false}],
+       why:"<b>文字列・数値・真偽値・プレーンなオブジェクトや配列</b>は安全に渡せる。一方、<b>関数</b>（後述の Server Actions を除く）や<b>クラスのインスタンス</b>はシリアライズできず渡せない。「素のデータに変換してから渡す」が基本。",
+       code:['<span class="cm">// Server Component</span>','<span class="kw">const</span> product = <span class="kw">await</span> <span class="fn">getProduct</span>(id);','&lt;<span class="fn">AddToCart</span>','  id={product.id} name={product.name} price={product.price} /&gt;'],
+       staticCode:true},
+      {eyebrow:"STEP 3 — 渡せないものの扱い", lbl:"素のデータに直す", sub:"変換してから渡す",
+       prompt:"取得結果に Date 型や独自クラスが含まれる。Client にどう渡す?",
+       question:"② Date やクラスは？",
+       opts:[{t:"文字列や数値など素の値に変換してから渡す",ok:true},{t:"そのまま渡せばクライアントで自動復元される",ok:false},{t:"渡せないので Client 側で再取得するしかない",ok:false}],
+       why:"Date やクラスインスタンスはそのままでは越えられない。<code>date.toISOString()</code> のように<b>素の値へ変換して渡す</b>のが定石。クライアントで必要なら受け取った文字列から組み立て直す。再取得が常に必要なわけではなく、まず変換を考える。",
+       code:['&lt;<span class="fn">OrderRow</span> createdAt={order.createdAt.<span class="fn">toISOString</span>()} /&gt;'],
+       staticCode:true},
+      {eyebrow:"STEP 4 — 関数を渡したい時", lbl:"Server Actions は例外", sub:"参照で渡る",
+       prompt:"「保存する関数」を Client に渡したい。普通の関数は渡せないが、例外は?",
+       question:"③ 関数を渡す手段は？",
+       opts:[{t:"'use server' を付けた Server Action なら渡せる",ok:true},{t:"どんな関数でも props で渡せる",ok:false},{t:"関数は一切渡せない",ok:false}],
+       why:"普通の関数は渡せないが、<code>\"use server\"</code> を付けた<b>Server Action は例外的に渡せる</b>（値ではなく参照として送られる）。これで Client のボタンからサーバー処理を呼べる。「関数は基本ダメ、Server Action だけ別」と覚える。",
+       code:null},
+    ],
+    doneMsg:"Server→Client の props はネットワークを越えるためシリアライズ可能な値に限る。関数やクラス・Date は素のデータに変換し、関数を渡したい時は Server Action を使う。境界を越えるデータの制約が掴めました。"
+  },
+
+  "context-provider":{
+    concept:"Server / Client Components", title:"テーマ Context の置き方",
+    scenario:"サイト全体でダークモードを共有したい。React Context のテーマプロバイダを App Router でどう置くか。",
+    steps:[
+      {eyebrow:"STEP 1 — Context の制約", lbl:"Server では使えない", sub:"まず前提",
+       prompt:"React Context（createContext / useContext）は Server Component で使える?",
+       question:"Server Component で Context は？",
+       opts:[{t:"使えない。Context は状態を持つ仕組みで Client 側のもの",ok:true},{t:"使える。どこでも自由に使える",ok:false},{t:"Server 専用の機能だ",ok:false}],
+       why:"<b>Context は Server Component では使えない</b>。状態や購読を伴う仕組みで、サーバーで一度実行されて終わる Server Component とは相容れない。だからテーマプロバイダは Client Component にする必要がある——ここが出発点。",
+       code:null},
+      {eyebrow:"STEP 2 — プロバイダを Client にする", lbl:"'use client'", sub:"境界を作る",
+       prompt:"テーマプロバイダのファイル先頭に①を付けて Client Component にする。",
+       question:"① プロバイダに付けるのは？",
+       opts:[{t:'"use client"',ok:true},{t:'"use server"',ok:false},{t:"何も付けない（Server のまま）",ok:false}],
+       why:"プロバイダは状態を持ち Context を提供するので <code>\"use client\"</code> を付けて Client Component にする。これで useState や createContext が使える。Context を扱う以上、プロバイダ自体は Client 側になるのは避けられない。",
+       code:['<span class="b1">①</span>;','<span class="kw">export function</span> <span class="fn">ThemeProvider</span>({ children }: { children: <span class="fn">ReactNode</span> }) {','  <span class="kw">const</span> [theme, setTheme] = <span class="fn">useState</span>(<span class="str">\'light\'</span>);','  <span class="kw">return</span> &lt;<span class="fn">Ctx.Provider</span> value={{ theme, setTheme }}&gt;{children}&lt;/<span class="fn">Ctx.Provider</span>&gt;;','}'],
+       fill:{slot:"b1",val:'<span class="str">"use client"</span>'}},
+      {eyebrow:"STEP 3 — 中身は Server のまま", lbl:"children で包む", sub:"全部 Client にしない",
+       prompt:"このプロバイダでアプリ全体を包む。中のページは全部 Client になってしまう?",
+       question:"② children で包むと中身は？",
+       opts:[{t:"Server のまま。children は包まれるだけで Client 化しない",ok:true},{t:"プロバイダが Client なので中身も全部 Client になる",ok:false},{t:"中身は再描画され続ける",ok:false}],
+       why:"プロバイダが Client でも、<b>children として渡された中身は Server のまま</b>。children はサーバーで先に描画され、Client プロバイダはそれを「包む」だけで再描画しない。だから全体を Client 化せずに Context を行き渡らせられる。合成の利点そのもの。",
+       code:['<span class="cm">// app/layout.tsx（Server Component のまま）</span>','&lt;<span class="fn">ThemeProvider</span>&gt;','  {children}  <span class="cm">// 各ページは Server のまま</span>','&lt;/<span class="fn">ThemeProvider</span>&gt;'],
+       staticCode:true},
+      {eyebrow:"STEP 4 — できるだけ深く置く", lbl:"配置の判断", sub:"静的部分を活かす",
+       prompt:"プロバイダはどこに置くのが良い?",
+       question:"③ プロバイダの配置は？",
+       opts:[{t:"必要な範囲をできるだけ深く包む（全体を覆いすぎない）",ok:true},{t:"とにかく最上位で全要素を直接包む",ok:false},{t:"ページごとに個別に置き直す",ok:false}],
+       why:"プロバイダは<b>必要な範囲をできるだけ深く</b>包むのが良い。children を通すので全体を Client 化はしないが、境界をむやみに上げず必要な所に絞ると、Server の静的な部分を活かしやすい。「広く共有」と「不必要に覆わない」のバランス。",
+       code:null},
+    ],
+    doneMsg:"Context は Server Component で使えないため、プロバイダは 'use client' にする。だが children で包めば中身は Server のまま保たれる。全体を Client 化せず Context を行き渡らせる——テーマや認証で頻出の置き方が掴めました。"
+  },
+
+  "use-client-spread":{
+    concept:"Server / Client Components", title:"'use client' はどこまで伝わるか",
+    scenario:"あるコンポーネントに 'use client' を付けたら、そこから import している別のコンポーネントまでクライアント側になった。なぜか。",
+    steps:[
+      {eyebrow:"STEP 1 — 伝播の仕組み", lbl:"import 先も巻き込む", sub:"モジュール単位",
+       prompt:"'use client' を付けたファイルが、別のコンポーネントを import している。その import 先は?",
+       question:"import 先はどうなる？",
+       opts:[{t:"一緒にクライアントバンドルに入る（境界の内側になる）",ok:true},{t:"import 先は影響を受けず Server のまま",ok:false},{t:"import 先だけ別に判定される",ok:false}],
+       why:"<code>\"use client\"</code> は<b>そのファイルと、そこから import するものすべて</b>をクライアント側に含める。境界の「内側」に入った import 先は、自分で 'use client' を書いていなくても Client Component として扱われる。これが伝播の仕組み。",
+       code:null},
+      {eyebrow:"STEP 2 — import では戻せない", lbl:"一方向", sub:"再確立できない",
+       prompt:"Client Component の中で Server Component を import すれば、そこだけ Server に戻せる?",
+       question:"import で Server に戻せる？",
+       opts:[{t:"戻せない。クライアント境界の内側で import したものは Client になる",ok:true},{t:"戻せる。import すれば Server に戻る",ok:false},{t:"'use server' を付ければ戻る",ok:false}],
+       why:"いったんクライアント境界に入ると、<b>import で Server を再確立することはできない</b>。Client の中で import したコンポーネントはクライアント側になる。Server を組み合わせたいなら import ではなく、前に学んだ<b>children や props で渡す合成</b>を使う。",
+       code:null},
+      {eyebrow:"STEP 3 — だから末端に置く", lbl:"境界を下げる", sub:"バンドルを小さく",
+       prompt:"この伝播を踏まえ、'use client' はどこに置くべき?",
+       question:"① 'use client' の置き場所は？",
+       opts:[{t:"操作が要る末端のコンポーネントだけに置く",ok:true},{t:"ページの最上位に置いてまとめて管理する",ok:false},{t:"共通の import 元に置く",ok:false}],
+       why:"伝播するからこそ、<b>操作が要る末端だけ</b>に 'use client' を置く。上位に置くと、そこから import される多くのコンポーネントまで巻き込んでクライアントバンドルが膨らむ。「境界は下げる・小さくする」——最重要レッスンの原則がこの仕組みから導かれる。",
+       code:['<span class="cm">// ✕ ページ全体に付けると配下を巻き込む</span>','<span class="cm">// ○ 操作する末端だけに付ける</span>','<span class="str">"use client"</span>;  <span class="cm">// LikeButton.tsx のような葉に</span>'],
+       staticCode:true},
+      {eyebrow:"STEP 4 — 切り出す対処", lbl:"葉に分割", sub:"実践",
+       prompt:"あるページで1つのボタンだけ onClick が要る。どう直す?",
+       question:"② どう切り出す？",
+       opts:[{t:"そのボタンを別ファイルに切り出し、そのファイルだけ 'use client'",ok:true},{t:"ページ全体に 'use client' を付ける",ok:false},{t:"ページを丸ごと Client Component にする",ok:false}],
+       why:"<b>ボタンを別ファイルに切り出し、そのファイルだけ 'use client'</b> にする。ページや周りのコンポーネントは Server のまま保てる。1つの操作のためにページ全体を巻き込まない——伝播の仕組みを理解すると、この対処が自然に出てくる。",
+       code:null},
+    ],
+    doneMsg:"'use client' はそのファイルと import 先すべてをクライアントに含め、import では Server に戻せない。だから操作の要る末端だけに置き、必要なら葉に切り出す。境界を小さく保つ理由が、伝播の仕組みから腑に落ちました。"
   },
 
   "server-fetch":{
@@ -2535,6 +3403,305 @@ const NEXT_LESSONS = {
        fill:{slot:"b3",val:'getPost(id)'}},
     ],
     doneMsg:"[id] の動的フォルダ1つで全記事ページを賄い、値は params で受け取り、その id でサーバー取得する。動的ルートとサーバー取得が繋がって、件数可変のページが作れる——Next.js のルーティングの実用形が掴めました。"
+  },
+
+  "static-dynamic":{
+    concept:"レンダリング戦略", title:"静的か動的かは自動で決まる",
+    scenario:"会社サイトの「会社概要」ページ。内容はめったに変わらず、誰が見ても同じ。",
+    steps:[
+      {eyebrow:"STEP 1 — 旧来の宣言は無い", lbl:"発想の転換", sub:"明示的に選ばない",
+       prompt:"App Router で「このページは静的に（SSG）」と指定したい。どうする?",
+       question:"静的化の指定は？",
+       opts:[{t:"明示的な指定は不要。動的な要素を使わなければ自動的に静的になる",ok:true},{t:"getStaticProps を export する",ok:false},{t:"export const ssg = true を書く",ok:false}],
+       why:"App Router に <code>getStaticProps</code>/<code>getServerSideProps</code> は<b>無い</b>。静的か動的かは<b>コンポーネントが何を使うか</b>で自動的に決まる。動的な要素を使わなければビルド時に1度生成され静的になる。「宣言する」発想から「使うもので決まる」発想への転換が要点。",
+       code:null},
+      {eyebrow:"STEP 2 — 何が動的化を招くか", lbl:"動的の引き金", sub:"使うと動的に",
+       prompt:"会社概要を静的に保ちたい。ページ内で<b>避けるべき</b>ものは?",
+       question:"① 静的を保つには避けるのは？",
+       opts:[{t:"cookies() や headers() などリクエスト依存の読み取り",ok:true},{t:"普通の文章や画像の表示",ok:false},{t:"子コンポーネントへの props 渡し",ok:false}],
+       why:"<code>cookies()</code>・<code>headers()</code>・検索パラメータ・キャッシュしない fetch など<b>リクエストごとに変わる要素</b>を使うと、Next.js はそのページを動的（リクエストごとに生成）と判定する。静的に保ちたいなら、これらを使わない。普通の表示や props は静的のまま。",
+       code:['<span class="cm">// 静的なまま（リクエスト依存の要素なし）</span>','<span class="kw">export default function</span> <span class="fn">About</span>() {','  <span class="kw">return</span> &lt;<span class="fn">main</span>&gt;…会社概要…&lt;/<span class="fn">main</span>&gt;;','}'],
+       staticCode:true},
+      {eyebrow:"STEP 3 — ユーザー固有は動的に", lbl:"動的が要る時", sub:"自動で切り替わる",
+       prompt:"別のページでログイン中ユーザー名を表示する。これは?",
+       question:"② ユーザー名を出すページは？",
+       opts:[{t:"cookies 等を読むので自動的に動的になる（それが正しい）",ok:true},{t:"無理やり静的にすべき",ok:false},{t:"静的のまま全員に同じ名前が出る",ok:false}],
+       why:"ユーザー固有の表示は<b>リクエストごとに変わる</b>べきもの。cookies 等を読むことで<b>自動的に動的</b>になり、それが正しい挙動。静的にしたら全員に同じHTMLが配信され破綻する。「内容の性質」が静的/動的を決め、使うものがそれを実現する。",
+       code:null},
+      {eyebrow:"STEP 4 — 判断の軸", lbl:"性質で選ぶ", sub:"静的/ISR/動的",
+       prompt:"静的・動的を分ける<b>判断の軸</b>として妥当なのは?",
+       question:"③ 判断の軸は？",
+       opts:[{t:"内容の性質（公開で安定か、ユーザー固有か、時々更新か）",ok:true},{t:"ページの見た目の派手さ",ok:false},{t:"コンポーネントの行数",ok:false}],
+       why:"<b>内容の性質</b>で決める。公開・安定（会社概要・記事）は静的、ユーザー固有・リアルタイムは動的、時々更新（商品一覧）は ISR。見た目や行数は無関係。性質を見極め、それに応じて「使うもの」を選ぶのが App Router のレンダリングの考え方。",
+       code:null},
+    ],
+    doneMsg:"App Router では SSR/SSG を宣言しない。動的な要素（cookies 等）を使わなければ静的、使えば動的に自動で決まる。判断の軸は内容の性質——「宣言する」から「使うもので決まる」への発想の転換が掴めました。"
+  },
+
+  "isr":{
+    concept:"レンダリング戦略", title:"商品一覧を定期更新（ISR）",
+    scenario:"EC の商品一覧。アクセスは多く速さが欲しいが、価格や在庫はたまに変わる。",
+    steps:[
+      {eyebrow:"STEP 1 — 静的と動的の間", lbl:"両立したい", sub:"速さと鮮度",
+       prompt:"商品一覧を「静的なみの速さ」で出しつつ「たまの更新」も反映したい。完全な静的・動的のどちらでもしっくりこない。何を使う?",
+       question:"速さと鮮度を両立するには？",
+       opts:[{t:"ISR（静的に生成しつつ、一定間隔で裏で更新する）",ok:true},{t:"完全な動的にして毎回生成する",ok:false},{t:"完全な静的にして更新は諦める",ok:false}],
+       why:"完全な動的は毎リクエスト生成で遅くなりがち、完全な静的は更新が反映されない。<b>ISR</b>はその中間で、静的の速さを保ちつつ<b>一定間隔で裏で再生成</b>する。アクセスが多く・速さが要り・たまに更新される商品一覧に向く。",
+       code:null},
+      {eyebrow:"STEP 2 — revalidate を指定", lbl:"間隔を書く", sub:"これだけ",
+       prompt:"1時間ごとに裏で更新したい。①でページに書くのは?",
+       question:"① ISR の指定は？",
+       opts:[{t:"export const revalidate = 3600",ok:true},{t:"export const isr = true",ok:false},{t:"getStaticProps に revalidate を返す",ok:false}],
+       why:"<code>export const revalidate = 3600</code>（秒）を書くだけ。これでページは静的に生成されつつ、1時間ごとに裏で再生成される。<code>getStaticProps</code> は App Router には無い。特別な関数ではなく、この一行の宣言で ISR になる。",
+       code:['<span class="b1">①</span>;','','<span class="kw">export default async function</span> <span class="fn">Products</span>() {','  <span class="kw">const</span> items = <span class="kw">await</span> <span class="fn">fetchProducts</span>();','  <span class="kw">return</span> &lt;<span class="fn">Grid</span> items={items} /&gt;;','}'],
+       fill:{slot:"b1",val:'<span class="kw">export const</span> revalidate = <span class="par">3600</span>'}},
+      {eyebrow:"STEP 3 — 更新の仕組み", lbl:"古い版を見せて裏で更新", sub:"stale-while-revalidate",
+       prompt:"revalidate の間隔が過ぎた後、最初にアクセスしたユーザーが見るのは?",
+       question:"② 間隔経過後の最初のアクセスは？",
+       opts:[{t:"まず古い版が表示され、裏で再生成されて次から新しくなる",ok:true},{t:"再生成を待たされてから新しい版を見る",ok:false},{t:"エラーになる",ok:false}],
+       why:"ISR は<b>古い版をすぐ見せつつ、裏で再生成</b>する方式。間隔経過後の最初のユーザーは古い版を即座に見て、その裏で更新が走り、次のユーザーから新しい版になる。待たされないので速さを保てる。これが「静的の速さ＋たまの鮮度」の仕組み。",
+       code:null},
+      {eyebrow:"STEP 4 — 即時更新したい時", lbl:"オンデマンド再検証", sub:"間隔を待たない",
+       prompt:"商品を編集したら<b>すぐ</b>一覧に反映したい。間隔を待ちたくない。③は?",
+       question:"③ 即時反映するには？",
+       opts:[{t:"更新時に revalidatePath / revalidateTag を呼んで明示的に再検証する",ok:true},{t:"revalidate を 0 にする",ok:false},{t:"ISR では即時反映はできない",ok:false}],
+       why:"時間間隔とは別に、<b>更新が起きた時に <code>revalidatePath('/products')</code> 等を呼ぶ</b>ことで、間隔を待たず即座に再検証できる（オンデマンド再検証）。Server Actions での更新後に呼ぶのが定番。時間ベースとオンデマンドを組み合わせて鮮度を制御する。",
+       code:null},
+    ],
+    doneMsg:"ISR は静的の速さと、たまの鮮度を両立する。revalidate で間隔を宣言し、古い版を見せつつ裏で更新。即時反映が要る時は revalidatePath で明示的に再検証する。商品一覧のような「速くてたまに変わる」ページの考え方が掴めました。"
+  },
+
+  streaming:{
+    concept:"レンダリング戦略", title:"重い部分を後から流し込む",
+    scenario:"業務ダッシュボード。集計グラフの取得が遅く、ページ全体がそれに引きずられて真っ白なまま待たされる。",
+    steps:[
+      {eyebrow:"STEP 1 — 全部を待たない", lbl:"遅い一部に引きずられる", sub:"問題の構造",
+       prompt:"ページに「すぐ出る部分」と「取得が遅い集計」が混在する。全体が遅い集計を待つと?",
+       question:"全部待つと？",
+       opts:[{t:"速い部分まで一緒に待たされ、ページが真っ白なままになる",ok:true},{t:"速い部分だけ先に出て、遅い部分は自動で諦められる",ok:false},{t:"遅い集計は表示されなくなる",ok:false}],
+       why:"1つの遅いデータ取得にページ全体が引きずられると、すぐ出せるヘッダーや一覧まで待たされ、<b>真っ白な時間</b>が生まれる。速い所は先に見せ、遅い所だけ後から出したい——これがストリーミングの狙い。",
+       code:null},
+      {eyebrow:"STEP 2 — 区切りで待つ", lbl:"loading.tsx", sub:"段の読込表示",
+       prompt:"あるルート区画の読み込み中に、自動で表示される枠を置くファイルは?",
+       question:"① 読込中の表示ファイルは？",
+       opts:[{t:"loading.tsx",ok:true},{t:"spinner.tsx",ok:false},{t:"page.tsx に手書きする",ok:false}],
+       why:"<code>loading.tsx</code> をルート区画に置くと、その区画の準備中に<b>自動で表示</b>される。内部的には Suspense の境界として働き、ページ全体ではなくその区画だけを「待ち」にできる。名前で役割が決まる規約。",
+       code:null},
+      {eyebrow:"STEP 3 — 一部だけ Suspense で囲む", lbl:"細かく流す", sub:"重い所を切り出す",
+       prompt:"ページ内で、遅い集計グラフ<b>だけ</b>を後から流したい。②で囲むのは?",
+       question:"② 何で囲む？",
+       opts:[{t:"&lt;Suspense fallback={…}&gt; で遅いコンポーネントを囲む",ok:true},{t:"useState で loading を持って分岐する",ok:false},{t:"そのコンポーネントを 'use client' にする",ok:false}],
+       why:"遅い部分を <code>&lt;Suspense fallback={…}&gt;</code> で囲むと、その中身の準備を待つ間 fallback を見せ、<b>準備でき次第そこだけ差し替わる</b>。ページの他の部分は先に表示される。Server Component のままでよく、useState の loading 管理は不要。",
+       code:['&lt;<span class="fn">Dashboard</span>&gt;','  &lt;<span class="fn">Header</span> /&gt;          <span class="cm">// すぐ出る</span>','  &lt;<span class="b1">①</span> fallback={&lt;<span class="fn">Skeleton</span> /&gt;}&gt;','    &lt;<span class="fn">SlowChart</span> /&gt;     <span class="cm">// 遅い。後から流れてくる</span>','  &lt;/<span class="b1">①</span>&gt;','&lt;/<span class="fn">Dashboard</span>&gt;'],
+       fill:{slot:"b1",val:'Suspense'}},
+      {eyebrow:"STEP 4 — 体験の効果", lbl:"早く見え始める", sub:"何が良くなるか",
+       prompt:"Suspense で遅い集計を切り出した。ユーザー体験はどう変わる?",
+       question:"③ 体験はどう変わる？",
+       opts:[{t:"速い部分が即表示され、遅い集計だけ後から埋まる",ok:true},{t:"全体の表示が遅い集計に合わせて遅くなる",ok:false},{t:"集計が出るまで何も表示されない",ok:false}],
+       why:"ヘッダーや枠が<b>即座に表示</b>され、遅い集計はスケルトンを見せながら準備でき次第流し込まれる。「真っ白で待つ」が「骨組みは見えていて中身が埋まる」に変わり、体感が大きく改善する。重い所を切り出すほど効く。",
+       code:null},
+    ],
+    doneMsg:"遅い一部にページ全体を引きずらせず、loading.tsx や Suspense で「速い所は即・遅い所は後から」流し込む。Server Component のまま、真っ白な待ち時間を骨組み表示に変えられる——ストリーミングの考え方が掴めました。"
+  },
+
+  "link-nav":{
+    concept:"リンクとナビゲーション", title:"a タグではなく Link",
+    scenario:"会社サイトのナビメニュー。トップ・サービス・会社概要を行き来する。ヘッダーは全ページ共通。",
+    steps:[
+      {eyebrow:"STEP 1 — a タグの問題", lbl:"全リロード", sub:"何が無駄か",
+       prompt:"ページ遷移に素の <code>&lt;a href=\"/about\"&gt;</code> を使うと、何が起きる?",
+       question:"a タグでの遷移は？",
+       opts:[{t:"全ページが再読み込みされ、共通ヘッダーも作り直され一瞬白くなる",ok:true},{t:"必要な部分だけ差し替わり共通部分は保たれる",ok:false},{t:"遷移できずエラーになる",ok:false}],
+       why:"素の <code>&lt;a&gt;</code> は<b>全ページを再読み込み</b>する。共通のヘッダーやサイドバーも毎回作り直され、画面が一瞬白くなり、スクロール位置などの状態も失われる。アプリ内の遷移としては無駄が多い。",
+       code:null},
+      {eyebrow:"STEP 2 — Link を使う", lbl:"next/link", sub:"href で遷移先",
+       prompt:"クライアントサイド遷移にする。①の Link の書き方は?",
+       question:"① Link の遷移先指定は？",
+       opts:[{t:'&lt;Link href="/about"&gt;会社概要&lt;/Link&gt;',ok:true},{t:'&lt;Link to="/about"&gt;会社概要&lt;/Link&gt;',ok:false},{t:'&lt;Link onClick="/about"&gt;会社概要&lt;/Link&gt;',ok:false}],
+       why:"<code>&lt;Link href=\"/about\"&gt;</code> と <b>href</b> で遷移先を指定する（<code>to</code> ではない——それは別ライブラリの書き方）。これでクライアントサイド遷移になり、必要な部分だけ差し替わる。子に表示テキストやコンポーネントを置ける。",
+       code:['<span class="kw">import</span> Link <span class="kw">from</span> <span class="str">\'next/link\'</span>;','&lt;<span class="fn">nav</span>&gt;','  <span class="b1">①</span>','&lt;/<span class="fn">nav</span>&gt;'],
+       fill:{slot:"b1",val:'&lt;<span class="fn">Link</span> href=<span class="str">"/about"</span>&gt;会社概要&lt;/<span class="fn">Link</span>&gt;'}},
+      {eyebrow:"STEP 3 — 得られる利点", lbl:"保持と先読み", sub:"速い遷移",
+       prompt:"Link にしたことで得られる利点は?",
+       question:"② Link の利点は？",
+       opts:[{t:"共有レイアウトが保たれ、見えているリンク先は自動で先読みされる",ok:true},{t:"遷移のたびに全コンポーネントが作り直される",ok:false},{t:"JavaScript が無効でも必ず動く",ok:false}],
+       why:"Link は<b>共有レイアウトを保ったまま</b>必要な部分だけ差し替え、画面内に見えるリンク先を<b>自動で先読み</b>する。だからクリック時の表示が速い。ヘッダーが作り直されず状態も保たれ、SPA のような滑らかな体験になる。",
+       code:null},
+      {eyebrow:"STEP 4 — 使い分け", lbl:"内部と外部", sub:"外部は a タグ",
+       prompt:"外部サイト（例: https://example.com）へのリンクは?",
+       question:"③ 外部リンクは？",
+       opts:[{t:"普通の a タグでよい。Link はアプリ内遷移向け",ok:true},{t:"必ず Link を使う",ok:false},{t:"外部リンクは貼れない",ok:false}],
+       why:"<b>アプリ内の遷移は Link</b>、外部サイトは普通の <code>&lt;a&gt;</code> でよい。Link のクライアント遷移・先読み・レイアウト保持はアプリ内でこそ意味がある。外部は別サイトへ出ていくので素の a タグが素直。用途で使い分ける。",
+       code:null},
+    ],
+    doneMsg:"アプリ内の遷移は Link を使うと、全リロードせず必要な部分だけ差し替わり、共有レイアウトが保たれ先読みも効く。外部サイトは素の a タグ。Next.js の画面遷移の基本が掴めました。"
+  },
+
+  "prefetch-control":{
+    concept:"リンクとナビゲーション", title:"大量リンクの先読みを抑える",
+    scenario:"EC商品一覧。1ページに商品カードを100件並べ、それぞれ詳細ページへの Link を置いている。",
+    steps:[
+      {eyebrow:"STEP 1 — 先読みの既定", lbl:"自動プリフェッチ", sub:"便利だが諸刃",
+       prompt:"画面内に入った Link を、Next.js は既定でどう扱う?",
+       question:"Link の既定の挙動は？",
+       opts:[{t:"ビューポートに入ると、その遷移先を自動で先読み（プリフェッチ）する",ok:true},{t:"クリックされて初めて遷移先を読み込む",ok:false},{t:"先読みは手動で指定しない限り一切しない",ok:false}],
+       why:"Link は<b>画面に入った時点で遷移先を自動プリフェッチ</b>する。だからクリック時の遷移が速い。1つ2つなら理想的な挙動。ただしリンクが大量にあると、この自動先読みが裏目に出ることがある。",
+       code:null},
+      {eyebrow:"STEP 2 — 大量だと負荷に", lbl:"100件の先読み", sub:"問題の発生",
+       prompt:"商品カード100件すべてに Link がある。一覧を開くと何が起きうる?",
+       question:"100件の Link を並べると？",
+       opts:[{t:"100件分の先読みが一斉に走り、通信が無駄に膨らむ",ok:true},{t:"先読みは1件ずつ順番に行われ負荷は出ない",ok:false},{t:"件数が多いと Next.js が自動で先読みを止める",ok:false}],
+       why:"画面内の Link がすべて先読み対象になるため、<b>100件分のプリフェッチが一斉に走り</b>、通信帯域を無駄に使う。多くのユーザーはそのうち数件しか開かない。便利な自動先読みが、大量リンクでは負荷になる。",
+       code:null},
+      {eyebrow:"STEP 3 — 先読みを切る", lbl:"prefetch={false}", sub:"一覧では抑える",
+       prompt:"一覧の各カードで自動先読みを止める。①で Link に渡すのは?",
+       question:"① 先読みを止めるには？",
+       opts:[{t:"prefetch={false}",ok:true},{t:"prefetch={true}",ok:false},{t:"preload={false}",ok:false}],
+       why:"<code>prefetch={false}</code> で<b>自動先読みを止められる</b>。一覧のように「多数あるが大半は開かれない」リンクに向く。クリック時の遷移自体はクライアントサイドで行われるので、全リロードにはならない。先読みだけを切る指定。",
+       code:['{products.map(p => (','  &lt;<span class="fn">Link</span> key={p.id} href={`/items/${p.id}`} <span class="b1">①</span>&gt;','    {p.name}','  &lt;/<span class="fn">Link</span>&gt;','))}'],
+       fill:{slot:"b1",val:'prefetch={false}'}},
+      {eyebrow:"STEP 4 — 使い分けの判断", lbl:"どこを残すか", sub:"高価値は残す",
+       prompt:"先読みを残すべきリンクは?",
+       question:"② 先読みを残すのは？",
+       opts:[{t:"遷移される可能性が高い少数の重要リンク（カート・購入手続きなど）",ok:true},{t:"とにかく全リンクで先読みを切るのが最善",ok:false},{t:"件数に関わらず常に全部で先読みを残す",ok:false}],
+       why:"カートや購入手続きなど<b>遷移される可能性が高い少数のリンク</b>は先読みを残すと体験が良い。逆に大量の一覧は切る。「全部切る」でも「全部残す」でもなく、<b>遷移の見込みで判断</b>する——最適化に共通する「効く所に絞る」姿勢。",
+       code:null},
+    ],
+    doneMsg:"Link は既定で画面内の遷移先を自動先読みする。大量にあると一斉先読みが負荷になるため、一覧では prefetch={false} で抑え、遷移見込みの高い重要リンクは残す。先読みを遷移の見込みで使い分ける判断が掴めました。"
+  },
+
+  "next-image":{
+    concept:"画像の最適化", title:"商品画像を最適化する",
+    scenario:"EC の商品一覧。多数の商品写真を並べる。元画像は大きく、読み込みでレイアウトがガクつく。",
+    steps:[
+      {eyebrow:"STEP 1 — img タグの課題", lbl:"何が問題か", sub:"重い・ガクつく",
+       prompt:"商品写真を素の <code>&lt;img&gt;</code> で多数並べると、起きがちな問題は?",
+       question:"img タグの課題は？",
+       opts:[{t:"巨大な元画像がそのまま送られ、読み込み前は高さ0でレイアウトがずれる",ok:true},{t:"画像が一切表示されない",ok:false},{t:"alt が自動で付くので何もしなくてよい",ok:false}],
+       why:"素の <code>&lt;img&gt;</code> は<b>巨大な元画像をそのまま配信</b>しがちで重く、読み込み完了まで<b>高さが0でレイアウトがガクッとずれ</b>る。画面外の画像まで一度に読み込むこともある。一覧で多数並べると体験が悪化する。",
+       code:null},
+      {eyebrow:"STEP 2 — Image を使う", lbl:"next/image", sub:"自動最適化",
+       prompt:"最適化を効かせる。①で使うコンポーネントは?",
+       question:"① 何を使う？",
+       opts:[{t:"next/image の &lt;Image&gt;",ok:true},{t:"素の &lt;img&gt; のまま class を付ける",ok:false},{t:"&lt;picture&gt; タグを手書きする",ok:false}],
+       why:"<code>next/image</code> の <code>&lt;Image&gt;</code> を使うと、<b>表示サイズに合った画像の配信・遅延読み込み・領域確保</b>が自動で効く。素の img や手書きの picture では、これらを自前で用意することになる。Next.js に最適化を任せる。",
+       code:['<span class="kw">import</span> Image <span class="kw">from</span> <span class="str">\'next/image\'</span>;','&lt;<span class="b1">①</span> src=<span class="str">"/p.jpg"</span> width={<span class="par">300</span>} height={<span class="par">300</span>} alt=<span class="str">"商品"</span> /&gt;'],
+       fill:{slot:"b1",val:'<span class="fn">Image</span>'}},
+      {eyebrow:"STEP 3 — width/height の意味", lbl:"領域を先に確保", sub:"ガクつき防止",
+       prompt:"<code>width</code> と <code>height</code> を指定するのは、主に何のため?",
+       question:"② width/height の役割は？",
+       opts:[{t:"読み込み前に領域を確保し、レイアウトのガクつきを防ぐため",ok:true},{t:"画像を強制的にその画素数で送らせるため",ok:false},{t:"見た目の装飾のため",ok:false}],
+       why:"width/height は<b>読み込み前に表示領域を確保</b>するためで、これでレイアウトのガクつき（CLS）を防ぐ。実際に配信される画像は表示サイズに最適化される。サイズが可変なら <code>fill</code> とコンテナ側の指定を使う。領域確保が主目的。",
+       code:null},
+      {eyebrow:"STEP 4 — 一覧での効果", lbl:"遅延読み込み", sub:"初期表示が軽い",
+       prompt:"Image で商品一覧を組むと、画面外の画像は?",
+       question:"③ 画面外の画像は？",
+       opts:[{t:"遅延読み込みされ、スクロールで近づいてから読み込まれる",ok:true},{t:"全部まとめて最初に読み込まれる",ok:false},{t:"表示されない",ok:false}],
+       why:"<code>&lt;Image&gt;</code> は画面外の画像を<b>遅延読み込み</b>する。スクロールで近づいてから読むので、多数並ぶ一覧でも<b>初期表示が軽い</b>。サイズ最適化と合わせて、画像の多いECサイトで効果が大きい。alt は常に付けてアクセシビリティも担保する。",
+       code:null},
+    ],
+    doneMsg:"商品画像は next/image の &lt;Image&gt; でサイズ最適化・遅延読み込み・領域確保が自動で効く。width/height はガクつき防止のための領域確保。画像の多い一覧でこそ恩恵が大きい——画像最適化の考え方が掴めました。"
+  },
+
+  "image-priority":{
+    concept:"画像の最適化", title:"主役画像を優先で読む",
+    scenario:"EC商品ページ。画面上部に大きな主役画像（メインビジュアル）、下にレスポンシブで幅が変わるサムネイル群。",
+    steps:[
+      {eyebrow:"STEP 1 — 既定は遅延読み込み", lbl:"lazy がデフォルト", sub:"上部画像には不利",
+       prompt:"next/image は既定で画像を遅延読み込み（lazy）する。画面最上部の主役画像にはどう影響する?",
+       question:"主役画像が遅延だと？",
+       opts:[{t:"最初に見える主役画像の表示が遅れ、第一印象の表示速度が落ちる",ok:true},{t:"上部の画像も遅延した方が常に速くなる",ok:false},{t:"上部画像には遅延は一切影響しない",ok:false}],
+       why:"遅延読み込みは「下にスクロールして初めて読む」ので、画面外の画像には有効。だが<b>最初から見えている主役画像</b>まで遅延すると、一番大事な表示が遅れる。最上部の大きな画像は、むしろ優先して読みたい。",
+       code:null},
+      {eyebrow:"STEP 2 — 主役を優先", lbl:"priority", sub:"最初に見える画像へ",
+       prompt:"主役画像を優先的に読み込ませる。①で Image に渡すのは?",
+       question:"① 優先読み込みの指定は？",
+       opts:[{t:"priority",ok:true},{t:"loading=\"lazy\"",ok:false},{t:"eager={false}",ok:false}],
+       why:"<code>priority</code> を付けると<b>遅延せず優先的に</b>読み込まれる。最初に見える主役画像（いわゆる LCP 画像）に付けると、第一印象の表示が速くなる。<b>画面で最初に見える1枚だけ</b>に付けるのが基本で、付けすぎると優先の意味が薄れる。",
+       code:['&lt;<span class="fn">Image</span> src={hero} alt=<span class="str">"主役"</span>','  width={<span class="par">1200</span>} height={<span class="par">600</span>} <span class="b1">①</span> /&gt;'],
+       fill:{slot:"b1",val:'priority'}},
+      {eyebrow:"STEP 3 — レスポンシブ幅を伝える", lbl:"sizes", sub:"表示幅のヒント",
+       prompt:"サムネイルは画面幅で表示サイズが変わる。最適なファイルを選ばせる②は?",
+       question:"② 表示幅を伝えるのは？",
+       opts:[{t:"sizes（表示される幅の目安を伝える）",ok:true},{t:"quality（画質だけ指定する）",ok:false},{t:"何も指定しなくても常に最適になる",ok:false}],
+       why:"<code>sizes</code> で「この画像は実際どのくらいの幅で表示されるか」を伝えると、next/image が<b>その幅に合った解像度のファイル</b>を選ぶ。スマホに巨大画像を送らずに済む。レスポンシブで幅が変わる画像で効く。quality は画質で別の話。",
+       code:['&lt;<span class="fn">Image</span> src={thumb} alt=<span class="str">"商品"</span> fill','  <span class="b2">②</span>={<span class="str">"(max-width: 768px) 50vw, 25vw"</span>} /&gt;'],
+       fill:{slot:"b2",val:'sizes'}},
+      {eyebrow:"STEP 4 — 使い分け", lbl:"主役と脇役", sub:"全部 priority にしない",
+       prompt:"一覧の何十枚ものサムネイルにも priority を付けるべき?",
+       question:"③ サムネイル群には？",
+       opts:[{t:"付けない。priority は最初に見える主役だけ。残りは遅延でよい",ok:true},{t:"全画像に priority を付けるほど速くなる",ok:false},{t:"priority は画像が多いほど必須になる",ok:false}],
+       why:"<b>priority は最初に見える主役の1枚に絞る</b>。全部に付けると「全部優先＝優先なし」になり、かえって主役の表示が遅れる。スクロールで現れるサムネイルは遅延読み込みのままでよい。優先すべきものを見極める、が要点。",
+       code:null},
+    ],
+    doneMsg:"既定の遅延読み込みは画面外の画像に有効だが、最初に見える主役画像には priority を付けて優先する。レスポンシブ画像には sizes で表示幅を伝える。priority は主役だけに絞る——画像の読み込み優先度を使い分ける判断が掴めました。"
+  },
+
+  "api-route":{
+    concept:"Route Handlers（APIルート）", title:"API エンドポイントを作る",
+    scenario:"web業務サイト。決済サービスからの Webhook を受け取り、外部に公開する受注 JSON API も用意したい。",
+    steps:[
+      {eyebrow:"STEP 1 — まず他で足りるか", lbl:"役割を見極める", sub:"画面か更新かAPIか",
+       prompt:"このサイトでページ表示のデータ取得は Server Component、フォーム更新は Server Actions で足りている。Route Handlers が要るのは?",
+       question:"Route Handlers が要るのは？",
+       opts:[{t:"Webhook 受けや、外部クライアントが叩く公開 API が要る時",ok:true},{t:"ページ表示用のデータ取得すべて",ok:false},{t:"フォームでの更新すべて",ok:false}],
+       why:"画面用の取得は Server Component で直接、更新は Server Actions で足りることが多い。Route Handlers が活きるのは<b>HTTPエンドポイントそのものが要る時</b>——Webhook の受け口、外部クライアント（モバイル等）が叩く公開API。まず他で足りないかを問う。",
+       code:null},
+      {eyebrow:"STEP 2 — route.ts を置く", lbl:"page と対", sub:"画面ではなくAPI",
+       prompt:"<code>/api/orders</code> という API を作る。①のファイルは?",
+       question:"① 作るファイルは？",
+       opts:[{t:"app/api/orders/route.ts",ok:true},{t:"app/api/orders/page.tsx",ok:false},{t:"app/api/orders/api.ts",ok:false}],
+       why:"API は <code>route.ts</code> を置く。<b>page.tsx が画面、route.ts が API</b> という対応。<code>app/api/orders/route.ts</code> なら <code>/api/orders</code> がエンドポイントになる。page.tsx は画面用なのでAPIにはならない。",
+       code:['app/api/orders/<span class="b1">①</span>'],
+       fill:{slot:"b1",val:'route.ts'}},
+      {eyebrow:"STEP 3 — メソッドを関数で", lbl:"GET/POST を export", sub:"メソッドごとに",
+       prompt:"受注一覧を返す GET を作る。②のように<b>メソッド名の関数</b>を export する。",
+       question:"② 何を export する？",
+       opts:[{t:"export async function GET() { ... }",ok:true},{t:"export default function handler() { ... }",ok:false},{t:"export const get = ...",ok:false}],
+       why:"<b>HTTPメソッド名の関数</b>（<code>GET</code>・<code>POST</code> など）を export する。<code>GET</code> は取得、<code>POST</code> は作成、というように分ける。1つの handler で全メソッドを受ける旧来の書き方ではなく、メソッドごとに関数を分けるのが Route Handlers の形。",
+       code:['<span class="kw">import</span> { NextResponse } <span class="kw">from</span> <span class="str">\'next/server\'</span>;','<span class="b2">②</span> {','  <span class="kw">const</span> orders = <span class="kw">await</span> <span class="fn">db</span>.orders.<span class="fn">findMany</span>();','  <span class="kw">return</span> NextResponse.<span class="fn">json</span>(orders);','}'],
+       fill:{slot:"b2",val:'<span class="kw">export async function</span> <span class="fn">GET</span>()'}},
+      {eyebrow:"STEP 4 — Web 標準で返す", lbl:"Response を返す", sub:"特別な作法は少ない",
+       prompt:"レスポンスの返し方として正しいのは?",
+       question:"③ レスポンスは？",
+       opts:[{t:"Response（や NextResponse.json）で Web 標準のレスポンスを返す",ok:true},{t:"res.send() で返す（Express のように）",ok:false},{t:"return するだけで自動でJSONになる",ok:false}],
+       why:"Route Handlers は<b>Web 標準の Request/Response</b> を使う。<code>NextResponse.json(data)</code> や素の <code>Response</code> を返す。<code>res.send()</code> のような旧来のNode/Express式ではない。標準APIなので作法が少なく、Webhook の検証なども標準的に書ける。",
+       code:null},
+    ],
+    doneMsg:"Route Handlers は route.ts に GET/POST 等の関数を書き、Web 標準の Response を返す API の口。まず Server Component と Server Actions で足りないか問い、Webhook や公開API などHTTPエンドポイントが要る時に使う——役割を分けて選ぶ判断が掴めました。"
+  },
+
+  "get-vs-action":{
+    concept:"Route Handlers（APIルート）", title:"GET の落とし穴と使い分け",
+    scenario:"ログアウト処理を作る。「/logout を叩いたらセッションを消す」route.ts を書いたら、なぜかログインした直後に勝手にログアウトされる。",
+    steps:[
+      {eyebrow:"STEP 1 — 謎の自動ログアウト", lbl:"原因を探す", sub:"GET と先読み",
+       prompt:"GET の /logout でセッションを消す実装。ヘッダーに <code>&lt;Link href=\"/logout\"&gt;</code> がある。ログイン直後に勝手にログアウトされる原因は?",
+       question:"勝手にログアウトされる原因は？",
+       opts:[{t:"Link の自動先読みが /logout に GET を投げ、副作用が走ってしまう",ok:true},{t:"セッションの保存に失敗しているから",ok:false},{t:"ログアウト処理にバグがあるから",ok:false}],
+       why:"Link は画面内に入ると遷移先を<b>自動で先読み（GET）</b>する。/logout が GET で<b>副作用（セッション削除）</b>を持つと、先読みのGETだけでログアウトが実行されてしまう。保存やロジックのバグではなく、「GETで副作用」という設計が原因。",
+       code:null},
+      {eyebrow:"STEP 2 — GET の原則", lbl:"GET は安全であるべき", sub:"読み取り専用",
+       prompt:"この落とし穴が教える、GET の原則は?",
+       question:"GET はどうあるべき？",
+       opts:[{t:"GET は読み取り専用にし、状態を変える副作用を持たせない",ok:true},{t:"GET でも自由に副作用を持たせてよい",ok:false},{t:"GET は使わず全て POST にすべき",ok:false}],
+       why:"GET は<b>読み取り専用・安全</b>であるべき、というのが Web の原則。先読みやブラウザの先読み機能、再読み込みなどが GET を予期せず叩きうるから。状態を変える操作（削除・更新）を GET に置くと事故になる。GET 自体は取得用途で正しく使う。",
+       code:null},
+      {eyebrow:"STEP 3 — 副作用は POST へ", lbl:"状態を変える操作", sub:"安全でないメソッド",
+       prompt:"ログアウトのような状態を変える処理は、route.ts のどの関数にする?",
+       question:"① 状態を変える処理は？",
+       opts:[{t:"POST（安全でない＝状態を変える操作用）",ok:true},{t:"GET（取得用）",ok:false},{t:"どちらでも同じ",ok:false}],
+       why:"状態を変える操作は <code>POST</code>（や DELETE 等）にする。これらは先読みで勝手に叩かれない。<code>export async function POST()</code> としてログアウトを実装すれば、Link の先読みで誤発火しない。<b>メソッドに意味を持たせる</b>のが安全策。",
+       code:['<span class="cm">// app/logout/route.ts</span>','<span class="kw">export async function</span> <span class="b1">①</span>() {','  <span class="kw">await</span> <span class="fn">clearSession</span>();','  <span class="kw">return</span> <span class="fn">Response</span>.<span class="fn">redirect</span>(<span class="str">\'/\'</span>);','}'],
+       fill:{slot:"b1",val:'POST'}},
+      {eyebrow:"STEP 4 — そもそも何で作るか", lbl:"Server Actions と比較", sub:"役割で選ぶ",
+       prompt:"アプリ内のフォームからのログアウトなら、Route Handler 以外の選択肢は?",
+       question:"② アプリ内の操作なら？",
+       opts:[{t:"Server Actions も使える。APIルートを介さず関数を直接呼べる",ok:true},{t:"必ず Route Handler を経由しなければならない",ok:false},{t:"クライアントで fetch を書くしかない",ok:false}],
+       why:"アプリ内のフォーム操作なら <b>Server Actions</b> が向く（API ルートなしで直接呼べる）。Route Handler は Webhook や外部公開API などHTTPの口が要る時。どちらも副作用は安全なメソッド/仕組みで扱う点は共通。<b>用途で使い分ける</b>。",
+       code:null},
+    ],
+    doneMsg:"GET で副作用を持つと、Link の自動先読みで誤発火する。GET は読み取り専用にし、状態を変える操作は POST に置く。アプリ内の操作は Server Actions も選べる——HTTPメソッドの意味と、APIルートの使い分けが掴めました。"
   }
 };
 
@@ -2543,6 +3710,26 @@ const NEXT_LESSONS = {
    ============================================================ */
 const viewEl = document.getElementById('view');
 const crumbEl = document.getElementById('crumb');
+
+/* ---------- お知らせ（ホーム3画面の右下に表示。×で閉じる・開くたび表示）---------- */
+const NOTICE = "🤖Next.js編増やしたよ〜🚀";
+function showNotice(){
+  // 既存があれば消してから作り直す（ホーム間移動でも1つだけ）
+  const old = document.getElementById('notice');
+  if(old) old.remove();
+  const el = document.createElement('div');
+  el.id = 'notice';
+  el.className = 'notice';
+  el.innerHTML = `<span class="notice-txt"></span><button class="notice-close" aria-label="閉じる">×</button>`;
+  el.querySelector('.notice-txt').textContent = NOTICE;
+  el.querySelector('.notice-close').onclick = () => el.remove();
+  document.body.appendChild(el);
+}
+function hideNotice(){
+  const el = document.getElementById('notice');
+  if(el) el.remove();
+}
+
 const atomSVG = `<svg class="atom" viewBox="0 0 100 100"><ellipse class="orb" cx="50" cy="50" rx="44" ry="17"/><ellipse class="orb" cx="50" cy="50" rx="44" ry="17" transform="rotate(60 50 50)"/><ellipse class="orb" cx="50" cy="50" rx="44" ry="17" transform="rotate(120 50 50)"/><circle class="nuc" cx="50" cy="50" r="7"/></svg>`;
 // Next.js 編のロゴ（モノクロの三角＝Next ブランドを想起させる簡易マーク）
 const nextLogo = `<svg class="atom" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="none" stroke="var(--ink)" stroke-width="5"/><path d="M35 30 V70 M35 30 L66 72 M66 30 V70" stroke="var(--ink)" stroke-width="6" fill="none" stroke-linecap="round"/></svg>`;
@@ -2567,17 +3754,18 @@ function route(){
   const parts = location.hash.replace(/^#\/?/,'').split('/').filter(Boolean)
     .map(p => decodeURIComponent(p));
   window.scrollTo(0,0);
+  hideNotice(); // まず消す。ホーム3画面でのみ下で出し直す
   // Next.js 名前空間
   if(parts[0]==='next'){
     MODE='next'; applyTheme();
-    if(parts.length===1) return renderNextHome();
+    if(parts.length===1){ renderNextHome(); showNotice(); return; }
     if(parts.length===2) return renderConcept(parts[1]);
     return renderLesson(parts[1], parts[2]);
   }
   MODE='react'; applyTheme();
-  if(parts.length===0) return renderTopGate();
+  if(parts.length===0){ renderTopGate(); showNotice(); return; }
   if(parts[0]==='react'){
-    if(parts.length===1) return renderHome();
+    if(parts.length===1){ renderHome(); showNotice(); return; }
     if(parts.length===2) return renderConcept(parts[1]);
     return renderLesson(parts[1], parts[2]);
   }
@@ -2609,7 +3797,7 @@ function renderTopGate(){
         <div class="gate-nm">Next.js 編</div>
         <div class="gate-ds">App Router・Server/Client の境界・サーバー取得・
           Server Actions など。フレームワークの考え方を。</div>
-        <div class="gate-meta">6 トピック ・ 8 の考え方</div>
+        <div class="gate-meta">10 トピック ・ 12 の考え方</div>
         <div class="gate-go">はじめる →</div>
       </a>
     </div>
@@ -2622,9 +3810,13 @@ function renderNextHome(){
   crumbEl.innerHTML = `${nextLogo}<a class="crumb" onclick="go('/')">ホーム</a><span class="sep">/</span><span class="here">Next.js 編</span>`;
   const CATS = [
     ["基礎 / ルーティング", [["app-router"],["dynamic-routes"]]],
+    ["基礎 / 画面遷移", [["navigation"]]],
     ["基礎 / コンポーネントの境界", [["server-client"]]],
+    ["レンダリング / 静的と動的", [["rendering"]]],
     ["データ / 取得と更新", [["data-fetching"],["server-actions"]]],
+    ["データ / API エンドポイント", [["route-handlers"]]],
     ["構造 / 共通UI", [["layouts"]]],
+    ["最適化 / 画像", [["image"]]],
   ];
   const cards = CATS.map(([label, techs])=>{
     const items = techs.map(([key])=>{
@@ -2668,6 +3860,9 @@ function renderHome(){
     ]],
     ["Ref / 描画に影響しない値", [
       ["useRef","DOM 操作や、再描画を起こさない値の保持。"],
+    ]],
+    ["ロジックの再利用", [
+      ["カスタムフック","フックを使うロジックを use で始まる関数に切り出す。"],
     ]],
     ["Performance / 最適化（必要な時だけ）", [
       ["useMemo","重い計算をキャッシュ。多くは不要、計測してから。"],
